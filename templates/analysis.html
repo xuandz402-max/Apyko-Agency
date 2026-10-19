@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% set nav_active = "analysis" %}
+{% block title %}Phân tích — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Phân tích</h1>
+  <p class="muted">Xếp hạng cơ hội theo điểm số</p>
+</div>
+<div class="stats">
+  {% for label, count in by_label.items() %}
+  <div class="stat-card">
+    <div class="stat-label">{{ label }}</div>
+    <div class="stat-value">{{ count }}</div>
+  </div>
+  {% endfor %}
+</div>
+<div class="card card-flat">
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>#</th><th>Sản phẩm</th><th>Điểm</th><th>Nhãn</th><th>Lợi nhuận/đơn</th><th>Biên LN</th></tr></thead>
+    <tbody>
+    {% for a in rows %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td><a href="/products/{{ a.product.id }}">{{ a.product.name }}</a></td>
+        <td>{% if a.score.score is none %}<span class="muted">—</span>{% else %}<span class="badge badge-score">{{ a.score.score }}</span>{% endif %}</td>
+        <td>{{ a.score.label }}</td>
+        <td class="{% if a.calc.profit >= 0 %}text-green{% else %}text-red{% endif %}">{{ "{:,.0f}".format(a.calc.profit) }}₫</td>
+        <td>{% if a.calc.margin is none %}<span class="muted">—</span>{% else %}{{ a.calc.margin }}%{% endif %}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="muted empty">Chưa có sản phẩm nào.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

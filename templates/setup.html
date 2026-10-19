@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thiết lập {{ app_name }}</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="auth-page">
+<div class="auth-card">
+  <div class="auth-logo"><span class="logo"><span class="logo-apy">APY</span><span class="logo-ko">KO</span></span></div>
+  <h1>Thiết lập {{ app_name }}</h1>
+  <p class="muted">Tạo tài khoản <strong>chủ sở hữu</strong> cho lần chạy đầu tiên. Trang này sẽ tự khóa sau khi tạo xong.</p>
+  <form method="post" action="/setup" class="form">
+    <label>Tên đăng nhập
+      <input name="username" value="{{ username or '' }}" required autocomplete="username">
+      {% if errors and errors.username %}<span class="field-error">{{ errors.username }}</span>{% endif %}
+    </label>
+    <label>Tên hiển thị
+      <input name="display_name" value="{{ display_name or '' }}" autocomplete="name">
+    </label>
+    <label>Mật khẩu (ít nhất 8 ký tự)
+      <input type="password" name="password" required autocomplete="new-password">
+      {% if errors and errors.password %}<span class="field-error">{{ errors.password }}</span>{% endif %}
+    </label>
+    <label>Nhập lại mật khẩu
+      <input type="password" name="password2" required autocomplete="new-password">
+      {% if errors and errors.password2 %}<span class="field-error">{{ errors.password2 }}</span>{% endif %}
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Tạo tài khoản chủ sở hữu</button>
+  </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% set nav_active = "product_new" %}
+{% block title %}{% if product and product.id %}Sửa sản phẩm{% else %}Thêm sản phẩm{% endif %} — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{% if product and product.id %}Sửa sản phẩm{% else %}Thêm sản phẩm{% endif %}</h1>
+  <p class="muted">Trường có số liệu thì nhập số; bỏ trống nếu chưa có — app không tự điền 0 vào chỗ thiếu.</p>
+</div>
+<form method="post" action="{{ action }}" class="form form-card">
+  <fieldset class="fieldset">
+    <legend>Thông tin chung</legend>
+    <label>Tên sản phẩm *
+      <input name="name" value="{{ product.name if product else '' }}" required>
+      {% if errors.name %}<span class="field-error">{{ errors.name }}</span>{% endif %}
+    </label>
+    <div class="grid-2">
+      <label>SKU
+        <input name="sku" value="{{ product.sku if product else '' }}">
+      </label>
+      <label>Ngành hàng
+        <input name="category" value="{{ product.category if product else '' }}" placeholder="VD: Vật tư đóng gói">
+      </label>
+    </div>
+    <div class="grid-2">
+      <label>Nguồn dữ liệu
+        <input name="data_source" value="{{ product.data_source if product else '' }}" placeholder="VD: Shopee, 1688">
+      </label>
+      <label>Trạng thái
+        <select name="status">
+          <option value="active" {% if product and product.status == "active" %}selected{% endif %}>Đang bán</option>
+          <option value="testing" {% if product and product.status == "testing" %}selected{% endif %}>Đang thử nghiệm</option>
+          <option value="archived" {% if product and product.status == "archived" %}selected{% endif %}>Lưu trữ</option>
+        </select>
+      </label>
+    </div>
+  </fieldset>
+  <fieldset class="fieldset">
+    <legend>Giá &amp; chi phí (đ)</legend>
+    <div class="grid-2">
+      <label>Giá bán
+        <input name="selling_price" inputmode="decimal" value="{{ product.selling_price if product and product.selling_price != '' else '' }}" placeholder="Để trống = 0">
+        {% if errors.selling_price %}<span class="field-error">{{ errors.selling_price }}</span>{% endif %}
+      </label>
+      <label>Giá vốn
+        <input name="cost_price" inputmode="decimal" value="{{ product.cost_price if product and product.cost_price != '' else '' }}" placeholder="Để trống = 0">
+        {% if errors.cost_price %}<span class="field-error">{{ errors.cost_price }}</span>{% endif %}
+      </label>
+      <label>Chi phí đóng gói
+        <input name="packaging_cost" inputmode="decimal" value="{{ product.packaging_cost if product and product.packaging_cost != '' else '' }}" placeholder="Để trống = 0">
+        {% if errors.packaging_cost %}<span class="field-error">{{ errors.packaging_cost }}</span>{% endif %}
+      </label>
+      <label>Phí ship người bán chịu
+        <input name="shipping_seller" inputmode="decimal" value="{{ product.shipping_seller if product and product.shipping_seller != '' else '' }}" placeholder="Để trống = 0">
+        {% if errors.shipping_seller %}<span class="field-error">{{ errors.shipping_seller }}</span>{% endif %}
+      </label>
+      <label>Chi phí khác
+        <input name="other_cost" inputmode="decimal" value="{{ product.other_cost if product and product.other_cost != '' else '' }}" placeholder="Để trống = 0">
+        {% if errors.other_cost %}<span class="field-error">{{ errors.other_cost }}</span>{% endif %}
+      </label>
+    </div>
+  </fieldset>
+  <fieldset class="fieldset">
+    <legend>Tỷ lệ phí (% trên giá bán)</legend>
+    <p class="muted small">Do bạn khai báo theo Kênh Người Bán — app không dùng biểu phí mặc định nào.</p>
+    <div class="grid-2">
+      <label>Phí sàn (%)
+        <input name="platform_fee_rate" inputmode="decimal" value="{{ product.platform_fee_rate if product and product.platform_fee_rate != '' else '' }}" placeholder="0–100">
+        {% if errors.platform_fee_rate %}<span class="field-error">{{ errors.platform_fee_rate }}</span>{% endif %}
+      </label>
+      <label>Phí thanh toán (%)
+        <input name="payment_fee_rate" inputmode="decimal" value="{{ product.payment_fee_rate if product and product.payment_fee_rate != '' else '' }}" placeholder="0–100">
+        {% if errors.payment_fee_rate %}<span class="field-error">{{ errors.payment_fee_rate }}</span>{% endif %}
+      </label>
+      <label>Chi phí quảng cáo (%)
+        <input name="ads_rate" inputmode="decimal" value="{{ product.ads_rate if product and product.ads_rate != '' else '' }}" placeholder="0–100">
+        {% if errors.ads_rate %}<span class="field-error">{{ errors.ads_rate }}</span>{% endif %}
+      </label>
+      <label>Hoa hồng Affiliate (%)
+        <input name="affiliate_rate" inputmode="decimal" value="{{ product.affiliate_rate if product and product.affiliate_rate != '' else '' }}" placeholder="0–100">
+        {% if errors.affiliate_rate %}<span class="field-error">{{ errors.affiliate_rate }}</span>{% endif %}
+      </label>
+    </div>
+  </fieldset>
+  <fieldset class="fieldset">
+    <legend>Điểm đánh giá (1–5, bỏ trống nếu chưa có)</legend>
+    <div class="grid-2">
+      <label>Điểm nhu cầu
+        <input name="demand_score" inputmode="numeric" value="{{ product.demand_score if product and product.demand_score != none else '' }}" placeholder="1–5">
+        {% if errors.demand_score %}<span class="field-error">{{ errors.demand_score }}</span>{% endif %}
+      </label>
+      <label>Điểm cạnh tranh (dễ)
+        <input name="competition_score" inputmode="numeric" value="{{ product.competition_score if product and product.competition_score != none else '' }}" placeholder="1–5">
+        {% if errors.competition_score %}<span class="field-error">{{ errors.competition_score }}</span>{% endif %}
+      </label>
+      <label>Điểm tiềm năng video
+        <input name="content_score" inputmode="numeric" value="{{ product.content_score if product and product.content_score != none else '' }}" placeholder="1–5">
+        {% if errors.content_score %}<span class="field-error">{{ errors.content_score }}</span>{% endif %}
+      </label>
+      <label>Điểm nguồn hàng
+        <input name="supply_score" inputmode="numeric" value="{{ product.supply_score if product and product.supply_score != none else '' }}" placeholder="1–5">
+        {% if errors.supply_score %}<span class="field-error">{{ errors.supply_score }}</span>{% endif %}
+      </label>
+    </div>
+  </fieldset>
+  <fieldset class="fieldset">
+    <legend>Ghi chú</legend>
+    <label><textarea name="notes" rows="3">{{ product.notes if product else '' }}</textarea></label>
+  </fieldset>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">Lưu sản phẩm</button>
+    <a href="/products" class="btn btn-ghost">Hủy</a>
+  </div>
+</form>
+{% endblock %}

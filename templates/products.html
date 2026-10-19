@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% set nav_active = "products" %}
+{% block title %}Sản phẩm — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Sản phẩm</h1>
+    <p class="muted">{{ products|length }} sản phẩm</p>
+  </div>
+  <div class="page-actions">
+    {% if user.can_add_edit_products %}
+    <a href="/products/new" class="btn btn-primary">➕ Thêm sản phẩm</a>
+    {% endif %}
+  </div>
+</div>
+{% if msg == "created" %}<div class="alert alert-ok">Đã thêm sản phẩm.</div>{% endif %}
+{% if msg == "deleted" %}<div class="alert alert-ok">Đã xóa sản phẩm.</div>{% endif %}
+<form method="get" action="/products" class="filters">
+  <input name="q" value="{{ q }}" placeholder="Tìm tên / SKU…" class="input">
+  <select name="category" class="input">
+    <option value="">Mọi ngành hàng</option>
+    {% for c in categories %}
+    <option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" class="input">
+    <option value="">Mọi trạng thái</option>
+    <option value="active" {% if status == "active" %}selected{% endif %}>Đang bán</option>
+    <option value="testing" {% if status == "testing" %}selected{% endif %}>Đang thử nghiệm</option>
+    <option value="archived" {% if status == "archived" %}selected{% endif %}>Lưu trữ</option>
+  </select>
+  <select name="sort" class="input">
+    <option value="updated_at" {% if sort == "updated_at" %}selected{% endif %}>Mới cập nhật</option>
+    <option value="score" {% if sort == "score" %}selected{% endif %}>Điểm</option>
+    <option value="profit" {% if sort == "profit" %}selected{% endif %}>Lợi nhuận</option>
+    <option value="margin" {% if sort == "margin" %}selected{% endif %}>Biên LN</option>
+    <option value="selling_price" {% if sort == "selling_price" %}selected{% endif %}>Giá bán</option>
+    <option value="name" {% if sort == "name" %}selected{% endif %}>Tên</option>
+  </select>
+  <select name="dir" class="input">
+    <option value="desc" {% if dir == "desc" %}selected{% endif %}>Giảm dần</option>
+    <option value="asc" {% if dir == "asc" %}selected{% endif %}>Tăng dần</option>
+  </select>
+  <button class="btn btn-secondary" type="submit">Lọc</button>
+</form>
+<div class="card card-flat">
+  <div class="table-wrap"><table class="table">
+    <thead><tr>
+      <th>Sản phẩm</th><th>Giá bán</th><th>Lợi nhuận/đơn</th><th>Biên LN</th><th>Điểm</th><th>Nhãn</th>
+    </tr></thead>
+    <tbody>
+    {% for a in products %}
+      <tr>
+        <td>
+          <a href="/products/{{ a.product.id }}">{{ a.product.name }}</a>
+          {% if a.product.sku %}<div class="muted small">{{ a.product.sku }}</div>{% endif %}
+          {% if a.product.is_demo %}<span class="badge badge-demo">DEMO</span>{% endif %}
+        </td>
+        <td>{{ "{:,.0f}".format(a.calc.selling_price) }}₫</td>
+        <td class="{% if a.calc.profit >= 0 %}text-green{% else %}text-red{% endif %}">{{ "{:,.0f}".format(a.calc.profit) }}₫</td>
+        <td>{% if a.calc.margin is none %}<span class="muted">—</span>{% else %}{{ a.calc.margin }}%{% endif %}</td>
+        <td>{% if a.score.score is none %}<span class="badge badge-need">Cần dữ liệu</span>{% else %}<span class="badge badge-score">{{ a.score.score }}</span>{% endif %}</td>
+        <td>{{ a.score.label }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="muted empty">Chưa có sản phẩm nào.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

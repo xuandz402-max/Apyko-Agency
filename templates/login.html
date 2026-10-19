@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đăng nhập — {{ app_name }}</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="auth-page">
+<div class="auth-card">
+  <div class="auth-logo"><span class="logo"><span class="logo-apy">APY</span><span class="logo-ko">KO</span></span></div>
+  <h1>Đăng nhập {{ app_name }}</h1>
+  {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+  <form method="post" action="/login" class="form">
+    <input type="hidden" name="next" value="{{ next or '' }}">
+    <label>Tên đăng nhập
+      <input name="username" value="{{ username or '' }}" required autocomplete="username" autofocus>
+    </label>
+    <label>Mật khẩu
+      <input type="password" name="password" required autocomplete="current-password">
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Đăng nhập</button>
+  </form>
+  <p class="auth-alt">Có mã kích hoạt từ chủ sở hữu? <a href="/activate">Kích hoạt tài khoản</a></p>
+</div>
+</body>
+</html>

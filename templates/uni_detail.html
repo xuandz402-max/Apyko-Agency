@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% set nav_active = "uni" %}
+{% block title %}{{ lesson.title }} — Apyko Uni{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <a href="/uni" class="link">← Apyko Uni</a>
+    <h1>{{ lesson.title }}</h1>
+  </div>
+  <div class="page-actions">
+    {% if is_learned %}
+    <span class="badge badge-done">Đã học</span>
+    <form method="post" action="/uni/{{ lesson.id }}/learn" class="inline">
+      <input type="hidden" name="learned" value="0">
+      <button class="btn btn-ghost btn-sm" type="submit">Đánh dấu chưa học</button>
+    </form>
+    {% else %}
+    <span class="badge badge-todo">Chưa học</span>
+    <form method="post" action="/uni/{{ lesson.id }}/learn" class="inline">
+      <input type="hidden" name="learned" value="1">
+      <button class="btn btn-primary btn-sm" type="submit">Đánh dấu đã học xong</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+<article class="card lesson-body">
+  {{ body_html | safe }}
+</article>
+{% endblock %}

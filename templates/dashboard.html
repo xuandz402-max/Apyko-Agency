@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% set nav_active = "dashboard" %}
+{% block title %}Dashboard — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Dashboard</h1>
+  <p class="muted">Tổng quan hiệu quả sản phẩm</p>
+</div>
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-label">Tổng sản phẩm</div>
+    <div class="stat-value">{{ total }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">SKU lãi dương</div>
+    <div class="stat-value text-green">{{ profitable }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Tổng lợi nhuận dự kiến / đơn</div>
+    <div class="stat-value {% if total_profit >= 0 %}text-green{% else %}text-red{% endif %}">{{ "{:,.0f}".format(total_profit) }}₫</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Bài học Apyko Uni</div>
+    <div class="stat-value">{{ uni_total or 0 }}</div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-head"><h2>Top điểm cao nhất</h2><a href="/analysis" class="link">Xem phân tích →</a></div>
+  {% if top %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Sản phẩm</th><th>Điểm</th><th>Lợi nhuận/đơn</th></tr></thead>
+    <tbody>
+    {% for a in top %}
+      <tr>
+        <td><a href="/products/{{ a.product.id }}">{{ a.product.name }}</a></td>
+        <td><span class="badge badge-score">{{ a.score.score }}</span></td>
+        <td class="{% if a.calc.profit >= 0 %}text-green{% else %}text-red{% endif %}">{{ "{:,.0f}".format(a.calc.profit) }}₫</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="muted empty">Chưa có sản phẩm nào. <a href="/products/new">Thêm sản phẩm đầu tiên</a></p>
+  {% endif %}
+</div>
+{% endblock %}

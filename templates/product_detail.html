@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% set nav_active = "products" %}
+{% block title %}{{ product.name }} — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <a href="/products" class="link">← Sản phẩm</a>
+    <h1>{{ product.name }}</h1>
+    <p class="muted">{% if product.sku %}{{ product.sku }} · {% endif %}{{ product.category }} · {{ product.status }}</p>
+  </div>
+  <div class="page-actions">
+    {% if user.can_add_edit_products %}
+    <a href="/products/{{ product.id }}/edit" class="btn btn-secondary">Sửa</a>
+    {% endif %}
+    {% if user.can_delete_products %}
+    <form method="post" action="/products/{{ product.id }}/delete" onsubmit="return confirm('Xóa sản phẩm này?');" class="inline">
+      <button class="btn btn-danger" type="submit">Xóa</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% if request.query_params.get("msg") == "updated" %}<div class="alert alert-ok">Đã cập nhật.</div>{% endif %}
+<div class="hero">
+  <div class="hero-main">
+    <div class="hero-label">Lợi nhuận dự kiến / đơn</div>
+    <div class="hero-value {% if calc.profit >= 0 %}text-green{% else %}text-red{% endif %}">{{ "{:,.0f}".format(calc.profit) }}₫</div>
+    <div class="muted">Biên lợi nhuận: {% if calc.margin is none %}— (giá bán = 0){% else %}{{ calc.margin }}%{% endif %}</div>
+  </div>
+  <div class="hero-side">
+    <div class="hero-label">Điểm cơ hội</div>
+    {% if calc.score is none %}
+      <div class="badge badge-need">Cần bổ sung dữ liệu</div>
+      <ul class="need-list">
+        {% for f in calc.needs_data %}<li>{{ f }}</li>{% endfor %}
+      </ul>
+    {% else %}
+      <div class="hero-value">{{ calc.score }}</div>
+      <div><span class="badge badge-label">{{ calc.label }}</span></div>
+    {% endif %}
+  </div>
+</div>
+<div class="grid-2 cards">
+  <div class="card">
+    <div class="card-head"><h2>Cách tính lợi nhuận</h2></div>
+    <table class="table kv">
+      <tbody>
+        <tr><td>Giá bán</td><td>{{ "{:,.0f}".format(calc.selling_price) }}₫</td></tr>
+        <tr><td>Giá vốn</td><td>− {{ "{:,.0f}".format(calc.cost_price) }}₫</td></tr>
+        <tr><td>Đóng gói</td><td>− {{ "{:,.0f}".format(calc.packaging_cost) }}₫</td></tr>
+        <tr><td>Ship người bán chịu</td><td>− {{ "{:,.0f}".format(calc.shipping_seller) }}₫</td></tr>
+        <tr><td>Phí sàn ({{ calc.platform_fee_rate }}%)</td><td>− {{ "{:,.0f}".format(calc.platform_fee) }}₫</td></tr>
+        <tr><td>Phí thanh toán ({{ calc.payment_fee_rate }}%)</td><td>− {{ "{:,.0f}".format(calc.payment_fee) }}₫</td></tr>
+        <tr><td>Quảng cáo ({{ calc.ads_rate }}%)</td><td>− {{ "{:,.0f}".format(calc.ads_cost) }}₫</td></tr>
+        <tr><td>Affiliate ({{ calc.affiliate_rate }}%)</td><td>− {{ "{:,.0f}".format(calc.affiliate_cost) }}₫</td></tr>
+        <tr><td>Chi phí khác</td><td>− {{ "{:,.0f}".format(calc.other_cost) }}₫</td></tr>
+        <tr class="total"><td><strong>Lợi nhuận / đơn</strong></td><td><strong>{{ "{:,.0f}".format(calc.profit) }}₫</strong></td></tr>
+      </tbody>
+    </table>
+    <p class="muted small">Tỷ lệ phí do bạn khai báo, chưa xác minh với Shopee.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Thành phần điểm</h2></div>
+    {% if calc.score is none %}
+      <p class="muted">Chưa đủ dữ liệu để chấm điểm.</p>
+    {% else %}
+      {% for key, name, weight in [("margin", "Biên lợi nhuận", "25%"), ("demand", "Nhu cầu", "25%"), ("competition", "Dễ cạnh tranh", "20%"), ("content", "Tiềm năng video", "15%"), ("supply", "Nguồn hàng", "15%")] %}
+      <div class="score-row">
+        <div class="score-head"><span>{{ name }} <span class="muted small">({{ weight }})</span></span><strong>{{ calc.components[key] }}</strong></div>
+        <div class="progress"><div class="progress-bar" style="width: {{ calc.components[key] }}%"></div></div>
+      </div>
+      {% endfor %}
+      <p class="muted small">Điểm là mô hình hỗ trợ quyết định, không phải xác suất thành công.</p>
+    {% endif %}
+  </div>
+</div>
+{% if product.notes %}
+<div class="card"><div class="card-head"><h2>Ghi chú</h2></div><p>{{ product.notes }}</p></div>
+{% endif %}
+{% endblock %}

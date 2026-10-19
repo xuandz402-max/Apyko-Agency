@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ app_name }}{% endblock %}</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23F0522B'/%3E%3Ctext x='32' y='42' font-family='Arial,sans-serif' font-weight='900' font-size='26' fill='white' text-anchor='middle'%3EKO%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+  <button class="hamburger" id="hamburger" aria-label="Mở menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="/">
+      <span class="logo"><span class="logo-apy">APY</span><span class="logo-ko">KO</span></span>
+      <span class="brand-name">{{ app_name }}</span>
+    </a>
+    <nav class="nav">
+      {% if user and user.can_view_products %}
+      <a href="/" class="nav-item{% if nav_active == 'dashboard' %} active{% endif %}">📊 Dashboard</a>
+      <a href="/products" class="nav-item{% if nav_active == 'products' %} active{% endif %}">📦 Sản phẩm</a>
+      {% if user.can_add_edit_products %}
+      <a href="/products/new" class="nav-item{% if nav_active == 'product_new' %} active{% endif %}">➕ Thêm sản phẩm</a>
+      {% endif %}
+      <a href="/analysis" class="nav-item{% if nav_active == 'analysis' %} active{% endif %}">📈 Phân tích</a>
+      <a href="/gmv" class="nav-item{% if nav_active == 'gmv' %} active{% endif %}">📣 GMV Max Shopee</a>
+      {% endif %}
+      {% if user and user.can_view_uni %}
+      <a href="/uni" class="nav-item{% if nav_active == 'uni' %} active{% endif %}">🎓 Apyko Uni</a>
+      {% endif %}
+      {% if user and user.is_owner %}
+      <a href="/accounts" class="nav-item{% if nav_active == 'accounts' %} active{% endif %}">👥 Quản lý tài khoản</a>
+      {% endif %}
+    </nav>
+    <div class="sidebar-foot">
+      {% if user %}
+      <div class="me">
+        <div class="me-name">{{ user.display_name or user.username }}</div>
+        <div class="me-role">{% if user.is_owner %}Chủ sở hữu{% else %}Nhân sự{% endif %}</div>
+      </div>
+      <a href="/logout" class="btn btn-ghost btn-sm">Đăng xuất</a>
+      {% endif %}
+    </div>
+  </aside>
+  <main class="main">
+    {% block content %}{% endblock %}
+    <footer class="foot">{{ app_name }} · nội bộ</footer>
+  </main>
+</div>
+<script>
+(function () {
+  var btn = document.getElementById('hamburger');
+  var bar = document.getElementById('sidebar');
+  var drop = document.getElementById('sidebarBackdrop');
+  function close() {
+    bar.classList.remove('open'); drop.classList.remove('show');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  btn.addEventListener('click', function () {
+    var open = bar.classList.toggle('open');
+    drop.classList.toggle('show', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  drop.addEventListener('click', close);
+  bar.querySelectorAll('.nav-item').forEach(function (a) {
+    a.addEventListener('click', close);
+  });
+})();
+</script>
+</body>
+</html>

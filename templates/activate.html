@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kích hoạt tài khoản — {{ app_name }}</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="auth-page">
+<div class="auth-card">
+  <div class="auth-logo"><span class="logo"><span class="logo-apy">APY</span><span class="logo-ko">KO</span></span></div>
+  <h1>Kích hoạt tài khoản</h1>
+  <p class="muted">Nhập tên đăng nhập và mã kích hoạt do chủ sở hữu cấp, rồi đặt mật khẩu của bạn (chỉ làm 1 lần).</p>
+  {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+  <form method="post" action="/activate" class="form">
+    <label>Tên đăng nhập
+      <input name="username" value="{{ username or '' }}" required autocomplete="username" autofocus>
+    </label>
+    <label>Mã kích hoạt
+      <input name="code" required placeholder="APYK-XXXX-XXXX" autocomplete="one-time-code">
+    </label>
+    <label>Mật khẩu mới (ít nhất 8 ký tự)
+      <input type="password" name="password" required autocomplete="new-password">
+    </label>
+    <label>Nhập lại mật khẩu
+      <input type="password" name="password2" required autocomplete="new-password">
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Kích hoạt và đăng nhập</button>
+  </form>
+  <p class="auth-alt"><a href="/login">Quay lại đăng nhập</a></p>
+</div>
+</body>
+</html>

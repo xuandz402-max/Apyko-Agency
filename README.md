@@ -5,6 +5,22 @@ chấm điểm cơ hội), Apyko Uni (58 bài học nội bộ), quản lý tài
 phân quyền. Chạy bằng Python + FastAPI + SQLite, đóng gói Docker — deploy 1 lần,
 lấy link gửi nhân sự đăng nhập.
 
+## GMV Max Shopee
+
+Theo dõi chỉ số quảng cáo Shopee (GMV Max) theo ngày, từng sản phẩm — thay cho
+file Google Sheet "THEO DÕI CHỈ SỐ QUẢNG CÁO SẢN PHẨM".
+
+- Sidebar **GMV Max Shopee**: mỗi sản phẩm là một tab (như một sheet trong file).
+- Nhân sự nhập tay: ngày, lượt xem, click, chuyển đổi, doanh thu (RM), chi phí QC,
+  ghi chú quyết định. Các cột CTR / CIR / CPC / CR / AOV / ROAS / quy đổi VND do
+  **máy chủ tự tính** (VND = RM x 5300; chia cho 0 hiển thị "—").
+- Bảng **tự động đồng bộ mỗi 10 giây** (polling) — ai sửa thì mọi người thấy ngay,
+  không cần F5. Mỗi dòng ghi tên người nhập cuối cùng.
+- Phân quyền như các trang khác: xem → nhập/sửa → xóa, kiểm tra ở máy chủ.
+- Lần khởi động đầu (bảng trống): tự tạo sẵn 5 sản phẩm từ sheet thật của shop
+  (ỐC NỞ CAMP MỚI, LIỀM, XÀ BÔNG NGHỆ, ĐEN TÓC, MẶT NẠ ĐỊNH HÌNH), sheet trống để
+  nhập liệu. Đổi tên/xóa/thêm sản phẩm tự do trong app.
+
 ## Tài khoản & bảo mật
 
 - **Lần chạy đầu tiên:** mở trang `/setup` để tạo tài khoản **chủ sở hữu**

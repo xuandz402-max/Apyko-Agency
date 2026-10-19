@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% set nav_active = "gmv" %}
+{% block title %}GMV Max Shopee · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>📣 GMV Max Shopee</h1>
+  <p class="muted">Theo dõi chỉ số quảng cáo theo ngày, từng sản phẩm — như file Google Sheet.
+    Bảng <strong>tự động đồng bộ mỗi 10 giây</strong>, không cần F5.</p>
+</div>
+
+<div class="card">
+  <div class="tabs">
+    {% for p in products %}
+    <a href="/gmv?product_id={{ p.id }}" class="tab{% if active and p.id == active.id %} active{% endif %}">{{ p.name }}</a>
+    {% endfor %}
+    {% if can_edit %}
+    <button type="button" class="tab tab-add" id="btnAddProduct">＋ Thêm sản phẩm</button>
+    {% endif %}
+  </div>
+
+  {% if active %}
+  <div class="card-head">
+    <h2>{{ active.name }}</h2>
+    <div class="row-actions">
+      <span id="syncStatus" class="badge badge-todo">Đang tải…</span>
+      {% if can_edit %}
+      <button type="button" class="btn btn-secondary btn-sm" id="btnRenameProduct">Đổi tên</button>
+      {% endif %}
+      {% if can_delete %}
+      <button type="button" class="btn btn-danger btn-sm" id="btnDeleteProduct">Xóa sản phẩm</button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if can_edit %}
+  <form id="entryForm" class="form form-inline card-flat" autocomplete="off">
+    <input type="hidden" id="fEditId" value="">
+    <label>Ngày
+      <input type="date" id="fDate" class="input" required>
+    </label>
+    <label>Lượt xem
+      <input type="number" id="fViews" class="input" min="0" step="1" value="0">
+    </label>
+    <label>Click
+      <input type="number" id="fClicks" class="input" min="0" step="1" value="0">
+    </label>
+    <label>Chuyển đổi
+      <input type="number" id="fConv" class="input" min="0" step="1" value="0">
+    </label>
+    <label>Doanh thu (RM)
+      <input type="number" id="fRevenue" class="input" min="0" step="0.01" value="0">
+    </label>
+    <label>Chi phí QC (RM)
+      <input type="number" id="fCost" class="input" min="0" step="0.01" value="0">
+    </label>
+    <label class="grow">Action / Quyết định
+      <input type="text" id="fNote" class="input" placeholder="VD: tăng ngân sách 20%">
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitEntry">＋ Thêm dòng</button>
+      <button type="button" class="btn btn-ghost btn-sm hidden" id="btnCancelEdit">Hủy sửa</button>
+    </div>
+    <div id="formError" class="alert alert-error hidden"></div>
+  </form>
+  {% endif %}
+
+  <div class="table-wrap"><table class="table" id="gmvTable">
+    <thead><tr>
+      <th>Ngày</th><th>Lượt xem</th><th>Click</th><th>CTR%</th><th>Chuyển đổi</th><th>CR%</th>
+      <th>Doanh thu (RM)</th><th>Quy đổi (VND)</th><th>Chi phí QC</th><th>CIR%</th>
+      <th>CPC</th><th>AOV</th><th>ROAS</th><th>Người nhập</th><th>Action / Quyết định</th>
+      {% if can_edit or can_delete %}<th></th>{% endif %}
+    </tr></thead>
+    <tbody id="gmvBody">
+      <tr><td colspan="16" class="muted">Đang tải dữ liệu…</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sync-note">Tự động đồng bộ mỗi 10 giây (polling). Cột tính toán do máy chủ tự tính — chia cho 0 hiển thị "—".</p>
+  {% else %}
+  <p class="muted">Chưa có sản phẩm nào.{% if can_edit %} Bấm "＋ Thêm sản phẩm" để bắt đầu.{% endif %}</p>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  var PRODUCT_ID = {{ active.id if active else 0 }};
+  var CAN_EDIT = {{ "true" if can_edit else "false" }};
+  var CAN_DELETE = {{ "true" if can_delete else "false" }};
+  if (!PRODUCT_ID) return;
+
+  var lastUpdated = null;
+  var syncEl = document.getElementById("syncStatus");
+  var bodyEl = document.getElementById("gmvBody");
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function pct(v) { return v == null ? "—" : v.toFixed(2) + "%"; }
+  function num(v, d) {
+    if (v == null) return "—";
+    return Number(v).toLocaleString("vi-VN", {minimumFractionDigits: d, maximumFractionDigits: d});
+  }
+  function stamp() {
+    var t = new Date().toLocaleTimeString("vi-VN", {hour12: false});
+    syncEl.textContent = "Đã đồng bộ lúc " + t;
+    syncEl.className = "badge badge-done";
+  }
+
+  function rowHtml(e) {
+    var c = e.calc || {};
+    var ops = "";
+    if (CAN_EDIT || CAN_DELETE) {
+      ops = "<td class=\"nowrap\">";
+      if (CAN_EDIT) ops += "<button type=\"button\" class=\"btn btn-secondary btn-sm\" data-edit=\"" + e.id + "\">Sửa</button> ";
+      if (CAN_DELETE) ops += "<button type=\"button\" class=\"btn btn-danger btn-sm\" data-del=\"" + e.id + "\">Xóa</button>";
+      ops += "</td>";
+    }
+    return "<tr><td class=\"nowrap\">" + esc(e.date) + "</td>"
+      + "<td>" + num(e.views, 0) + "</td>"
+      + "<td>" + num(e.clicks, 0) + "</td>"
+      + "<td>" + pct(c.ctr) + "</td>"
+      + "<td>" + num(e.conversions, 0) + "</td>"
+      + "<td>" + pct(c.cr) + "</td>"
+      + "<td>" + num(e.revenue_rm, 2) + "</td>"
+      + "<td>" + num(c.vnd, 0) + "</td>"
+      + "<td>" + num(e.ad_cost, 2) + "</td>"
+      + "<td>" + pct(c.cir) + "</td>"
+      + "<td>" + num(c.cpc, 2) + "</td>"
+      + "<td>" + num(c.aov, 2) + "</td>"
+      + "<td>" + num(c.roas, 2) + "</td>"
+      + "<td>" + esc(e.updated_by || "") + "</td>"
+      + "<td>" + esc(e.action_note || "") + "</td>"
+      + ops + "</tr>";
+  }
+
+  function render(entries) {
+    if (!entries.length) {
+      bodyEl.innerHTML = "<tr><td colspan=\"16\" class=\"muted\">Chưa có dòng dữ liệu nào — nhập dòng đầu tiên ở form trên.</td></tr>";
+      return;
+    }
+    bodyEl.innerHTML = entries.map(rowHtml).join("");
+  }
+
+  var loading = false;
+  function loadEntries() {
+    if (loading) return;
+    loading = true;
+    fetch("/api/gmv/products/" + PRODUCT_ID + "/entries", {credentials: "same-origin"})
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (data.last_updated !== lastUpdated) {
+          lastUpdated = data.last_updated;
+          render(data.entries || []);
+        }
+        stamp();
+      })
+      .catch(function () {
+        syncEl.textContent = "Lỗi đồng bộ — thử lại sau 10 giây";
+        syncEl.className = "badge badge-need";
+      })
+      .finally(function () { loading = false; });
+  }
+
+  // ---- form thêm / sửa dòng ----
+  var form = document.getElementById("entryForm");
+  if (form) {
+    var fDate = document.getElementById("fDate"),
+        fViews = document.getElementById("fViews"),
+        fClicks = document.getElementById("fClicks"),
+        fConv = document.getElementById("fConv"),
+        fRevenue = document.getElementById("fRevenue"),
+        fCost = document.getElementById("fCost"),
+        fNote = document.getElementById("fNote"),
+        fEditId = document.getElementById("fEditId"),
+        btnSubmit = document.getElementById("btnSubmitEntry"),
+        btnCancel = document.getElementById("btnCancelEdit"),
+        formError = document.getElementById("formError");
+    fDate.value = new Date().toISOString().slice(0, 10);
+
+    function showError(msg) {
+      formError.textContent = msg;
+      formError.classList.remove("hidden");
+    }
+    function clearError() { formError.classList.add("hidden"); }
+
+    form.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      clearError();
+      var payload = {
+        date: fDate.value,
+        views: fViews.value, clicks: fClicks.value, conversions: fConv.value,
+        revenue_rm: fRevenue.value, ad_cost: fCost.value,
+        action_note: fNote.value
+      };
+      var editId = fEditId.value;
+      var url = editId ? "/api/gmv/entries/" + editId
+                       : "/api/gmv/products/" + PRODUCT_ID + "/entries";
+      fetch(url, {
+        method: editId ? "PUT" : "POST",
+        credentials: "same-origin",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+      }).then(function (r) {
+        if (r.ok) { resetForm(); lastUpdated = null; loadEntries(); return; }
+        return r.json().then(function (data) {
+          var errs = data.errors || {};
+          var first = Object.keys(errs)[0];
+          showError(errs[first] || data.detail || "Có lỗi xảy ra.");
+        });
+      }).catch(function () { showError("Không gửi được — kiểm tra mạng."); });
+    });
+
+    function resetForm() {
+      fEditId.value = "";
+      fViews.value = 0; fClicks.value = 0; fConv.value = 0;
+      fRevenue.value = 0; fCost.value = 0; fNote.value = "";
+      fDate.value = new Date().toISOString().slice(0, 10);
+      btnSubmit.textContent = "＋ Thêm dòng";
+      btnCancel.classList.add("hidden");
+      clearError();
+    }
+    btnCancel.addEventListener("click", resetForm);
+
+    bodyEl.addEventListener("click", function (ev) {
+      var t = ev.target;
+      var editId = t.getAttribute && t.getAttribute("data-edit");
+      var delId = t.getAttribute && t.getAttribute("data-del");
+      if (editId) {
+        fetch("/api/gmv/products/" + PRODUCT_ID + "/entries", {credentials: "same-origin"})
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            var e = (data.entries || []).find(function (x) { return String(x.id) === editId; });
+            if (!e) return;
+            fEditId.value = e.id;
+            fDate.value = e.date; fViews.value = e.views; fClicks.value = e.clicks;
+            fConv.value = e.conversions; fRevenue.value = e.revenue_rm;
+            fCost.value = e.ad_cost; fNote.value = e.action_note || "";
+            btnSubmit.textContent = "💾 Cập nhật";
+            btnCancel.classList.remove("hidden");
+            form.scrollIntoView({behavior: "smooth", block: "center"});
+          });
+      } else if (delId) {
+        if (!confirm("Xóa dòng dữ liệu này?")) return;
+        fetch("/api/gmv/entries/" + delId, {method: "DELETE", credentials: "same-origin"})
+          .then(function (r) {
+            if (r.ok || r.status === 404) { lastUpdated = null; loadEntries(); }
+            else alert("Không xóa được dòng này.");
+          });
+      }
+    });
+  }
+
+  // ---- quản lý sản phẩm ----
+  var btnAdd = document.getElementById("btnAddProduct");
+  if (btnAdd) btnAdd.addEventListener("click", function () {
+    var name = prompt("Tên sản phẩm mới:");
+    if (!name || !name.trim()) return;
+    fetch("/api/gmv/products", {
+      method: "POST", credentials: "same-origin",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({name: name.trim()})
+    }).then(function (r) {
+      if (r.status === 201) return r.json().then(function (p) {
+        window.location = "/gmv?product_id=" + p.id;
+      });
+      return r.json().then(function (d) {
+        alert(d.detail || (d.errors && d.errors.name) || "Không tạo được sản phẩm.");
+      });
+    });
+  });
+
+  var btnRename = document.getElementById("btnRenameProduct");
+  if (btnRename) btnRename.addEventListener("click", function () {
+    var name = prompt("Tên mới cho sản phẩm:", {{ active.name|tojson if active else '""' }});
+    if (!name || !name.trim()) return;
+    fetch("/api/gmv/products/" + PRODUCT_ID, {
+      method: "PATCH", credentials: "same-origin",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({name: name.trim()})
+    }).then(function (r) {
+      if (r.ok) window.location.reload();
+      else r.json().then(function (d) {
+        alert(d.detail || (d.errors && d.errors.name) || "Không đổi tên được.");
+      });
+    });
+  });
+
+  var btnDelP = document.getElementById("btnDeleteProduct");
+  if (btnDelP) btnDelP.addEventListener("click", function () {
+    if (!confirm("Xóa sản phẩm này và TOÀN BỘ dòng dữ liệu của nó?")) return;
+    fetch("/api/gmv/products/" + PRODUCT_ID, {method: "DELETE", credentials: "same-origin"})
+      .then(function (r) {
+        if (r.ok || r.status === 404) window.location = "/gmv";
+        else alert("Không xóa được sản phẩm.");
+      });
+  });
+
+  loadEntries();
+  setInterval(loadEntries, 10000);
+})();
+</script>
+{% endblock %}

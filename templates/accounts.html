@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% set nav_active = "accounts" %}
+{% block title %}Quản lý tài khoản — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>👥 Quản lý tài khoản</h1>
+  <p class="muted">Chỉ chủ sở hữu thấy trang này. Tạo tài khoản cho nhân sự → gửi mã kích hoạt → họ tự đặt mật khẩu.</p>
+</div>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+{% if new_code %}
+<div class="alert alert-ok">
+  Đã tạo tài khoản <strong>{{ new_user }}</strong>. Mã kích hoạt (chỉ hiện 1 lần):<br>
+  <code class="code-big">{{ new_code }}</code><br>
+  <span class="small">Gửi mã này cho nhân sự — họ vào trang <strong>Kích hoạt</strong> để đặt mật khẩu.</span>
+</div>
+{% endif %}
+<div class="card">
+  <div class="card-head"><h2>Tạo tài khoản nhân sự</h2></div>
+  <form method="post" action="/accounts/create" class="form">
+    <div class="grid-2">
+      <label>Tên đăng nhập *
+        <input name="username" required placeholder="vd: nhanvien01">
+      </label>
+      <label>Tên hiển thị
+        <input name="display_name" placeholder="vd: Nguyễn Văn A">
+      </label>
+    </div>
+    <fieldset class="fieldset">
+      <legend>Quyền</legend>
+      <div class="check-grid">
+        {% for field, label in perm_fields %}
+        <label class="check"><input type="checkbox" name="{{ field }}" {% if field in ("can_view_products", "can_view_uni") %}checked{% endif %}> {{ label }}</label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <button class="btn btn-primary" type="submit">Tạo &amp; sinh mã kích hoạt</button>
+  </form>
+</div>
+<div class="card card-flat">
+  <div class="card-head"><h2>Danh sách tài khoản</h2></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Tài khoản</th><th>Vai trò</th><th>Trạng thái</th><th>Quyền</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for u in users %}
+      <tr>
+        <td><strong>{{ u.display_name or u.username }}</strong><div class="muted small">{{ u.username }}</div></td>
+        <td>{% if u.is_owner %}<span class="badge badge-owner">Chủ sở hữu</span>{% else %}Nhân sự{% endif %}</td>
+        <td>
+          {% if u.must_activate %}<span class="badge badge-need">Chờ kích hoạt</span>
+          {% elif u.is_active %}<span class="badge badge-done">Đang hoạt động</span>
+          {% else %}<span class="badge badge-locked">Đã khóa</span>{% endif %}
+        </td>
+        <td class="small">
+          {% if u.is_owner %}Toàn quyền
+          {% else %}
+          {{ "Xem SP" if u.can_view_products else "" }}
+          {{ "· Sửa SP" if u.can_add_edit_products else "" }}
+          {{ "· Xóa SP" if u.can_delete_products else "" }}
+          {{ "· Uni" if u.can_view_uni else "" }}
+          {% endif %}
+        </td>
+        <td>
+          {% if not u.is_owner %}
+          <div class="row-actions">
+            <form method="post" action="/accounts/{{ u.id }}/reset-code" class="inline">
+              <button class="btn btn-ghost btn-sm" type="submit" title="Tạo mã kích hoạt mới (tài khoản phải kích hoạt lại)">Đặt lại mã</button>
+            </form>
+            <form method="post" action="/accounts/{{ u.id }}/toggle-lock" class="inline">
+              <button class="btn btn-ghost btn-sm" type="submit">{% if u.is_active %}Khóa{% else %}Mở khóa{% endif %}</button>
+            </form>
+            <form method="post" action="/accounts/{{ u.id }}/delete" class="inline" onsubmit="return confirm('Xóa tài khoản {{ u.username }}?');">
+              <button class="btn btn-danger btn-sm" type="submit">Xóa</button>
+            </form>
+          </div>
+          <form method="post" action="/accounts/{{ u.id }}/perms" class="perm-form">
+            {% for field, label in perm_fields %}
+            <label class="check check-sm"><input type="checkbox" name="{{ field }}" {% if u[field] %}checked{% endif %}> {{ label }}</label>
+            {% endfor %}
+            <button class="btn btn-secondary btn-sm" type="submit">Lưu quyền</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

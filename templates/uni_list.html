@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% set nav_active = "uni" %}
+{% block title %}Apyko Uni — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>🎓 Apyko Uni</h1>
+    <p class="muted">Kho bài học nội bộ — học theo tiến độ của bạn</p>
+  </div>
+</div>
+<div class="card">
+  <div class="progress-meta"><span>Tiến độ của bạn: <strong>{{ done }}/{{ total }}</strong> bài</span><span>{{ pct }}%</span></div>
+  <div class="progress progress-lg"><div class="progress-bar" style="width: {{ pct }}%"></div></div>
+</div>
+<div class="lesson-list">
+  {% for les in lessons %}
+  <a href="/uni/{{ les.id }}" class="lesson-item">
+    <span class="lesson-num">{{ loop.index }}</span>
+    <span class="lesson-title">{{ les.title }}</span>
+    {% if les.id in learned %}
+    <span class="badge badge-done">Đã học</span>
+    {% else %}
+    <span class="badge badge-todo">Chưa học</span>
+    {% endif %}
+  </a>
+  {% else %}
+  <p class="muted empty">Chưa có bài học nào.</p>
+  {% endfor %}
+</div>
+{% endblock %}

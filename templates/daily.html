@@ -18,28 +18,28 @@
         <input type="date" id="fDate" class="input" required>
       </label>
       <label>Doanh thu Thẻ sản phẩm (₫)
-        <input type="number" id="fRevProduct" class="input" min="0" step="1" value="0">
+        <input type="text" inputmode="numeric" id="fRevProduct" class="input money" value="0">
       </label>
       <label>Doanh thu Live (₫)
-        <input type="number" id="fRevLive" class="input" min="0" step="1" value="0">
+        <input type="text" inputmode="numeric" id="fRevLive" class="input money" value="0">
       </label>
       <label>Doanh thu Video (₫)
-        <input type="number" id="fRevVideo" class="input" min="0" step="1" value="0">
+        <input type="text" inputmode="numeric" id="fRevVideo" class="input money" value="0">
       </label>
       <label>Doanh thu Tiếp thị liên kết (₫)
-        <input type="number" id="fRevAffLink" class="input" min="0" step="1" value="0">
+        <input type="text" inputmode="numeric" id="fRevAffLink" class="input money" value="0">
       </label>
       <label>Doanh thu Affiliate (₫)
-        <input type="number" id="fRevAffiliate" class="input" min="0" step="1" value="0">
+        <input type="text" inputmode="numeric" id="fRevAffiliate" class="input money" value="0">
       </label>
       <label>GMV quảng cáo (₫)
-        <input type="number" id="fAdGmv" class="input" min="0" step="1" value="0">
+        <input type="text" inputmode="numeric" id="fAdGmv" class="input money" value="0">
       </label>
       <label>Chi phí ads (₫)
-        <input type="number" id="fAdCost" class="input" min="0" step="1" value="0">
+        <input type="text" inputmode="numeric" id="fAdCost" class="input money" value="0">
       </label>
       <label>Giá trị đơn trung bình (₫)
-        <input type="number" id="fAov" class="input" min="0" step="1" value="0">
+        <input type="text" inputmode="numeric" id="fAov" class="input money" value="0">
       </label>
       <label>Tỉ lệ chuyển đổi (%)
         <input type="number" id="fConvRate" class="input" min="0" max="100" step="0.1" value="0">
@@ -111,6 +111,33 @@
     var m = String(d.getMonth() + 1).padStart(2, "0");
     var day = String(d.getDate()).padStart(2, "0");
     return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  // ---------------- định dạng tiền: dấu phẩy ngăn cách hàng nghìn ----------------
+  var MONEY_KEYS = ["rev_product", "rev_live", "rev_video", "rev_aff_link",
+                    "rev_affiliate", "ad_gmv", "ad_cost", "aov"];
+  function fmtThousand(s) {
+    var d = String(s == null ? "" : s).replace(/\D/g, "");
+    if (!d) return "";
+    return d.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  function unformatMoney(s) {
+    var d = String(s == null ? "" : s).replace(/\D/g, "");
+    return d === "" ? "0" : String(parseInt(d, 10));
+  }
+  function bindMoneyInputs() {
+    var inputs = document.querySelectorAll("input.money");
+    inputs.forEach(function (el) {
+      el.addEventListener("input", function () {
+        el.value = fmtThousand(el.value);
+      });
+      el.addEventListener("blur", function () {
+        if (el.value === "") el.value = "0";
+      });
+      el.addEventListener("focus", function () {
+        el.select();
+      });
+    });
   }
 
   // ---------------- vẽ thẻ báo cáo PNG (1080x1500) ----------------
@@ -289,7 +316,10 @@
       ev.preventDefault();
       clearError();
       var payload = {date: fDate.value};
-      keys.forEach(function (k, i) { payload[k] = $(fields[i]).value; });
+      keys.forEach(function (k, i) {
+        var v = $(fields[i]).value;
+        payload[k] = (MONEY_KEYS.indexOf(k) >= 0) ? unformatMoney(v) : v;
+      });
       var editDate = fEditDate.value;
       var url = editDate ? "/api/daily/" + editDate : "/api/daily";
       fetch(url, {
@@ -307,10 +337,14 @@
       }).catch(function () { showError("Không gửi được — kiểm tra mạng."); });
     });
 
+    bindMoneyInputs();
     window.__dailyFillForm = function (r) {
       fEditDate.value = r.date;
       fDate.value = r.date;
-      keys.forEach(function (k, i) { $(fields[i]).value = r[k] == null ? "" : r[k]; });
+      keys.forEach(function (k, i) {
+        var v = r[k] == null ? "" : r[k];
+        $(fields[i]).value = (MONEY_KEYS.indexOf(k) >= 0 && v !== "") ? fmtThousand(v) : v;
+      });
       btnSubmit.textContent = "💾 Cập nhật báo cáo";
       formTitle.textContent = "Sửa báo cáo ngày " + ddmmyyyy(r.date);
       btnCancel.classList.remove("hidden");

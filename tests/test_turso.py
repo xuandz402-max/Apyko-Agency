@@ -7,20 +7,22 @@ local — cùng libsql core engine với Turso remote — và monkeypatch libsql
 để kiểm tra nhánh chọn backend theo biến môi trường.
 """
 
-import os
 import sqlite3
 import sys
 
 import pytest
-
 from conftest import create_owner
-
-_PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if _PROJECT_DIR not in sys.path:
-    sys.path.insert(0, _PROJECT_DIR)
 
 FAKE_URL = "libsql://fake-test.turso.io"
 FAKE_TOKEN = "fake-token-chi-dung-cho-test"
+
+
+class _PragmaNotSupportedError(Exception):
+    """Giả lập remote không hỗ trợ PRAGMA (chỉ dùng trong test)."""
+
+
+def _raise_boom():
+    raise RuntimeError("boom")
 
 
 def _purge_app_modules():
@@ -128,10 +130,7 @@ def test_turso_init_db_creates_all_tables_and_idempotent(turso_db, tmp_path):
 
     conn = libsql.connect(str(tmp_path / "turso-test.db"))
     tables = {
-        r[0]
-        for r in conn.execute(
-            "SELECT name FROM sqlite_master WHERE type = 'table'"
-        ).fetchall()
+        r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
     }
     assert {
         "products",
@@ -149,20 +148,14 @@ def test_turso_with_block_commit_and_rollback(turso_db):
     from app.database import get_conn
 
     with get_conn() as conn:
-        conn.execute(
-            "INSERT INTO gmv_products (name, created_at) VALUES (?, ?)", ("A", "t")
-        )
+        conn.execute("INSERT INTO gmv_products (name, created_at) VALUES (?, ?)", ("A", "t"))
     with get_conn() as conn:
         n = conn.execute("SELECT COUNT(*) AS c FROM gmv_products").fetchone()["c"]
     assert n == 1
-    try:
+    with pytest.raises(RuntimeError, match="boom"):
         with get_conn() as conn:
-            conn.execute(
-                "INSERT INTO gmv_products (name, created_at) VALUES (?, ?)", ("B", "t")
-            )
-            raise RuntimeError("boom")
-    except RuntimeError:
-        pass
+            conn.execute("INSERT INTO gmv_products (name, created_at) VALUES (?, ?)", ("B", "t"))
+            _raise_boom()
     with get_conn() as conn:
         n = conn.execute("SELECT COUNT(*) AS c FROM gmv_products").fetchone()["c"]
     assert n == 1  # dòng B đã rollback như sqlite3
@@ -180,7 +173,7 @@ def test_turso_pragma_failure_tolerated(tmp_path, monkeypatch, caplog):
 
         def execute(self, sql, params=()):
             if sql.strip().upper().startswith("PRAGMA"):
-                raise Exception("PRAGMA không hỗ trợ ở remote")
+                raise _PragmaNotSupportedError("PRAGMA không hỗ trợ ở remote")
             return self._raw.execute(sql, params)
 
         def __getattr__(self, name):

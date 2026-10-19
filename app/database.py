@@ -165,12 +165,12 @@ class _Row:
     dict(row), len(row), keys() và iteration như sqlite3.Row.
     """
 
-    __slots__ = ("_keys", "_values", "_map")
+    __slots__ = ("_keys", "_map", "_values")
 
     def __init__(self, keys, values):
         self._keys = list(keys)
         self._values = tuple(values)
-        self._map = dict(zip(self._keys, self._values))
+        self._map = dict(zip(self._keys, self._values, strict=True))
 
     def __getitem__(self, key):
         if isinstance(key, str):
@@ -187,7 +187,7 @@ class _Row:
         return list(self._keys)
 
     def __repr__(self):
-        return "_Row(%r)" % (self._map,)
+        return f"_Row({self._map!r})"
 
 
 def _is_libsql_integrity_error(exc: BaseException) -> bool:
@@ -268,13 +268,12 @@ class _TursoConnection:
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        try:
-            if exc_type is None:
-                self._conn.commit()
-            else:
-                self._conn.rollback()
-        finally:
-            return False
+        # Như sqlite3: hết khối with mà không lỗi -> commit, có lỗi -> rollback.
+        if exc_type is None:
+            self._conn.commit()
+        else:
+            self._conn.rollback()
+        return False
 
 
 def _turso_enabled() -> bool:

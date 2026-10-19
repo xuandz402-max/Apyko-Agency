@@ -77,9 +77,10 @@ Mở http://127.0.0.1:8000 → trang `/setup` tạo tài khoản chủ sở hữ
 
 > **Lưu ý gói miễn phí:** Render tắt máy khi không ai dùng 15 phút nên lần mở
 > đầu có thể chờ ~30 giây để máy khởi động lại. Dữ liệu SQLite nằm trên ổ đĩa
-> tạm — nếu deploy lại code, dữ liệu có thể mất. **Hãy xuất CSV sản phẩm định kỳ**
-> (nút Xuất CSV ở trang Sản phẩm) để sao lưu. Muốn giữ dữ liệu vĩnh viễn: nâng
-> cấp gói có Persistent Disk và gắn vào `/srv/data`.
+> tạm — nếu deploy lại code, dữ liệu có thể mất: hãy làm theo mục
+> **Database online (Turso)** bên dưới để giữ dữ liệu vĩnh viễn (miễn phí).
+> Tạm thời chưa làm thì **xuất CSV sản phẩm định kỳ** (nút Xuất CSV ở trang
+> Sản phẩm) để sao lưu.
 
 ## Deploy lên Railway
 
@@ -101,13 +102,39 @@ Mở http://127.0.0.1:8000 → trang `/setup` tạo tài khoản chủ sở hữ
 5. Muốn giữ dữ liệu: `fly volumes create apyko_data --size 1` rồi gắn vào
    `/srv/data` trong `fly.toml`.
 
+## Database online (Turso) — chống mất dữ liệu khi deploy
+
+Mặc định app lưu dữ liệu vào file SQLite trên ổ đĩa của hosting. Gói miễn phí
+(Render/Railway) **xóa ổ đĩa tạm mỗi lần deploy lại code** → mất hết dữ liệu
+(tài khoản, sản phẩm, báo cáo). Cách khắc phục: dùng database online miễn phí
+của Turso (SQLite trên cloud, app tương thích hoàn toàn, không cần đổi gì thêm).
+
+Các bước (làm 1 lần, khoảng 5 phút):
+
+1. Vào https://turso.tech → **Sign Up** (tài khoản miễn phí).
+2. Cài công cụ Turso theo hướng dẫn trên trang rồi đăng nhập: `turso auth login`
+3. Tạo database (region Singapore cho gần Việt Nam):
+   `turso db create apyko-agency --region sin`
+4. Lấy địa chỉ database: `turso db show apyko-agency --url`
+   → dạng `libsql://apyko-agency-<ten-ban>.turso.io`
+5. Tạo mã token: `turso db tokens create apyko-agency`
+6. Trên Render (mục **Environment Variables** của service), thêm 2 biến:
+   - `TURSO_DATABASE_URL` = địa chỉ ở bước 4
+   - `TURSO_AUTH_TOKEN` = mã token ở bước 5
+7. Render tự deploy lại → từ nay dữ liệu nằm trên Turso, deploy lại code bao
+   nhiêu lần cũng không mất.
+
+> Khi chưa đặt 2 biến này, app vẫn chạy SQLite local như cũ — không vỡ gì cả.
+> Muốn quay lại SQLite local thì xóa 2 biến trên là xong.
+
 ## Biến môi trường đầy đủ
 
 | Biến | Bắt buộc | Mặc định | Ghi chú |
 |---|---|---|---|
 | `SECRET_KEY` | Có (production) | rỗng | Chuỗi bí mật, không chia sẻ |
 | `OWNER_USERNAME` / `OWNER_PASSWORD` | Không | rỗng | Bỏ trống thì dùng trang `/setup` |
-| `DATABASE_PATH` | Không | `./data/apyko_agency.db` | File SQLite |
+| `DATABASE_PATH` | Không | `./data/apyko_agency.db` | File SQLite (bỏ qua khi dùng Turso) |
+| `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` | Không | rỗng | Đủ cả 2 → dùng Turso remote; thiếu → SQLite local |
 | `PORT` | Không | `8000` | Hosting tự đặt |
 | `COOKIE_SECURE` | Nên `true` khi deploy | `false` | Cookie chỉ qua HTTPS |
 | `SESSION_DAYS` | Không | `30` | Số ngày duy trì đăng nhập |

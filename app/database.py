@@ -6,6 +6,7 @@ Bảng:
 - sessions: token phiên đăng nhập.
 - lesson_progress: tiến độ học Apyko Uni theo tài khoản.
 - gmv_products / gmv_entries: theo dõi chỉ số quảng cáo Shopee GMV Max theo ngày.
+- daily_reports: báo cáo doanh thu ngày (1 dòng / ngày), xuất ảnh PNG gửi Zalo.
 """
 
 import os
@@ -131,6 +132,22 @@ CREATE TABLE IF NOT EXISTS gmv_entries (
     updated_by TEXT DEFAULT '',
     updated_at TEXT NOT NULL,
     UNIQUE (product_id, date)
+);
+CREATE TABLE IF NOT EXISTS daily_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL UNIQUE,
+    rev_product REAL NOT NULL DEFAULT 0,
+    rev_live REAL NOT NULL DEFAULT 0,
+    rev_video REAL NOT NULL DEFAULT 0,
+    rev_aff_link REAL NOT NULL DEFAULT 0,
+    rev_affiliate REAL NOT NULL DEFAULT 0,
+    ad_gmv REAL NOT NULL DEFAULT 0,
+    ad_cost REAL NOT NULL DEFAULT 0,
+    aov REAL NOT NULL DEFAULT 0,
+    conv_rate REAL NOT NULL DEFAULT 0,
+    note TEXT DEFAULT '',
+    updated_by TEXT DEFAULT '',
+    updated_at TEXT NOT NULL
 );
 """
 
@@ -539,6 +556,70 @@ def gmv_update_entry(entry_id: int, data: dict, updated_by: str) -> dict | None:
 def gmv_delete_entry(entry_id: int) -> bool:
     with get_conn() as conn:
         cur = conn.execute("DELETE FROM gmv_entries WHERE id = ?", (entry_id,))
+        return cur.rowcount > 0
+
+
+# --------------------------- báo cáo ngày -------------------------------
+
+
+DAILY_COLUMNS = [
+    "rev_product",
+    "rev_live",
+    "rev_video",
+    "rev_aff_link",
+    "rev_affiliate",
+    "ad_gmv",
+    "ad_cost",
+    "aov",
+    "conv_rate",
+    "note",
+]
+
+
+def daily_list() -> list:
+    with get_conn() as conn:
+        rows = conn.execute("SELECT * FROM daily_reports ORDER BY date DESC").fetchall()
+    return [dict(r) for r in rows]
+
+
+def daily_get(report_date: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM daily_reports WHERE date = ?", (report_date,)).fetchone()
+    return dict(row) if row is not None else None
+
+
+def daily_upsert(data: dict, updated_by: str) -> tuple:
+    """Nhập báo cáo theo ngày; ngày đã tồn tại thì cập nhật. Trả về (entry, created)."""
+    now = _utcnow()
+    values = [data.get(c, 0 if c != "note" else "") for c in DAILY_COLUMNS]
+    with get_conn() as conn:
+        existing = conn.execute(
+            "SELECT id FROM daily_reports WHERE date = ?", (data["date"],)
+        ).fetchone()
+        if existing is not None:
+            conn.execute(
+                f"UPDATE daily_reports SET {', '.join(f'{c} = ?' for c in DAILY_COLUMNS)},"
+                " updated_by = ?, updated_at = ? WHERE id = ?",
+                (*values, updated_by, now, existing["id"]),
+            )
+            entry_id = existing["id"]
+            created = False
+        else:
+            cols = ", ".join(["date", *DAILY_COLUMNS, "updated_by", "updated_at"])
+            placeholders = ", ".join("?" for _ in range(len(DAILY_COLUMNS) + 3))
+            cur = conn.execute(
+                f"INSERT INTO daily_reports ({cols}) VALUES ({placeholders})",
+                (data["date"], *values, updated_by, now),
+            )
+            entry_id = cur.lastrowid
+            created = True
+        row = conn.execute("SELECT * FROM daily_reports WHERE id = ?", (entry_id,)).fetchone()
+    return dict(row), created
+
+
+def daily_delete(report_date: str) -> bool:
+    with get_conn() as conn:
+        cur = conn.execute("DELETE FROM daily_reports WHERE date = ?", (report_date,))
         return cur.rowcount > 0
 
 

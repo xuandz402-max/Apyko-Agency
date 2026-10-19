@@ -21,6 +21,20 @@ file Google Sheet "THEO DÕI CHỈ SỐ QUẢNG CÁO SẢN PHẨM".
   (ỐC NỞ CAMP MỚI, LIỀM, XÀ BÔNG NGHỆ, ĐEN TÓC, MẶT NẠ ĐỊNH HÌNH), sheet trống để
   nhập liệu. Đổi tên/xóa/thêm sản phẩm tự do trong app.
 
+## Báo cáo ngày
+
+Nhân sự nhập doanh thu + chi phí mỗi ngày, xuất ảnh PNG gửi Zalo cho khách.
+
+- Sidebar **Báo cáo ngày**: form nhập theo ngày — doanh thu 5 nguồn (Thẻ sản phẩm,
+  Live, Video, Tiếp thị liên kết, Affiliate), GMV quảng cáo, chi phí ads, giá trị
+  đơn trung bình, tỉ lệ chuyển đổi (%), ghi chú. Mỗi ngày 1 báo cáo; nhập trùng
+  ngày thì cập nhật.
+- **Tổng doanh thu** và **ROAS** do **máy chủ tự tính** (chia cho 0 hiển thị "—").
+- Mỗi dòng có nút **Xuất ảnh**: vẽ thẻ báo cáo 1080x1500px lên canvas (không cần
+  thư viện ngoài) rồi tải file `apyko-bao-cao-YYYY-MM-DD.png` — header cam nghệ,
+  đủ 5 nguồn doanh thu, khối hiệu quả quảng cáo, footer giờ xuất.
+- Phân quyền như các trang khác: xem → nhập/sửa → xóa, kiểm tra ở máy chủ.
+
 ## Tài khoản & bảo mật
 
 - **Lần chạy đầu tiên:** mở trang `/setup` để tạo tài khoản **chủ sở hữu**

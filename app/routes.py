@@ -28,6 +28,7 @@ from .auth import (
     ApiOwner,
 )
 from .calc import analyze_product
+from .daily import calc_daily, validate_daily_report
 from .gmv import calc_gmv, validate_gmv_entry
 from .validation import payload_from_input, validate_product
 
@@ -1016,4 +1017,87 @@ async def api_gmv_update_entry(entry_id: int, request: Request, user: dict = Api
 def api_gmv_delete_entry(entry_id: int, user: dict = ApiCanDeleteProducts):
     if not db.gmv_delete_entry(entry_id):
         return JSONResponse({"detail": "Không tìm thấy dòng dữ liệu"}, status_code=404)
+    return Response(status_code=204)
+
+
+# ------------------------------ báo cáo ngày ------------------------------
+
+
+def _daily_actor(user: dict) -> str:
+    return (user.get("display_name") or user.get("username") or "").strip()
+
+
+def _daily_enrich(entry: dict) -> dict:
+    enriched = dict(entry)
+    enriched["calc"] = calc_daily(enriched)
+    return enriched
+
+
+@router.get("/bao-cao", response_class=HTMLResponse)
+def page_daily(request: Request):
+    user, redir = auth.page_guard(request, "can_view_products")
+    if redir:
+        return redir
+    return templates.TemplateResponse(
+        "daily.html",
+        _ctx(
+            request,
+            user,
+            reports=[_daily_enrich(r) for r in db.daily_list()],
+            can_edit=bool(user.get("can_add_edit_products")),
+            can_delete=bool(user.get("can_delete_products")),
+        ),
+    )
+
+
+@router.get("/api/daily")
+def api_daily_list(user: dict = ApiCanViewProducts):
+    return {"reports": [_daily_enrich(r) for r in db.daily_list()]}
+
+
+@router.get("/api/daily/{report_date}")
+def api_daily_get(report_date: str, user: dict = ApiCanViewProducts):
+    entry = db.daily_get(report_date)
+    if entry is None:
+        return JSONResponse({"detail": "Không tìm thấy báo cáo ngày này"}, status_code=404)
+    return _daily_enrich(entry)
+
+
+@router.post("/api/daily")
+async def api_daily_upsert(request: Request, user: dict = ApiCanEditProducts):
+    body, err = await _gmv_json_body(request)
+    if err:
+        return err
+    clean, errors = validate_daily_report(body)
+    if errors:
+        return JSONResponse({"errors": errors}, status_code=422)
+    entry, created = db.daily_upsert(clean, _daily_actor(user))
+    return JSONResponse(_daily_enrich(entry), status_code=201 if created else 200)
+
+
+@router.put("/api/daily/{report_date}")
+async def api_daily_update(report_date: str, request: Request, user: dict = ApiCanEditProducts):
+    if db.daily_get(report_date) is None:
+        return JSONResponse({"detail": "Không tìm thấy báo cáo ngày này"}, status_code=404)
+    body, err = await _gmv_json_body(request)
+    if err:
+        return err
+    body = dict(body)
+    if isinstance(body.get("date"), str) and body["date"].strip() != report_date:
+        return JSONResponse(
+            {"errors": {"date": "Ngày trong body phải trùng với ngày trên URL."}},
+            status_code=422,
+        )
+    body["date"] = report_date
+    clean, errors = validate_daily_report(body)
+    if errors:
+        return JSONResponse({"errors": errors}, status_code=422)
+    entry, _ = db.daily_upsert(clean, _daily_actor(user))
+    return _daily_enrich(entry)
+
+
+@router.delete("/api/daily/{report_date}", status_code=204)
+def api_daily_delete(report_date: str, user: dict = ApiCanDeleteProducts):
+    if not db.daily_delete(report_date):
+        return JSONResponse({"detail": "Không tìm thấy báo cáo ngày này"}, status_code=404)
     return Response(status_code=204)

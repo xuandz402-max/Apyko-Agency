@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+{% set nav_active = "daily" %}
+{% block title %}Báo cáo ngày · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>📊 Báo cáo ngày</h1>
+  <p class="muted">Nhân sự nhập doanh thu + chi phí mỗi ngày. Mỗi dòng có nút
+    <strong>Xuất ảnh</strong> để tải thẻ báo cáo PNG gửi Zalo cho khách.</p>
+</div>
+
+{% if can_edit %}
+<div class="card">
+  <div class="card-head"><h2 id="formTitle">Nhập báo cáo ngày</h2></div>
+  <form id="dailyForm" class="form" autocomplete="off">
+    <input type="hidden" id="fEditDate" value="">
+    <div class="form-grid">
+      <label>Ngày
+        <input type="date" id="fDate" class="input" required>
+      </label>
+      <label>Doanh thu Thẻ sản phẩm (₫)
+        <input type="number" id="fRevProduct" class="input" min="0" step="1" value="0">
+      </label>
+      <label>Doanh thu Live (₫)
+        <input type="number" id="fRevLive" class="input" min="0" step="1" value="0">
+      </label>
+      <label>Doanh thu Video (₫)
+        <input type="number" id="fRevVideo" class="input" min="0" step="1" value="0">
+      </label>
+      <label>Doanh thu Tiếp thị liên kết (₫)
+        <input type="number" id="fRevAffLink" class="input" min="0" step="1" value="0">
+      </label>
+      <label>Doanh thu Affiliate (₫)
+        <input type="number" id="fRevAffiliate" class="input" min="0" step="1" value="0">
+      </label>
+      <label>GMV quảng cáo (₫)
+        <input type="number" id="fAdGmv" class="input" min="0" step="1" value="0">
+      </label>
+      <label>Chi phí ads (₫)
+        <input type="number" id="fAdCost" class="input" min="0" step="1" value="0">
+      </label>
+      <label>Giá trị đơn trung bình (₫)
+        <input type="number" id="fAov" class="input" min="0" step="1" value="0">
+      </label>
+      <label>Tỉ lệ chuyển đổi (%)
+        <input type="number" id="fConvRate" class="input" min="0" max="100" step="0.1" value="0">
+      </label>
+    </div>
+    <label>Ghi chú
+      <input type="text" id="fNote" class="input" placeholder="Ghi chú tùy chọn">
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm" id="btnSubmit">💾 Lưu báo cáo</button>
+      <button type="button" class="btn btn-ghost btn-sm hidden" id="btnCancelEdit">Hủy sửa</button>
+    </div>
+    <div id="formError" class="alert alert-error hidden"></div>
+  </form>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-head"><h2>Các ngày đã nhập</h2></div>
+  <div class="table-wrap"><table class="table" id="dailyTable">
+    <thead><tr>
+      <th>Ngày</th><th>Tổng doanh thu</th><th>Chi phí ads</th><th>ROAS</th>
+      <th>Người nhập</th><th>Ghi chú</th><th></th>
+    </tr></thead>
+    <tbody>
+      {% for r in reports %}
+      <tr>
+        <td class="nowrap"><strong>{{ r.date[8:10] }}/{{ r.date[5:7] }}/{{ r.date[0:4] }}</strong></td>
+        <td class="nowrap"><strong>{{ "{:,.0f}".format(r.calc.total_rev).replace(",", ".") }}đ</strong></td>
+        <td class="nowrap">{{ "{:,.0f}".format(r.ad_cost).replace(",", ".") }}đ</td>
+        <td>{{ "—" if r.calc.roas is none else "%.2f"|format(r.calc.roas) }}</td>
+        <td>{{ r.updated_by or "" }}</td>
+        <td>{{ r.note or "" }}</td>
+        <td class="nowrap">
+          <button type="button" class="btn btn-primary btn-sm" data-export="{{ r.date }}">🖼️ Xuất ảnh</button>
+          {% if can_edit %}<button type="button" class="btn btn-secondary btn-sm" data-edit="{{ r.date }}">Sửa</button>{% endif %}
+          {% if can_delete %}<button type="button" class="btn btn-danger btn-sm" data-del="{{ r.date }}">Xóa</button>{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="muted">Chưa có báo cáo nào{% if can_edit %} — nhập báo cáo đầu tiên ở form trên{% endif %}.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<canvas id="reportCanvas" width="1080" height="1500" style="display:none"></canvas>
+
+<script>
+(function () {
+  "use strict";
+  var REPORTS = {{ reports|tojson }};
+  var CAN_EDIT = {{ "true" if can_edit else "false" }};
+  var CAN_DELETE = {{ "true" if can_delete else "false" }};
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function vnd(v) {
+    return Number(v || 0).toLocaleString("vi-VN", {maximumFractionDigits: 0}) + "đ";
+  }
+  function ddmmyyyy(iso) {
+    return iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4);
+  }
+  function localISO(d) {
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  // ---------------- vẽ thẻ báo cáo PNG (1080x1500) ----------------
+  var BRAND = "#F0522B";
+  var INK = "#1A1A1A";
+  var GRAY = "#6B7280";
+  var LIGHT = "#F7F7F8";
+  var FONT = 'Arial, "Helvetica Neue", Helvetica, sans-serif';
+
+  function wrapText(ctx, text, maxW) {
+    var words = String(text).split(/\s+/), lines = [], line = "";
+    words.forEach(function (w) {
+      var t = line ? line + " " + w : w;
+      if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; }
+      else line = t;
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function drawReport(r) {
+    var cv = $("reportCanvas");
+    var ctx = cv.getContext("2d");
+    var W = 1080, H = 1500;
+    var c = r.calc || {};
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, W, H);
+
+    // Header cam nghệ
+    ctx.fillStyle = BRAND;
+    ctx.fillRect(0, 0, W, 300);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.textAlign = "center";
+    ctx.font = "800 54px " + FONT;
+    ctx.fillText("APYKO AGENCY", W / 2, 100);
+    ctx.font = "700 42px " + FONT;
+    ctx.fillText("BÁO CÁO DOANH THU NGÀY", W / 2, 175);
+    ctx.font = "400 36px " + FONT;
+    ctx.fillStyle = "#FFE8DE";
+    ctx.fillText(ddmmyyyy(r.date), W / 2, 240);
+
+    var x0 = 80, x1 = W - 80, y = 390;
+    ctx.textAlign = "left";
+
+    function section(title) {
+      ctx.font = "700 30px " + FONT;
+      ctx.fillStyle = BRAND;
+      ctx.fillText(title, x0, y);
+      y += 18;
+      ctx.strokeStyle = "#F3D9CE";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+      y += 52;
+    }
+    function row(label, value, big, accent) {
+      ctx.font = (big ? "700 " : "400 ") + (big ? 34 : 30) + "px " + FONT;
+      ctx.fillStyle = accent ? BRAND : (big ? INK : "#374151");
+      ctx.textAlign = "left";
+      ctx.fillText(label, x0, y);
+      ctx.font = "700 " + (big ? 40 : 32) + "px " + FONT;
+      ctx.fillStyle = accent ? BRAND : INK;
+      ctx.textAlign = "right";
+      ctx.fillText(value, x1, y);
+      ctx.textAlign = "left";
+      y += big ? 78 : 62;
+    }
+
+    // Khối doanh thu
+    section("DOANH THU THEO NGUỒN");
+    row("Thẻ sản phẩm", vnd(r.rev_product));
+    row("Live", vnd(r.rev_live));
+    row("Video", vnd(r.rev_video));
+    row("Tiếp thị liên kết", vnd(r.rev_aff_link));
+    row("Affiliate", vnd(r.rev_affiliate));
+    y += 6;
+    ctx.strokeStyle = "#E5E7EB";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+    y += 58;
+    row("TỔNG DOANH THU", vnd(c.total_rev), true, true);
+
+    // Khối quảng cáo
+    section("HIỆU QUẢ QUẢNG CÁO");
+    row("GMV quảng cáo", vnd(r.ad_gmv));
+    row("Chi phí ads", vnd(r.ad_cost));
+    row("ROAS", c.roas == null ? "—" : Number(c.roas).toFixed(2));
+    row("Giá trị đơn trung bình", vnd(r.aov));
+    row("Tỉ lệ chuyển đổi", Number(r.conv_rate || 0).toFixed(1) + "%");
+
+    // Ghi chú
+    if (r.note) {
+      y += 10;
+      ctx.font = "700 28px " + FONT;
+      ctx.fillStyle = GRAY;
+      ctx.fillText("Ghi chú", x0, y);
+      y += 44;
+      ctx.font = "400 28px " + FONT;
+      ctx.fillStyle = INK;
+      var lines = wrapText(ctx, r.note, x1 - x0 - 48);
+      var boxH = lines.length * 44 + 44;
+      ctx.fillStyle = LIGHT;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x0, y - 36, x1 - x0, boxH, 14);
+      else ctx.rect(x0, y - 36, x1 - x0, boxH);
+      ctx.fill();
+      ctx.fillStyle = INK;
+      lines.forEach(function (ln) { ctx.fillText(ln, x0 + 24, y); y += 44; });
+    }
+
+    // Footer
+    var now = new Date();
+    var stamp = String(now.getHours()).padStart(2, "0") + ":" +
+                String(now.getMinutes()).padStart(2, "0") + " " + ddmmyyyy(localISO(now));
+    ctx.font = "400 24px " + FONT;
+    ctx.fillStyle = "#9CA3AF";
+    ctx.textAlign = "center";
+    ctx.fillText("Apyko Agency \u2022 Xuất lúc " + stamp, W / 2, H - 48);
+  }
+
+  function exportPNG(isoDate) {
+    var r = null;
+    for (var i = 0; i < REPORTS.length; i++) {
+      if (REPORTS[i].date === isoDate) { r = REPORTS[i]; break; }
+    }
+    if (!r) { alert("Không tìm thấy báo cáo ngày này."); return; }
+    drawReport(r);
+    var cv = $("reportCanvas");
+    cv.toBlob(function (blob) {
+      if (!blob) { alert("Không tạo được ảnh."); return; }
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "apyko-bao-cao-" + isoDate + ".png";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
+    }, "image/png");
+  }
+
+  // ---------------- form nhập / sửa ----------------
+  var form = $("dailyForm");
+  if (form) {
+    var fDate = $("fDate"), fEditDate = $("fEditDate"),
+        btnSubmit = $("btnSubmit"), btnCancel = $("btnCancelEdit"),
+        formError = $("formError"), formTitle = $("formTitle");
+    var fields = ["fRevProduct", "fRevLive", "fRevVideo", "fRevAffLink", "fRevAffiliate",
+                  "fAdGmv", "fAdCost", "fAov", "fConvRate", "fNote"];
+    var keys = ["rev_product", "rev_live", "rev_video", "rev_aff_link", "rev_affiliate",
+                "ad_gmv", "ad_cost", "aov", "conv_rate", "note"];
+    var today = localISO(new Date());
+    var tomorrow = localISO(new Date(Date.now() + 86400000));
+    fDate.value = today;
+    fDate.max = tomorrow;
+
+    function showError(msg) {
+      formError.innerHTML = esc(msg);
+      formError.classList.remove("hidden");
+    }
+    function clearError() { formError.classList.add("hidden"); }
+
+    function resetForm() {
+      fEditDate.value = "";
+      fields.forEach(function (id) {
+        $(id).value = (id === "fNote") ? "" : 0;
+      });
+      fDate.value = today;
+      btnSubmit.textContent = "💾 Lưu báo cáo";
+      formTitle.textContent = "Nhập báo cáo ngày";
+      btnCancel.classList.add("hidden");
+      clearError();
+    }
+    btnCancel.addEventListener("click", resetForm);
+
+    form.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      clearError();
+      var payload = {date: fDate.value};
+      keys.forEach(function (k, i) { payload[k] = $(fields[i]).value; });
+      var editDate = fEditDate.value;
+      var url = editDate ? "/api/daily/" + editDate : "/api/daily";
+      fetch(url, {
+        method: editDate ? "PUT" : "POST",
+        credentials: "same-origin",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+      }).then(function (r) {
+        if (r.ok) { window.location.reload(); return; }
+        return r.json().then(function (data) {
+          var errs = data.errors || {};
+          var first = Object.keys(errs)[0];
+          showError(errs[first] || data.detail || "Có lỗi xảy ra.");
+        });
+      }).catch(function () { showError("Không gửi được — kiểm tra mạng."); });
+    });
+
+    window.__dailyFillForm = function (r) {
+      fEditDate.value = r.date;
+      fDate.value = r.date;
+      keys.forEach(function (k, i) { $(fields[i]).value = r[k] == null ? "" : r[k]; });
+      btnSubmit.textContent = "💾 Cập nhật báo cáo";
+      formTitle.textContent = "Sửa báo cáo ngày " + ddmmyyyy(r.date);
+      btnCancel.classList.remove("hidden");
+      form.scrollIntoView({behavior: "smooth", block: "center"});
+    };
+  }
+
+  // ---------------- nút trên bảng ----------------
+  document.getElementById("dailyTable").addEventListener("click", function (ev) {
+    var t = ev.target;
+    var exp = t.getAttribute && t.getAttribute("data-export");
+    var edit = t.getAttribute && t.getAttribute("data-edit");
+    var del = t.getAttribute && t.getAttribute("data-del");
+    if (exp) { exportPNG(exp); return; }
+    if (edit && CAN_EDIT && window.__dailyFillForm) {
+      var r = null;
+      for (var i = 0; i < REPORTS.length; i++) {
+        if (REPORTS[i].date === edit) { r = REPORTS[i]; break; }
+      }
+      if (r) window.__dailyFillForm(r);
+      return;
+    }
+    if (del && CAN_DELETE) {
+      if (!confirm("Xóa báo cáo ngày " + ddmmyyyy(del) + "?")) return;
+      fetch("/api/daily/" + del, {method: "DELETE", credentials: "same-origin"})
+        .then(function (r) {
+          if (r.ok || r.status === 404) window.location.reload();
+          else alert("Không xóa được báo cáo này.");
+        });
+    }
+  });
+})();
+</script>
+{% endblock %}

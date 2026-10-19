@@ -105,6 +105,11 @@ a:hover { text-decoration: underline; }
 .table tbody tr:hover { background: #FFFBF8; }
 .table.kv td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .table tr.total td { border-top: 2px solid var(--brand); }
+/* ---------- wide content + compact tables (GMV) ---------- */
+.main-wide { max-width: none; }
+.table-compact { font-size: 12.5px; }
+.table-compact th, .table-compact td { padding: 7px 8px; white-space: nowrap; }
+.table-compact td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .md-table-wrap { overflow-x: auto; margin: 12px 0; }
 .md-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .md-table th, .md-table td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; }

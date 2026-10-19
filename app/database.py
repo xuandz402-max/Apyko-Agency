@@ -1,14 +1,13 @@
-"""Tầng lưu trữ SQLite (stdlib sqlite3).
+"""Tầng lưu trữ: SQLite local (stdlib sqlite3) hoặc Turso (libsql) trên cloud.
 
-Bảng:
-- products: như bản MUSE-PRODUCT-RESEARCH.
-- users: tài khoản (owner + nhân sự), cờ phân quyền, mã kích hoạt.
-- sessions: token phiên đăng nhập.
-- lesson_progress: tiến độ học Apyko Uni theo tài khoản.
-- gmv_products / gmv_entries: theo dõi chỉ số quảng cáo Shopee GMV Max theo ngày.
-- daily_reports: báo cáo doanh thu ngày (1 dòng / ngày), xuất ảnh PNG gửi Zalo.
+Chọn backend qua biến môi trường TURSO_DATABASE_URL + TURSO_AUTH_TOKEN (xem config):
+- đủ cả 2  -> Turso remote qua libsql (dữ liệu không mất khi Render deploy lại)
+- thiếu     -> SQLite file local như cũ (dev/test offline)
+
+Mọi truy vấn đi qua get_conn(); code nghiệp vụ không đổi.
 """
 
+import logging
 import os
 import sqlite3
 from datetime import datetime, timezone
@@ -156,7 +155,143 @@ def _utcnow() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def get_conn() -> sqlite3.Connection:
+log = logging.getLogger("apyko.db")
+
+
+class _Row:
+    """Hàng kết quả tương thích sqlite3.Row cho backend Turso/libsql.
+
+    libsql trả về tuple thuần; wrapper này hỗ trợ row["col"], row[0],
+    dict(row), len(row), keys() và iteration như sqlite3.Row.
+    """
+
+    __slots__ = ("_keys", "_values", "_map")
+
+    def __init__(self, keys, values):
+        self._keys = list(keys)
+        self._values = tuple(values)
+        self._map = dict(zip(self._keys, self._values))
+
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            return self._map[key]
+        return self._values[key]
+
+    def __iter__(self):
+        return iter(self._values)
+
+    def __len__(self):
+        return len(self._values)
+
+    def keys(self):
+        return list(self._keys)
+
+    def __repr__(self):
+        return "_Row(%r)" % (self._map,)
+
+
+def _is_libsql_integrity_error(exc: BaseException) -> bool:
+    """libsql 0.1.x ném ValueError thuần cho lỗi constraint của SQLite core."""
+    return isinstance(exc, ValueError) and "constraint failed" in str(exc).lower()
+
+
+class _TursoCursor:
+    """Cursor bọc libsql: fetch trả về _Row thay vì tuple thuần."""
+
+    def __init__(self, raw_cursor):
+        self._cur = raw_cursor
+
+    @property
+    def description(self):
+        return self._cur.description
+
+    @property
+    def lastrowid(self):
+        return self._cur.lastrowid
+
+    @property
+    def rowcount(self):
+        return self._cur.rowcount
+
+    def _keys(self):
+        desc = self._cur.description
+        return [d[0] for d in desc] if desc else []
+
+    def fetchone(self):
+        row = self._cur.fetchone()
+        return None if row is None else _Row(self._keys(), row)
+
+    def fetchall(self):
+        keys = self._keys()
+        return [_Row(keys, r) for r in self._cur.fetchall()]
+
+    def __iter__(self):
+        keys = self._keys()
+        for r in self._cur:
+            yield _Row(keys, r)
+
+
+class _TursoConnection:
+    """Connection bọc libsql cho Turso remote, API giống sqlite3.Connection.
+
+    - Lỗi constraint của libsql (ValueError "... constraint failed ...") được
+      chuẩn hoá thành sqlite3.IntegrityError ngay tại biên, nên code gọi
+      (VD: routes.py bắt sqlite3.IntegrityError) hoạt động y hệt cả 2 backend.
+    - Khối `with` commit khi hết khối không lỗi, rollback khi có lỗi (như sqlite3).
+    """
+
+    def __init__(self, raw_conn):
+        self._conn = raw_conn
+
+    def execute(self, sql, params=()):
+        try:
+            raw_cur = self._conn.execute(sql, params)
+        except ValueError as e:
+            if _is_libsql_integrity_error(e):
+                raise sqlite3.IntegrityError(str(e)) from e
+            raise
+        return _TursoCursor(raw_cur)
+
+    def executescript(self, script):
+        return self._conn.executescript(script)
+
+    def commit(self):
+        return self._conn.commit()
+
+    def rollback(self):
+        return self._conn.rollback()
+
+    def close(self):
+        return self._conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        try:
+            if exc_type is None:
+                self._conn.commit()
+            else:
+                self._conn.rollback()
+        finally:
+            return False
+
+
+def _turso_enabled() -> bool:
+    return bool(config.TURSO_DATABASE_URL and config.TURSO_AUTH_TOKEN)
+
+
+def get_conn() -> "sqlite3.Connection | _TursoConnection":
+    """Kết nối DB: Turso (libsql) nếu đủ 2 biến môi trường, ngược lại SQLite local."""
+    if _turso_enabled():
+        import libsql
+
+        raw = libsql.connect(config.TURSO_DATABASE_URL, auth_token=config.TURSO_AUTH_TOKEN)
+        try:
+            raw.execute("PRAGMA foreign_keys = ON")
+        except Exception as e:  # remote có thể không hỗ trợ PRAGMA này
+            log.warning("Turso: bỏ qua PRAGMA foreign_keys (%s)", e)
+        return _TursoConnection(raw)
     parent = os.path.dirname(config.DATABASE_PATH)
     if parent:
         os.makedirs(parent, exist_ok=True)

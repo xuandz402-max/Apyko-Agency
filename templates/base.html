@@ -14,9 +14,8 @@
   </button>
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
   <aside class="sidebar" id="sidebar">
-    <a class="brand" href="/">
+    <a class="brand" href="/" aria-label="{{ app_name }}">
       <span class="logo"><span class="logo-apy">APY</span><span class="logo-ko">KO</span></span>
-      <span class="brand-name">{{ app_name }}</span>
     </a>
     <nav class="nav">
       {% if user and user.can_view_products %}
@@ -46,7 +45,7 @@
       {% endif %}
     </div>
   </aside>
-  <main class="main">
+  <main class="main {% block main_class %}{% endblock %}">
     {% block content %}{% endblock %}
     <footer class="foot">{{ app_name }} · nội bộ</footer>
   </main>

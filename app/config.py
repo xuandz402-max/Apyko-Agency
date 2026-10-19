@@ -16,4 +16,9 @@ SESSION_DAYS = int(os.environ.get("SESSION_DAYS", "30"))
 OWNER_USERNAME = os.environ.get("OWNER_USERNAME", "").strip()
 OWNER_PASSWORD = os.environ.get("OWNER_PASSWORD", "")
 
+# Database online (Turso/libsql) — chống mất dữ liệu khi Render deploy lại.
+# Đủ cả 2 biến -> dùng Turso remote; thiếu -> fallback SQLite file local.
+TURSO_DATABASE_URL = os.environ.get("TURSO_DATABASE_URL", "")
+TURSO_AUTH_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
+
 APP_NAME = "Apyko Agency"

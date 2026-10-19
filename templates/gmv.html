@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% set nav_active = "gmv" %}
+{% block main_class %}main-wide{% endblock %}
 {% block title %}GMV Max Shopee · {{ app_name }}{% endblock %}
 {% block content %}
 <div class="page-head">
@@ -64,7 +65,7 @@
   </form>
   {% endif %}
 
-  <div class="table-wrap"><table class="table" id="gmvTable">
+  <div class="table-wrap"><table class="table table-compact" id="gmvTable">
     <thead><tr>
       <th>Ngày</th><th>Lượt xem</th><th>Click</th><th>CTR%</th><th>Chuyển đổi</th><th>CR%</th>
       <th>Doanh thu (RM)</th><th>Quy đổi (VND)</th><th>Chi phí QC</th><th>CIR%</th>
@@ -118,18 +119,18 @@
       ops += "</td>";
     }
     return "<tr><td class=\"nowrap\">" + esc(e.date) + "</td>"
-      + "<td>" + num(e.views, 0) + "</td>"
-      + "<td>" + num(e.clicks, 0) + "</td>"
-      + "<td>" + pct(c.ctr) + "</td>"
-      + "<td>" + num(e.conversions, 0) + "</td>"
-      + "<td>" + pct(c.cr) + "</td>"
-      + "<td>" + num(e.revenue_rm, 2) + "</td>"
-      + "<td>" + num(c.vnd, 0) + "</td>"
-      + "<td>" + num(e.ad_cost, 2) + "</td>"
-      + "<td>" + pct(c.cir) + "</td>"
-      + "<td>" + num(c.cpc, 2) + "</td>"
-      + "<td>" + num(c.aov, 2) + "</td>"
-      + "<td>" + num(c.roas, 2) + "</td>"
+      + "<td class=\"num\">" + num(e.views, 0) + "</td>"
+      + "<td class=\"num\">" + num(e.clicks, 0) + "</td>"
+      + "<td class=\"num\">" + pct(c.ctr) + "</td>"
+      + "<td class=\"num\">" + num(e.conversions, 0) + "</td>"
+      + "<td class=\"num\">" + pct(c.cr) + "</td>"
+      + "<td class=\"num\">" + num(e.revenue_rm, 2) + "</td>"
+      + "<td class=\"num\">" + num(c.vnd, 0) + "</td>"
+      + "<td class=\"num\">" + num(e.ad_cost, 2) + "</td>"
+      + "<td class=\"num\">" + pct(c.cir) + "</td>"
+      + "<td class=\"num\">" + num(c.cpc, 2) + "</td>"
+      + "<td class=\"num\">" + num(c.aov, 2) + "</td>"
+      + "<td class=\"num\">" + num(c.roas, 2) + "</td>"
       + "<td>" + esc(e.updated_by || "") + "</td>"
       + "<td>" + esc(e.action_note || "") + "</td>"
       + ops + "</tr>";

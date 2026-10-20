@@ -236,7 +236,17 @@ class _Row:
 
     def __getitem__(self, key):
         if isinstance(key, str):
-            return self._map[key]
+            try:
+                return self._map[key]
+            except KeyError:
+                # libsql/Turso có thể chuẩn hoá HOA tên cột là từ khóa
+                # (ví dụ "key" -> "KEY"); thử khớp không phân biệt hoa/thường
+                # trước khi bỏ cuộc. Khớp chính xác vẫn được ưu tiên.
+                lowered = key.lower()
+                for k, v in self._map.items():
+                    if k.lower() == lowered:
+                        return v
+                raise
         return self._values[key]
 
     def __iter__(self):
@@ -1077,8 +1087,13 @@ def cl_item_update(item_id: int, d: dict) -> dict | None:
 
 def cl_setting_get_all() -> dict:
     with get_conn() as conn:
-        rows = conn.execute("SELECT key, value FROM checklist_settings").fetchall()
-    return {r["key"]: r["value"] for r in rows}
+        # Alias bắt buộc: libsql/Turso trả tên cột "key" thành "KEY" (từ khóa)
+        # nên đọc r["key"] sẽ KeyError trên Turso dù SQLite local chạy đúng.
+        rows = conn.execute(
+            "SELECT key AS setting_key, value AS setting_value"
+            " FROM checklist_settings"
+        ).fetchall()
+    return {r["setting_key"]: r["setting_value"] for r in rows}
 
 
 def cl_setting_set(key: str, value: str) -> None:

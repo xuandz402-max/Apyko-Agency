@@ -387,3 +387,164 @@ def test_overview_revenue_fallback(client):
     assert ov["rev_prev_fallback"] is True
     assert ov["rev_prev_date"] == "2026-09-20"
     assert ov["rev_change_pct"] == 3.2
+
+
+# --- tự chọn 2 khoảng (period_compare_custom) ---------------------------------
+
+
+def test_period_compare_custom_ranges(client):
+    create_owner(client)
+    db, ceo = _db(), _ceo()
+    _report(db, "2026-10-20", 5574, 1200, 500)
+    _report(db, "2026-09-20", 5400, 1000, 200)
+    cmp = ceo.period_compare_custom(
+        "2026-10-20", ("2026-10-20", "2026-10-20"), ("2026-09-20", "2026-09-20")
+    )
+    assert cmp["period"] == "custom"
+    assert cmp["prev_fallback"] is False
+    assert cmp["cur_name"] == "Kỳ đã chọn"
+    assert cmp["prev_name"] == "kỳ so sánh đã chọn"
+    assert cmp["cur_label"] == "20/10"
+    assert cmp["prev_label"] == "20/09"
+    assert cmp["metrics"]["revenue"] == {"cur": 5574, "prev": 5400, "delta_pct": 3.2}
+
+
+def test_period_compare_custom_span_and_empty_prev(client):
+    create_owner(client)
+    db, ceo = _db(), _ceo()
+    _report(db, "2026-10-19", 1000, 100, 50)
+    _report(db, "2026-10-20", 2000, 200, 100)
+    # Kỳ xem 2 ngày; kỳ so sánh không có dữ liệu -> prev/delta None
+    cmp = ceo.period_compare_custom(
+        "2026-10-20", ("2026-10-19", "2026-10-20"), ("2026-08-01", "2026-08-05")
+    )
+    assert cmp["metrics"]["revenue"]["cur"] == 3000
+    assert cmp["metrics"]["revenue"]["prev"] is None
+    assert cmp["metrics"]["revenue"]["delta_pct"] is None
+    # cached variant: khoá gồm cả 2 khoảng, 2 khoảng khác nhau -> kết quả khác nhau
+    a = ceo.cached_period_compare_custom(
+        ("2026-10-19", "2026-10-20"), ("2026-08-01", "2026-08-05")
+    )
+    b = ceo.cached_period_compare_custom(
+        ("2026-10-20", "2026-10-20"), ("2026-10-19", "2026-10-19")
+    )
+    assert a["metrics"]["revenue"]["cur"] == 3000
+    assert b["metrics"]["revenue"] == {"cur": 2000, "prev": 1000, "delta_pct": 100.0}
+
+
+def test_default_prev_range(client):
+    ceo = _ceo()
+    assert ceo.default_prev_range(("2026-10-20", "2026-10-20")) == (
+        "2026-10-19",
+        "2026-10-19",
+    )
+    assert ceo.default_prev_range(("2026-10-18", "2026-10-20")) == (
+        "2026-10-15",
+        "2026-10-17",
+    )
+    # Qua ranh giới tháng
+    assert ceo.default_prev_range(("2026-11-01", "2026-11-02")) == (
+        "2026-10-30",
+        "2026-10-31",
+    )
+
+
+def test_ceo_route_custom_compare(client):
+    create_owner(client)
+    db = _db()
+    _report(db, "2026-10-20", 5574, 1200, 500)
+    _report(db, "2026-09-20", 5400, 1000, 200)
+    r = client.get(
+        "/ceo?period=custom&from=2026-10-20&to=2026-10-20"
+        "&cfrom=2026-09-20&cto=2026-09-20"
+    )
+    assert r.status_code == 200
+    assert "Kỳ đã chọn" in r.text
+    assert "kỳ so sánh đã chọn" in r.text
+    assert "+3.2%" in r.text
+    # 4 ô date được điền sẵn đúng giá trị đã chọn
+    assert 'name="from" value="2026-10-20"' in r.text
+    assert 'name="cfrom" value="2026-09-20"' in r.text
+
+
+def test_ceo_route_custom_default_prev(client):
+    create_owner(client)
+    db = _db()
+    _report(db, "2026-10-20", 6000, 1200, 500)
+    _report(db, "2026-10-16", 5000, 1000, 200)
+    # Không truyền cfrom/cto -> kỳ so sánh mặc định = 15/10-17/10 (liền trước, dài bằng)
+    r = client.get("/ceo?period=custom&from=2026-10-18&to=2026-10-20")
+    assert r.status_code == 200
+    assert "Kỳ đã chọn" in r.text
+    assert "+20.0%" in r.text
+    assert 'name="cfrom" value="2026-10-15"' in r.text
+    assert 'name="cto" value="2026-10-17"' in r.text
+
+
+def test_ceo_route_custom_invalid_falls_back_to_day(client):
+    create_owner(client)
+    _seed_up(client)
+    # to < from
+    r = client.get("/ceo?period=custom&from=2026-10-20&to=2026-10-10")
+    assert r.status_code == 200
+    assert "Hôm nay:" in r.text
+    # ngày sai định dạng
+    r = client.get("/ceo?period=custom&from=abc&to=2026-10-10")
+    assert r.status_code == 200
+    assert "Hôm nay:" in r.text
+    # khoảng dài hơn 366 ngày
+    r = client.get("/ceo?period=custom&from=2024-01-01&to=2026-10-10")
+    assert r.status_code == 200
+    assert "Hôm nay:" in r.text
+    # kỳ so sánh đảo (cto < cfrom)
+    r = client.get(
+        "/ceo?period=custom&from=2026-10-20&to=2026-10-20"
+        "&cfrom=2026-09-20&cto=2026-09-19"
+    )
+    assert r.status_code == 200
+    assert "Hôm nay:" in r.text
+
+
+# --- chọn ngày xem ------------------------------------------------------------
+
+
+def test_ceo_route_view_past_date(client):
+    create_owner(client)
+    db = _db()
+    _report(db, "2026-09-20", 5400, 1000, 200)
+    r = client.get("/ceo?date=2026-09-20")
+    assert r.status_code == 200
+    html = r.text
+    assert "Đang xem ngày" in html
+    assert "20/09/2026" in html
+    assert "5,400" in html  # doanh thu của đúng ngày 20/09
+    assert "Doanh thu 20/09" in html  # nhãn thẻ theo ngày xem
+    assert "Doanh thu hôm nay" not in html
+    assert "Về hôm nay" in html
+    # Link chuyển kỳ giữ nguyên ngày đang xem
+    assert "period=week&amp;date=2026-09-20" in html
+
+
+def test_ceo_route_future_or_bad_date_uses_today(client):
+    create_owner(client)
+    _seed_up(client)
+    r = client.get("/ceo?date=2999-01-01")  # tương lai -> hôm nay
+    assert r.status_code == 200
+    assert "Đang xem ngày" not in r.text
+    assert "Doanh thu hôm nay" in r.text
+    r = client.get("/ceo?date=20-09-2026")  # sai định dạng -> hôm nay
+    assert r.status_code == 200
+    assert "Đang xem ngày" not in r.text
+    assert "Doanh thu hôm nay" in r.text
+
+
+def test_ceo_route_date_custom_forbidden_for_plain_staff(client):
+    create_owner(client)
+    code = create_staff(client, "nv_date", perms=("can_view_products",))
+    logout(client)
+    activate(client, "nv_date", code)
+    assert client.get("/ceo?date=2026-09-20").status_code == 403
+    assert (
+        client.get("/ceo?period=custom&from=2026-10-01&to=2026-10-20").status_code
+        == 403
+    )

@@ -341,8 +341,46 @@ def _ceo_can_view(user: dict) -> bool:
     )
 
 
+def _ceo_custom_ranges(date_from, date_to, cfrom, cto):
+    """Validate tham số Tự chọn của /ceo -> ((cur), (prev)) hoặc None.
+
+    - Kỳ xem bắt buộc: đúng định dạng YYYY-MM-DD, to >= from, dài <= 366
+      ngày; sai bất kỳ điều nào -> None (route quay về kỳ Ngày).
+    - Kỳ so sánh: thiếu cả 2 ô (hoặc chỉ điền 1 ô) -> mặc định là khoảng
+      dài bằng kỳ xem nằm ngay trước kỳ xem (ceo.default_prev_range).
+      Điền đủ 2 ô nhưng sai định dạng / cto < cfrom / dài > 366 ngày ->
+      None (quay về kỳ Ngày).
+    """
+    cur_from = periods._parse_iso(date_from)
+    cur_to = periods._parse_iso(date_to)
+    if cur_from is None or cur_to is None or cur_to < cur_from:
+        return None
+    if (cur_to - cur_from).days + 1 > 366:
+        return None
+    cur = (cur_from.isoformat(), cur_to.isoformat())
+    if not cfrom and not cto:
+        return cur, ceo.default_prev_range(cur)
+    if bool(cfrom) != bool(cto):  # chỉ điền 1 trong 2 ô -> dùng mặc định
+        return cur, ceo.default_prev_range(cur)
+    prev_from = periods._parse_iso(cfrom)
+    prev_to = periods._parse_iso(cto)
+    if prev_from is None or prev_to is None or prev_to < prev_from:
+        return None
+    if (prev_to - prev_from).days + 1 > 366:
+        return None
+    return cur, (prev_from.isoformat(), prev_to.isoformat())
+
+
 @router.get("/ceo", response_class=HTMLResponse)
-def page_ceo(request: Request, period: str = "day"):
+def page_ceo(
+    request: Request,
+    period: str = "day",
+    date: str | None = None,
+    date_from: str | None = Query(default=None, alias="from"),
+    date_to: str | None = Query(default=None, alias="to"),
+    cfrom: str | None = None,
+    cto: str | None = None,
+):
     user, redir = auth.page_guard(request)
     if redir:
         return redir
@@ -350,9 +388,38 @@ def page_ceo(request: Request, period: str = "day"):
         raise HTTPException(
             status_code=403, detail="Chỉ chủ sở hữu / Leader / Quản trị được xem."
         )
-    if period not in ceo.PERIODS:
-        period = "day"
-    today = checklist.today_str()
+    # ----- ngày xem: mặc định hôm nay; ngày hợp lệ trong quá khứ thì xem
+    # theo ngày đó; sai định dạng hoặc tương lai -> hôm nay -----
+    real_today = checklist.today_str()
+    view_date = real_today
+    picked = periods._parse_iso(date)
+    if picked is not None and picked.isoformat() <= real_today:
+        view_date = picked.isoformat()
+    is_today = view_date == real_today
+
+    # ----- so sánh theo kỳ: day/week/month neo tại ngày xem, hoặc Tự chọn
+    # với 2 khoảng tuyệt đối (kỳ xem + kỳ so sánh do người dùng điền) -----
+    cmp_data = None
+    custom = {"from": view_date, "to": view_date}
+    custom["cfrom"], custom["cto"] = ceo.default_prev_range((view_date, view_date))
+    if period == "custom":
+        ranges = _ceo_custom_ranges(date_from, date_to, cfrom, cto)
+        if ranges is not None:
+            cur_range, prev_range = ranges
+            cmp_data = ceo.cached_period_compare_custom(cur_range, prev_range)
+            custom = {
+                "from": cur_range[0],
+                "to": cur_range[1],
+                "cfrom": prev_range[0],
+                "cto": prev_range[1],
+            }
+        else:
+            period = "day"
+    if cmp_data is None:
+        if period not in ceo.PERIODS:
+            period = "day"
+        cmp_data = ceo.cached_period_compare(view_date, period)
+
     now = checklist.now_vn()
     weekday_names = [
         "Thứ Hai",
@@ -372,11 +439,18 @@ def page_ceo(request: Request, period: str = "day"):
         _ctx(
             request,
             user,
-            ov=ceo.cached_overview(today),
-            today=today,
+            ov=ceo.cached_overview(view_date),
+            today=view_date,
+            view_date=view_date,
+            is_today=is_today,
+            date_qs="" if is_today else f"&date={view_date}",
+            back_today_url=(
+                "/ceo" if period == "custom" else f"/ceo?period={period}"
+            ),
             period=period,
-            cmp=ceo.cached_period_compare(today, period),
-            rev_series=ceo.cached_revenue_series(today),
+            cmp=cmp_data,
+            custom=custom,
+            rev_series=ceo.cached_revenue_series(view_date),
             now_text=now_text,
         ),
     )

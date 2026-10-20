@@ -8,6 +8,23 @@
   <p class="ceo-clock" id="ceoClock">🕒 {{ now_text }} (giờ Việt Nam)</p>
 </div>
 
+{% set dlabel = "hôm nay" if is_today else view_date[8:10] ~ "/" ~ view_date[5:7] %}
+<form method="get" action="/ceo" class="form-inline per-custom">
+  <label>Xem ngày
+    <input type="date" name="date" value="{{ view_date }}" class="input">
+  </label>
+  {% if period in ("day", "week", "month") %}
+  <input type="hidden" name="period" value="{{ period }}">
+  {% endif %}
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary btn-sm">Xem</button>
+    {% if not is_today %}<a href="{{ back_today_url }}" class="btn btn-ghost btn-sm">Về hôm nay</a>{% endif %}
+  </div>
+</form>
+{% if not is_today %}
+<p class="muted">📅 Đang xem ngày <strong>{{ view_date[8:10] }}/{{ view_date[5:7] }}/{{ view_date[0:4] }}</strong> — toàn bộ số liệu dưới đây là của ngày này.</p>
+{% endif %}
+
 {% macro metric_card(label, metric, kind) %}
   <div class="stat-card">
     <div class="stat-label">{{ label }}</div>
@@ -27,11 +44,11 @@
 
 <div class="stats">
   <div class="stat-card">
-    <div class="stat-label">Doanh thu hôm nay</div>
+    <div class="stat-label">Doanh thu {{ dlabel }}</div>
     {% if ov.has_report_today %}
     <div class="stat-value">{{ "{:,.0f}".format(ov.revenue_today.total_rev) }}₫</div>
     {% if ov.rev_change_pct is not none %}
-    <div class="{% if ov.rev_change_pct >= 0 %}text-green{% else %}text-red{% endif %}">{{ "%+.1f"|format(ov.rev_change_pct) }}% {% if ov.rev_prev_fallback %}so với ngày có số gần nhất ({{ ov.rev_prev_date[8:10] }}/{{ ov.rev_prev_date[5:7] }}){% else %}so với hôm qua{% endif %}</div>
+    <div class="{% if ov.rev_change_pct >= 0 %}text-green{% else %}text-red{% endif %}">{{ "%+.1f"|format(ov.rev_change_pct) }}% {% if ov.rev_prev_fallback %}so với ngày có số gần nhất ({{ ov.rev_prev_date[8:10] }}/{{ ov.rev_prev_date[5:7] }}){% elif is_today %}so với hôm qua{% else %}so với ngày liền trước{% endif %}</div>
     {% else %}
     <div class="muted">Chưa có ngày nào trước đó để so sánh</div>
     {% endif %}
@@ -41,27 +58,27 @@
     {% endif %}
   </div>
   <div class="stat-card">
-    <div class="stat-label">Chi phí ads hôm nay</div>
+    <div class="stat-label">Chi phí ads {{ dlabel }}</div>
     {% if ov.has_report_today %}
     <div class="stat-value">{{ "{:,.0f}".format(ov.revenue_today.ads_cost) }}₫</div>
     <div class="muted">ROAS {{ ov.revenue_today.roas if ov.revenue_today.roas is not none else "—" }}</div>
     {% else %}
     <div class="stat-value">Chưa nhập</div>
-    <div class="muted">Chưa có Báo cáo ngày hôm nay</div>
+    <div class="muted">Chưa có Báo cáo ngày {{ dlabel }}</div>
     {% endif %}
   </div>
   <div class="stat-card">
-    <div class="stat-label">GMV quảng cáo hôm nay (VNĐ)</div>
+    <div class="stat-label">GMV quảng cáo {{ dlabel }} (VNĐ)</div>
     {% if ov.gmv_today.entry_count %}
     <div class="stat-value">{{ "{:,.0f}".format(ov.gmv_today.revenue_vnd) }}₫</div>
     <div class="muted">Chi phí {{ "{:,.0f}".format(ov.gmv_today.ad_cost_vnd) }}₫ · ROAS {{ ov.gmv_today.roas if ov.gmv_today.roas is not none else "—" }}</div>
     {% else %}
     <div class="stat-value">—</div>
-    <div class="muted">Chưa có dữ liệu GMV hôm nay</div>
+    <div class="muted">Chưa có dữ liệu GMV {{ dlabel }}</div>
     {% endif %}
   </div>
   <div class="stat-card">
-    <div class="stat-label">Checklist hôm nay</div>
+    <div class="stat-label">Checklist {{ dlabel }}</div>
     <div class="stat-value">{{ ov.checklist_today.done }}/{{ ov.checklist_today.tasks }} xong</div>
     <div class="muted">{{ ov.checklist_today.pct }}% hoàn thành{% if ov.checklist_today.overdue %} · <span class="text-red"><strong>{{ ov.checklist_today.overdue }} quá hạn</strong></span>{% endif %}</div>
   </div>
@@ -71,11 +88,31 @@
   <div class="card-head">
     <h2>📈 So sánh theo kỳ</h2>
     <div class="row-actions">
-      <a href="/ceo?period=day" class="btn btn-sm {% if period == 'day' %}btn-primary{% else %}btn-ghost{% endif %}">Ngày</a>
-      <a href="/ceo?period=week" class="btn btn-sm {% if period == 'week' %}btn-primary{% else %}btn-ghost{% endif %}">Tuần</a>
-      <a href="/ceo?period=month" class="btn btn-sm {% if period == 'month' %}btn-primary{% else %}btn-ghost{% endif %}">Tháng</a>
+      <a href="/ceo?period=day{{ date_qs }}" class="btn btn-sm {% if period == 'day' %}btn-primary{% else %}btn-ghost{% endif %}">Ngày</a>
+      <a href="/ceo?period=week{{ date_qs }}" class="btn btn-sm {% if period == 'week' %}btn-primary{% else %}btn-ghost{% endif %}">Tuần</a>
+      <a href="/ceo?period=month{{ date_qs }}" class="btn btn-sm {% if period == 'month' %}btn-primary{% else %}btn-ghost{% endif %}">Tháng</a>
+      <a href="/ceo?period=custom&from={{ custom.from }}&to={{ custom.to }}&cfrom={{ custom.cfrom }}&cto={{ custom.cto }}{{ date_qs }}" class="btn btn-sm {% if period == 'custom' %}btn-primary{% else %}btn-ghost{% endif %}">Tự chọn</a>
     </div>
   </div>
+  <form method="get" action="/ceo" class="form-inline per-custom">
+    <input type="hidden" name="period" value="custom">
+    {% if not is_today %}<input type="hidden" name="date" value="{{ view_date }}">{% endif %}
+    <label>Kỳ xem — Từ ngày
+      <input type="date" name="from" value="{{ custom.from }}" class="input">
+    </label>
+    <label>Kỳ xem — Đến ngày
+      <input type="date" name="to" value="{{ custom.to }}" class="input">
+    </label>
+    <label>Kỳ so sánh — Từ ngày
+      <input type="date" name="cfrom" value="{{ custom.cfrom }}" class="input">
+    </label>
+    <label>Kỳ so sánh — Đến ngày
+      <input type="date" name="cto" value="{{ custom.cto }}" class="input">
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Áp dụng</button>
+    </div>
+  </form>
   <p class="muted">{{ cmp.cur_name }}: <strong>{{ cmp.cur_label }}</strong> · so với <strong>{{ cmp.prev_label }}</strong> {{ cmp.prev_name }}. Số tăng hiện màu xanh lá ▲, giảm hiện màu đỏ ▼; kỳ trước = 0 hoặc thiếu dữ liệu thì không hiện %.</p>
   <div class="stats">
     {{ metric_card("Doanh thu (" ~ cmp.cur_name|lower ~ ")", cmp.metrics.revenue, "money") }}
@@ -111,7 +148,7 @@
 </div>
 
 <div class="card">
-  <div class="card-head"><h2>Nhân viên hôm nay</h2><a href="/checklist/board" class="link">Bảng Leader →</a></div>
+  <div class="card-head"><h2>Nhân viên {{ dlabel }}</h2><a href="/checklist/board" class="link">Bảng Leader →</a></div>
   {% if ov.checklist_today.per_user %}
   <div class="table-wrap"><table class="table">
     <thead><tr><th>Tên</th><th>Được giao</th><th>Đã xong</th><th>Quá hạn</th><th>% hoàn thành</th></tr></thead>
@@ -131,7 +168,7 @@
     </tbody>
   </table></div>
   {% else %}
-  <p class="muted">Chưa có việc nào được giao cho nhân viên hôm nay.</p>
+  <p class="muted">Chưa có việc nào được giao cho nhân viên {{ "hôm nay" if is_today else "trong ngày này" }}.</p>
   {% endif %}
 </div>
 

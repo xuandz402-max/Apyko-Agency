@@ -171,20 +171,31 @@ bảng dữ liệu riêng, chỉ đọc tổng hợp từ các module khác:
   tính là 0).
 - **Đồng hồ ngày giờ** — đầu trang hiện ngày giờ Việt Nam hiện tại, tự cập
   nhật mỗi 30 giây.
+- **🗓️ Chọn ngày xem** — ô chọn ngày ở đầu trang (`/ceo?date=YYYY-MM-DD`):
+  toàn trang (4 thẻ chính, so sánh theo kỳ, biểu đồ 30 ngày, bảng 7 ngày,
+  bảng nhân viên) render theo **ngày được chọn** thay vì hôm nay; nhãn thẻ
+  đổi từ "hôm nay" sang ngày cụ thể (VD "Doanh thu 20/09") và có nút **Về
+  hôm nay**. Ngày sai định dạng hoặc ở tương lai thì tự dùng hôm nay.
 - **📈 So sánh theo kỳ** — 4 thẻ Doanh thu / Chi phí quảng cáo / ROAS / GMV
   quảng cáo VNĐ của kỳ hiện tại kèm **% thay đổi so với kỳ trước**, có nút
-  chuyển **Ngày / Tuần / Tháng** (mặc định Ngày). Cách so kỳ: **Ngày** =
-  hôm nay vs hôm qua; **Tuần** = thứ Hai -> hôm nay vs cùng số ngày đầu
-  tuần trước (VD 19/10 – 20/10 vs 12/10 – 13/10); **Tháng** = ngày 1 ->
-  hôm nay vs cùng số ngày đầu tháng trước (tháng trước ngắn hơn thì dừng ở
-  ngày cuối của tháng trước). Hai khoảng luôn dài bằng nhau và giao diện
-  ghi rõ nhãn khoảng ngày. **Tăng hiện màu xanh lá #15803D kèm ▲ và dấu +,
-  giảm hiện màu đỏ #DC2626 kèm ▼** — đây là ngoại lệ màu duy nhất ngoài
-  theme đen trắng, do chủ shop chốt riêng cho số tăng/giảm. Kỳ trước = 0
-  hoặc thiếu dữ liệu thì hiện "—", không bịa %.
+  chuyển **Ngày / Tuần / Tháng / Tự chọn** (mặc định Ngày). Cách so kỳ:
+  **Ngày** = ngày xem vs ngày liền trước (ngày liền trước không có bất kỳ
+  số nào thì lùi về **ngày có số gần nhất** và ghi rõ trên thẻ); **Tuần**
+  = trọn tuần lịch thứ Hai -> Chủ Nhật chứa ngày xem vs trọn tuần liền
+  trước; **Tháng** = trọn tháng lịch chứa ngày xem vs trọn tháng liền
+  trước. Giao diện ghi rõ nhãn khoảng ngày. **Tăng hiện màu xanh lá
+  #15803D kèm ▲ và dấu +, giảm hiện màu đỏ #DC2626 kèm ▼** — đây là ngoại
+  lệ màu duy nhất ngoài theme đen trắng, do chủ shop chốt riêng cho số
+  tăng/giảm. Kỳ trước = 0 hoặc thiếu dữ liệu thì hiện "—", không bịa %.
+- **Tự chọn 2 khoảng** (`?period=custom&from=&to=&cfrom=&cto=`) — tự điền
+  **Kỳ xem** (Từ–Đến) và **Kỳ so sánh** (Từ–Đến) bất kỳ. Chưa điền kỳ so
+  sánh (hoặc chỉ điền 1 ô) thì app tự dùng khoảng **dài bằng kỳ xem nằm
+  ngay trước kỳ xem** và điền sẵn vào ô để sửa tiếp. Ngày sai định dạng,
+  khoảng đảo (đến < từ) hoặc dài hơn **366 ngày** thì tự quay về kỳ Ngày.
+  Chế độ Tự chọn **không** áp fallback "ngày có số gần nhất".
 - **📊 Biểu đồ doanh thu 30 ngày gần nhất** — biểu đồ cột doanh thu từng
-  ngày (SVG vẽ bằng JS thuần); ngày chưa nhập Báo cáo ngày được để trống,
-  không vẽ 0.
+  ngày (SVG vẽ bằng JS thuần), kết thúc tại ngày đang xem; ngày chưa nhập
+  Báo cáo ngày được để trống, không vẽ 0.
 
 Ngưỡng cảnh báo mặc định (chỉnh trong `app/ceo.py`): `ROAS_WARN = 2.0`
 (entry GMV mới nhất của sản phẩm có ROAS dưới 2.0 thì cảnh báo) và
@@ -200,7 +211,8 @@ cảnh báo "chưa có dữ liệu gần đây").
 sửa dữ liệu ở các module khác (Báo cáo ngày, GMV Max, checklist...) có thể
 mất tối đa ~1 phút mới hiện lên trang CEO. Các trang còn lại không dùng
 cache này. Khu so sánh theo kỳ và biểu đồ 30 ngày cũng cache 60 giây
-tương tự (`cached_period_compare` khoá theo ngày + kỳ, và
+tương tự (`cached_period_compare` khoá theo ngày + kỳ,
+`cached_period_compare_custom` khoá theo cả 2 khoảng tự chọn, và
 `cached_revenue_series`).
 
 ## 🗓️ Chọn khoảng thời gian + so sánh kỳ (dùng chung)
@@ -248,8 +260,9 @@ sánh với **kỳ liền trước dài bằng nhau** — logic ở `app/periods
 Các trang **không** có thanh kỳ vì dữ liệu không gắn với thời gian vận
 hành: Định giá (bảng tính giá tại thời điểm nhập), Sản phẩm/Phân tích
 (danh mục SKU), Apyko Uni (bài học), Dashboard chủ (tổng quan sản phẩm).
-Dashboard CEO có thanh Ngày/Tuần/Tháng riêng từ trước (cùng công thức,
-chưa có Tự chọn).
+Dashboard CEO dùng thanh kỳ riêng (Ngày/Tuần/Tháng cùng công thức) và có
+thêm **chọn ngày xem** + **Tự chọn 2 khoảng** (kỳ xem + kỳ so sánh tự
+điền) — xem mục Dashboard CEO ở trên.
 
 ## 🏷️ Định giá sản phẩm
 

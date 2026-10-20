@@ -14,13 +14,15 @@ cho mọi ngày cần xem, entry GMV 1 query cho mọi sản phẩm, checklist q
 board_stats). cached_overview() nhớ kết quả 60 giây vì trang chỉ đọc.
 
 So sánh theo kỳ (period_compare): Doanh thu / Chi phí ads / ROAS (từ Báo
-cáo ngày) và GMV quảng cáo VNĐ (từ GMV Max) của kỳ này so với kỳ trước
-LIỀN KỀ DÀI BẰNG NHAU — Ngày: hôm nay vs hôm qua; Tuần: thứ Hai -> hôm
-nay vs cùng số ngày đầu tuần trước; Tháng: ngày 1 -> hôm nay vs cùng số
-ngày đầu tháng trước. Kỳ trước = 0 hoặc thiếu dữ liệu -> delta = None
-(giao diện hiện "—", không bịa %). % tăng/giảm trên trang dùng màu xanh
-lá #15803D / đỏ #DC2626 (class .delta-up/.delta-down) — ngoại lệ màu duy
-nhất ngoài theme đen trắng, do chủ shop chốt riêng cho số tăng/giảm.
+cáo ngày) và GMV quảng cáo VNĐ (từ GMV Max) của kỳ này so với kỳ trước —
+Ngày: hôm nay vs hôm qua (hôm qua trống số thì lùi về ngày có số gần
+nhất); Tuần: TRỌN tuần lịch thứ Hai -> Chủ Nhật vs trọn tuần liền trước;
+Tháng: TRỌN tháng lịch vs trọn tháng liền trước. Chế độ Tự chọn
+(period_compare_custom): 2 khoảng ngày tùy ý do người dùng điền. Kỳ
+trước = 0 hoặc thiếu dữ liệu -> delta = None (giao diện hiện "—", không
+bịa %). % tăng/giảm trên trang dùng màu xanh lá #15803D / đỏ #DC2626
+(class .delta-up/.delta-down) — ngoại lệ màu duy nhất ngoài theme đen
+trắng, do chủ shop chốt riêng cho số tăng/giảm.
 """
 
 import threading
@@ -383,6 +385,49 @@ def period_compare(today: str, period: str) -> dict:
     }
 
 
+def default_prev_range(cur_range: tuple[str, str]) -> tuple[str, str]:
+    """Khoảng liền trước DÀI BẰNG cur_range, kết thúc ngay trước cur_start.
+
+    Dùng làm kỳ so sánh mặc định cho chế độ Tự chọn ở Dashboard CEO khi
+    người dùng chưa tự điền kỳ so sánh.
+    """
+    start = _to_date(cur_range[0])
+    length = (_to_date(cur_range[1]) - start).days + 1
+    prev_end = start - timedelta(days=1)
+    prev_start = prev_end - timedelta(days=length - 1)
+    return prev_start.isoformat(), prev_end.isoformat()
+
+
+def period_compare_custom(today: str, cur_range, prev_range) -> dict:
+    """So sánh 4 chỉ số giữa 2 khoảng ngày TÙY Ý (chế độ Tự chọn).
+
+    `today` là ngày neo (giữ chữ ký đồng nhất với period_compare) — hai
+    khoảng là tuyệt đối và đã được validate ở route (định dạng, thứ tự,
+    độ dài). KHÔNG áp fallback "ngày có số gần nhất": fallback chỉ dành
+    cho kỳ Ngày. Ngày trong khoảng chưa có số thì bỏ qua như _aggregate.
+    """
+    reports = {r["date"]: r for r in db.daily_list()}
+    entries = db.gmv_all_entries()
+    cur = _aggregate(reports, entries, *cur_range)
+    prev = _aggregate(reports, entries, *prev_range)
+    return {
+        "period": "custom",
+        "cur_start": cur_range[0],
+        "cur_end": cur_range[1],
+        "prev_start": prev_range[0],
+        "prev_end": prev_range[1],
+        "cur_name": "Kỳ đã chọn",
+        "prev_name": "kỳ so sánh đã chọn",
+        "cur_label": _range_label(*cur_range),
+        "prev_label": _range_label(*prev_range),
+        "prev_fallback": False,
+        "metrics": {
+            key: _with_delta(cur[key], prev[key])
+            for key in ("revenue", "ads_cost", "roas", "gmv_vnd")
+        },
+    }
+
+
 def revenue_series(today: str, days: int = 30) -> dict:
     """Doanh thu từng ngày trong `days` ngày gần nhất (gồm hôm nay).
 
@@ -422,6 +467,14 @@ def cached_period_compare(today: str, period: str) -> dict:
         period = "day"
     return _ttl_get(
         ("period", today, period), lambda: period_compare(today, period)
+    )
+
+
+def cached_period_compare_custom(cur_range, prev_range) -> dict:
+    """period_compare_custom() với cache 60 giây, khoá gồm cả 2 khoảng."""
+    key = ("period_custom", cur_range[0], cur_range[1], prev_range[0], prev_range[1])
+    return _ttl_get(
+        key, lambda: period_compare_custom(cur_range[0], cur_range, prev_range)
     )
 
 

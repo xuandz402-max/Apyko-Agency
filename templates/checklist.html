@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% set nav_active = "checklist" %}
+{% block title %}Daily Checklist · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>✅ Daily Checklist</h1>
+  <p class="muted">Checklist vận hành Shopee đầu ngày. Màu trạng thái: quá hạn = đỏ đậm, sắp tới hạn = đỏ, hoàn thành = xanh.</p>
+</div>
+
+<form method="get" action="/checklist" class="form-inline">
+  <label>Ngày
+    <input type="date" name="date" value="{{ date }}" class="input">
+  </label>
+  {% if is_leader %}
+  <label>Nhân viên
+    <select name="assignee" class="input">
+      <option value="">— Tất cả —</option>
+      {% for u in users %}
+      {% if u.is_active %}<option value="{{ u.id }}" {% if f_assignee == u.id %}selected{% endif %}>{{ u.display_name or u.username }}</option>{% endif %}
+      {% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  <label>Shop
+    <select name="shop" class="input">
+      <option value="">— Tất cả —</option>
+      {% for s in shops %}
+      <option value="{{ s.id }}" {% if f_shop == s.id %}selected{% endif %}>{{ s.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
+    {% if is_leader %}<button type="button" class="btn btn-ghost btn-sm" id="btnGen">Tạo checklist hôm nay</button>{% endif %}
+  </div>
+</form>
+
+<div id="clError" class="alert alert-error hidden"></div>
+
+{% if groups %}
+{% for g in groups %}
+<h3 class="cl-group">{{ g.name }}</h3>
+{% for it in g["items"] %}
+<div class="cl-item cl-{{ it.state }}" data-item-id="{{ it.id }}" data-state="{{ it.state }}">
+  <div class="cl-head">
+    <span class="cl-title">{{ it.title }}</span>
+    {% if it.state == 'overdue' %}<span class="cl-badge cl-overdue">QUÁ HẠN</span>{% endif %}
+    {% if it.state == 'due' %}<span class="cl-badge cl-due">SẮP TỚI HẠN</span>{% endif %}
+    {% if it.state == 'done' %}<span class="cl-badge cl-done">Hoàn thành</span>{% endif %}
+    {% if it.state == 'cancelled' %}<span class="cl-badge cl-cancelled">Đã hủy</span>{% endif %}
+  </div>
+  <div class="cl-meta">
+    Hạn <strong>{{ it.due_time }}</strong> ·  {{ it.date[8:10] }}/{{ it.date[5:7] }}/{{ it.date[0:4] }}
+    {% if it.assignee_name %} · 👤 {{ it.assignee_name }}{% endif %}
+    {% if it.shop_name %} · 🏪 {{ it.shop_name }}{% endif %}
+    {% if it.state == 'done' %} · ✔ {{ it.completed_by }} lúc {{ it.completed_at[11:16] if it.completed_at else '' }} {{ it.completed_at[8:10] }}/{{ it.completed_at[5:7] }}{% endif %}
+  </div>
+  <label class="cl-note">Ghi chú / kết quả kiểm tra
+    <textarea class="cl-note-text" rows="2" placeholder="Ghi chú (có thể để trống)">{{ it.note or '' }}</textarea>
+  </label>
+  <div class="cl-actions">
+    <button type="button" class="btn btn-ghost btn-sm" data-save-note>Sửa ghi chú</button>
+    {% if it.state != 'done' and it.state != 'cancelled' %}
+    <button type="button" class="btn btn-primary btn-sm" data-complete>✔ Hoàn thành</button>
+    {% endif %}
+    {% if it.state == 'done' or it.state == 'cancelled' %}
+    <button type="button" class="btn btn-ghost btn-sm" data-reopen>Mở lại</button>
+    {% endif %}
+    {% if it.state != 'cancelled' and it.state != 'done' %}
+    <button type="button" class="btn btn-ghost btn-sm" data-cancel>Hủy</button>
+    {% endif %}
+    {% if is_leader %}
+    <select class="input cl-assign-user" data-assign-sel>
+      <option value="">— Giao cho —</option>
+      {% for u in users %}{% if u.is_active %}<option value="{{ u.id }}" {% if it.assignee_id == u.id %}selected{% endif %}>{{ u.display_name or u.username }}</option>{% endif %}{% endfor %}
+    </select>
+    <select class="input cl-assign-shop" data-shop-sel>
+      <option value="">— Shop —</option>
+      {% for s in shops %}<option value="{{ s.id }}" {% if it.shop_id == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+    </select>
+    <button type="button" class="btn btn-ghost btn-sm" data-assign>Giao việc</button>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endfor %}
+{% else %}
+<p class="muted">Chưa có công việc nào trong ngày này{% if not is_leader %} được giao cho bạn{% endif %}.</p>
+{% endif %}
+{% if is_leader %}
+<p class="muted">Quyền chỉnh sửa: bạn là quản lý hệ thống, có thể hoàn thành/mở lại/hủy tất cả các công việc.</p>
+{% endif %}
+
+<script>
+(function() {
+  var errEl = document.getElementById('clError');
+  function showErr(msg) { errEl.textContent = msg; errEl.classList.remove('hidden'); }
+  function post(url, body) {
+    return fetch(url, {
+      method: 'POST', credentials: 'same-origin',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body || {})
+    });
+  }
+  function handle(r, reload) {
+    if (r.ok) { if (reload) location.reload(); return null; }
+    return r.json().then(function(d){ showErr(d.detail || 'Có lỗi xảy ra.'); });
+  }
+  var genBtn = document.getElementById('btnGen');
+  if (genBtn) genBtn.addEventListener('click', function() {
+    post('/api/checklist/generate', {date: '{{ date }}'}).then(function(r) { return handle(r, true); });
+  });
+  document.querySelectorAll('.cl-item').forEach(function(row) {
+    var id = row.getAttribute('data-item-id');
+    function val(sel) { var el = row.querySelector(sel); return el ? el.value : ''; }
+    row.querySelector('[data-save-note]').addEventListener('click', function() {
+      post('/api/checklist/items/' + id + '/note', {note: val('.cl-note-text')}).then(function(r) { return handle(r, false); });
+    });
+    var c = row.querySelector('[data-complete]');
+    if (c) c.addEventListener('click', function() {
+      post('/api/checklist/items/' + id + '/complete', {note: val('.cl-note-text')}).then(function(r) { return handle(r, true); });
+    });
+    var rp = row.querySelector('[data-reopen]');
+    if (rp) rp.addEventListener('click', function() {
+      post('/api/checklist/items/' + id + '/reopen').then(function(r) { return handle(r, true); });
+    });
+    var cx = row.querySelector('[data-cancel]');
+    if (cx) cx.addEventListener('click', function() {
+      if (!confirm('Hủy việc này? Việc đã hủy sẽ không được nhắc nữa.')) return;
+      post('/api/checklist/items/' + id + '/cancel').then(function(r) { return handle(r, true); });
+    });
+    var as = row.querySelector('[data-assign]');
+    if (as) as.addEventListener('click', function() {
+      var u = row.querySelector('[data-assign-sel]').value;
+      var s = row.querySelector('[data-shop-sel]').value;
+      post('/api/checklist/items/' + id + '/assign', {
+        assignee_id: u === '' ? null : parseInt(u, 10),
+        shop_id: s === '' ? null : parseInt(s, 10)
+      }).then(function(r) { return handle(r, true); });
+    });
+  });
+})();
+</script>
+{% endblock %}

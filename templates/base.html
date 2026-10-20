@@ -28,6 +28,16 @@
       <a href="/gmv" class="nav-item{% if nav_active == 'gmv' %} active{% endif %}">📣 GMV Max Shopee</a>
       <a href="/bao-cao" class="nav-item{% if nav_active == 'daily' %} active{% endif %}">📊 Báo cáo ngày</a>
       {% endif %}
+      {% if user %}
+      <a href="/checklist" class="nav-item{% if nav_active == 'checklist' %} active{% endif %}">✅ Daily Checklist</a>
+      {% if user.is_owner or user.can_checklist_leader or user.can_checklist_admin %}
+      <a href="/checklist/board" class="nav-item{% if nav_active == 'checklist_board' %} active{% endif %}">📋 Bảng Leader</a>
+      {% endif %}
+      {% if user.is_owner or user.can_checklist_admin %}
+      <a href="/checklist/admin" class="nav-item{% if nav_active == 'checklist_admin' %} active{% endif %}">⚙️ Mẫu checklist</a>
+      {% endif %}
+      <a href="/thong-bao" class="nav-item{% if nav_active == 'notifications' %} active{% endif %}">🔔 Thông báo{% if unread_notifications %} ({{ unread_notifications }}){% endif %}</a>
+      {% endif %}
       {% if user and user.can_view_uni %}
       <a href="/uni" class="nav-item{% if nav_active == 'uni' %} active{% endif %}">🎓 Apyko Uni</a>
       {% endif %}

@@ -2,6 +2,7 @@
 
 import csv
 import io
+import logging
 import os
 import re
 import sqlite3
@@ -18,7 +19,7 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 
-from . import auth, config, lessons
+from . import auth, checklist, config, lessons
 from . import database as db
 from .auth import (
     ApiCanDeleteProducts,
@@ -26,11 +27,14 @@ from .auth import (
     ApiCanViewProducts,
     ApiCanViewUni,
     ApiOwner,
+    ApiUser,
 )
 from .calc import analyze_product
 from .daily import calc_daily, validate_daily_report
 from .gmv import calc_gmv, validate_gmv_entry
 from .validation import payload_from_input, validate_product
+
+log = logging.getLogger("apyko.routes")
 
 _PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 templates = Jinja2Templates(directory=os.path.join(_PROJECT_DIR, "templates"))
@@ -137,6 +141,13 @@ def _safe_next(value: str | None) -> str:
 
 def _ctx(request: Request, user: dict, **kw) -> dict:
     base = {"request": request, "user": user, "app_name": config.APP_NAME}
+    if user and user.get("id"):
+        try:
+            base["unread_notifications"] = db.notif_unread_count(user["id"])
+        except Exception:
+            base["unread_notifications"] = 0
+    else:
+        base["unread_notifications"] = 0
     base.update(kw)
     return base
 
@@ -523,6 +534,8 @@ _PERM_FIELDS = [
     ("can_add_edit_products", "Thêm / sửa sản phẩm"),
     ("can_delete_products", "Xóa sản phẩm"),
     ("can_view_uni", "Xem Apyko Uni"),
+    ("can_checklist_leader", "Leader checklist"),
+    ("can_checklist_admin", "Quản trị checklist"),
 ]
 
 
@@ -586,6 +599,8 @@ async def page_accounts_create(request: Request):
             "can_add_edit_products": 1 if form.get("can_add_edit_products") else 0,
             "can_delete_products": 1 if form.get("can_delete_products") else 0,
             "can_view_uni": 1 if form.get("can_view_uni") else 0,
+            "can_checklist_leader": 1 if form.get("can_checklist_leader") else 0,
+            "can_checklist_admin": 1 if form.get("can_checklist_admin") else 0,
         }
     )
     return RedirectResponse(url=f"/accounts?new_user={username}&new_code={code}", status_code=303)
@@ -651,6 +666,8 @@ async def page_accounts_perms(user_id: int, request: Request):
             "can_add_edit_products": 1 if form.get("can_add_edit_products") else 0,
             "can_delete_products": 1 if form.get("can_delete_products") else 0,
             "can_view_uni": 1 if form.get("can_view_uni") else 0,
+            "can_checklist_leader": 1 if form.get("can_checklist_leader") else 0,
+            "can_checklist_admin": 1 if form.get("can_checklist_admin") else 0,
         },
     )
     return RedirectResponse(url="/accounts", status_code=303)
@@ -1101,3 +1118,469 @@ def api_daily_delete(report_date: str, user: dict = ApiCanDeleteProducts):
     if not db.daily_delete(report_date):
         return JSONResponse({"detail": "Không tìm thấy báo cáo ngày này"}, status_code=404)
     return Response(status_code=204)
+
+
+# ------------------------------ daily checklist ---------------------------
+
+
+def _cl_is_admin(user: dict) -> bool:
+    return bool(user.get("is_owner") or user.get("can_checklist_admin"))
+
+
+def _cl_is_leader(user: dict) -> bool:
+    return bool(_cl_is_admin(user) or user.get("can_checklist_leader"))
+
+
+def _cl_can_touch(user: dict, item: dict) -> bool:
+    """Được sửa việc: leader/admin/owner hoặc chính nhân viên được giao."""
+    if _cl_is_leader(user):
+        return True
+    return item.get("assignee_id") == user.get("id")
+
+
+def _cl_valid_date(value: str | None) -> str | None:
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value.strip(), "%Y-%m-%d").date().isoformat()
+    except ValueError:
+        return None
+
+
+def _cl_safety_net(date_str: str) -> None:
+    """Lưới an toàn khi mở trang: tạo việc + gửi nhắc (idempotent)."""
+    try:
+        checklist.seed_defaults()
+        checklist.generate_for_date(date_str)
+        checklist.process_reminders(checklist.now_vn())
+    except Exception:
+        log.exception("Lỗi lưới an toàn Daily Checklist")
+
+
+def _cl_enrich(item: dict, now, settings, users_map: dict, shops_map: dict) -> dict:
+    enriched = dict(item)
+    enriched["state"] = checklist.display_state(item, now, settings["due_soon_min"])
+    assignee = users_map.get(item.get("assignee_id"))
+    enriched["assignee_name"] = (
+        (assignee.get("display_name") or assignee.get("username")) if assignee else ""
+    )
+    shop = shops_map.get(item.get("shop_id"))
+    enriched["shop_name"] = shop["name"] if shop else ""
+    return enriched
+
+
+async def _cl_json_body(request: Request, required: bool = True):
+    """Body JSON: required=True như module khác; False cho phép body trống."""
+    try:
+        body = await request.json()
+    except Exception:
+        if not required:
+            return {}, None
+        return None, JSONResponse(
+            {"errors": {"body": "Body phải là JSON hợp lệ."}}, status_code=422
+        )
+    if not isinstance(body, dict):
+        if not required:
+            return {}, None
+        return None, JSONResponse(
+            {"errors": {"body": "Body phải là một object JSON."}}, status_code=422
+        )
+    return body, None
+
+
+@router.get("/checklist", response_class=HTMLResponse)
+def page_checklist(
+    request: Request,
+    date: str | None = None,
+    assignee: int | None = None,
+    shop: int | None = None,
+):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    today = checklist.today_str()
+    date_str = _cl_valid_date(date) or today
+    _cl_safety_net(date_str)
+    leader = _cl_is_leader(user)
+    eff_assignee = assignee if leader else user["id"]
+    items = db.cl_item_list(date_str, assignee_id=eff_assignee, shop_id=shop)
+    settings = checklist.get_settings()
+    now = checklist.now_vn()
+    users_map = {u["id"]: u for u in db.list_users()}
+    shops_map = {s["id"]: s for s in db.shop_list()}
+    enriched = [_cl_enrich(it, now, settings, users_map, shops_map) for it in items]
+    groups = []
+    for it in enriched:
+        if groups and groups[-1]["name"] == it["group_name"]:
+            groups[-1]["items"].append(it)
+        else:
+            groups.append({"name": it["group_name"] or "Khác", "items": [it]})
+    return templates.TemplateResponse(
+        "checklist.html",
+        _ctx(
+            request,
+            user,
+            date=date_str,
+            today=today,
+            groups=groups,
+            is_leader=leader,
+            is_admin=_cl_is_admin(user),
+            users=db.list_users() if leader else [],
+            shops=db.shop_list(),
+            f_assignee=assignee,
+            f_shop=shop,
+        ),
+    )
+
+
+@router.get("/checklist/board", response_class=HTMLResponse)
+def page_checklist_board(
+    request: Request,
+    date: str | None = None,
+    assignee: int | None = None,
+    shop: int | None = None,
+):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    if not _cl_is_leader(user):
+        raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
+    date_str = _cl_valid_date(date) or checklist.today_str()
+    _cl_safety_net(date_str)
+    stats = checklist.board_stats(date_str, assignee_id=assignee, shop_id=shop)
+    return templates.TemplateResponse(
+        "checklist_board.html",
+        _ctx(
+            request,
+            user,
+            stats=stats,
+            date=date_str,
+            users=db.list_users(),
+            shops=db.shop_list(),
+            f_assignee=assignee,
+            f_shop=shop,
+        ),
+    )
+
+
+@router.get("/checklist/admin", response_class=HTMLResponse)
+def page_checklist_admin(request: Request):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    if not _cl_is_admin(user):
+        raise HTTPException(status_code=403, detail="Chỉ Quản trị checklist được xem.")
+    raw = dict(checklist.DEFAULT_SETTINGS)
+    raw.update(db.cl_setting_get_all())
+    return templates.TemplateResponse(
+        "checklist_admin.html",
+        _ctx(
+            request,
+            user,
+            templates=db.cl_template_list(),
+            shops=db.shop_list(),
+            users=db.list_users(),
+            settings=raw,
+        ),
+    )
+
+
+@router.get("/thong-bao", response_class=HTMLResponse)
+def page_notifications(request: Request):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    _cl_safety_net(checklist.today_str())
+    notifs = db.notif_list(user["id"])
+    unread = db.notif_unread_count(user["id"])
+    return templates.TemplateResponse(
+        "notifications.html",
+        _ctx(request, user, notifications=notifs, unread=unread),
+    )
+
+
+@router.post("/api/checklist/generate")
+async def api_checklist_generate(request: Request, user: dict = ApiUser):
+    if not _cl_is_leader(user):
+        return JSONResponse({"detail": "Chỉ Leader/Quản trị được tạo checklist."}, status_code=403)
+    body, err = await _cl_json_body(request)
+    if err:
+        return err
+    date_str = _cl_valid_date(body.get("date")) or checklist.today_str()
+    created = checklist.generate_for_date(date_str)
+    return {"date": date_str, "created": created}
+
+
+@router.post("/api/checklist/items/{item_id}/complete")
+async def api_checklist_complete(item_id: int, request: Request, user: dict = ApiUser):
+    item = db.cl_item_get(item_id)
+    if item is None:
+        return JSONResponse({"detail": "Không tìm thấy công việc."}, status_code=404)
+    if not _cl_can_touch(user, item):
+        return JSONResponse({"detail": "Bạn không được xử lý công việc này."}, status_code=403)
+    body, err = await _cl_json_body(request, required=False)
+    if err:
+        return err
+    actor = (user.get("display_name") or user.get("username") or "").strip()
+    update = {
+        "status": "done",
+        "completed_by": actor,
+        "completed_at": checklist.now_vn().isoformat(),
+    }
+    if "note" in body:
+        note = body["note"]
+        update["note"] = note.strip() if isinstance(note, str) else ""
+    updated = db.cl_item_update(item_id, update)
+    return _cl_enrich(
+        updated,
+        checklist.now_vn(),
+        checklist.get_settings(),
+        {u["id"]: u for u in db.list_users()},
+        {s["id"]: s for s in db.shop_list()},
+    )
+
+
+@router.post("/api/checklist/items/{item_id}/reopen")
+async def api_checklist_reopen(item_id: int, user: dict = ApiUser):
+    item = db.cl_item_get(item_id)
+    if item is None:
+        return JSONResponse({"detail": "Không tìm thấy công việc."}, status_code=404)
+    if not _cl_can_touch(user, item):
+        return JSONResponse({"detail": "Bạn không được xử lý công việc này."}, status_code=403)
+    updated = db.cl_item_update(
+        item_id, {"status": "pending", "completed_by": "", "completed_at": ""}
+    )
+    return _cl_enrich(
+        updated,
+        checklist.now_vn(),
+        checklist.get_settings(),
+        {u["id"]: u for u in db.list_users()},
+        {s["id"]: s for s in db.shop_list()},
+    )
+
+
+@router.post("/api/checklist/items/{item_id}/cancel")
+async def api_checklist_cancel(item_id: int, user: dict = ApiUser):
+    item = db.cl_item_get(item_id)
+    if item is None:
+        return JSONResponse({"detail": "Không tìm thấy công việc."}, status_code=404)
+    if not _cl_can_touch(user, item):
+        return JSONResponse({"detail": "Bạn không được xử lý công việc này."}, status_code=403)
+    updated = db.cl_item_update(
+        item_id, {"status": "cancelled", "completed_by": "", "completed_at": ""}
+    )
+    return _cl_enrich(
+        updated,
+        checklist.now_vn(),
+        checklist.get_settings(),
+        {u["id"]: u for u in db.list_users()},
+        {s["id"]: s for s in db.shop_list()},
+    )
+
+
+@router.post("/api/checklist/items/{item_id}/note")
+async def api_checklist_note(item_id: int, request: Request, user: dict = ApiUser):
+    item = db.cl_item_get(item_id)
+    if item is None:
+        return JSONResponse({"detail": "Không tìm thấy công việc."}, status_code=404)
+    if not _cl_can_touch(user, item):
+        return JSONResponse({"detail": "Bạn không được xử lý công việc này."}, status_code=403)
+    body, err = await _cl_json_body(request)
+    if err:
+        return err
+    note = body.get("note")
+    if not isinstance(note, str):
+        return JSONResponse({"errors": {"note": "Ghi chú phải là chuỗi."}}, status_code=422)
+    updated = db.cl_item_update(item_id, {"note": note.strip()})
+    return _cl_enrich(
+        updated,
+        checklist.now_vn(),
+        checklist.get_settings(),
+        {u["id"]: u for u in db.list_users()},
+        {s["id"]: s for s in db.shop_list()},
+    )
+
+
+@router.post("/api/checklist/items/{item_id}/assign")
+async def api_checklist_assign(item_id: int, request: Request, user: dict = ApiUser):
+    if not _cl_is_leader(user):
+        return JSONResponse({"detail": "Chỉ Leader/Quản trị được phân công."}, status_code=403)
+    item = db.cl_item_get(item_id)
+    if item is None:
+        return JSONResponse({"detail": "Không tìm thấy công việc."}, status_code=404)
+    body, err = await _cl_json_body(request)
+    if err:
+        return err
+    update: dict = {}
+    for field, getter, label in (
+        ("assignee_id", db.get_user, "Nhân viên"),
+        ("shop_id", db.shop_get, "Shop"),
+    ):
+        if field in body:
+            raw = body[field]
+            if raw is None or raw == "":
+                update[field] = None
+            else:
+                try:
+                    ref_id = int(raw)
+                except (TypeError, ValueError):
+                    return JSONResponse(
+                        {"errors": {field: f"{label} không hợp lệ."}}, status_code=422
+                    )
+                if getter(ref_id) is None:
+                    return JSONResponse(
+                        {"errors": {field: f"{label} không tồn tại."}}, status_code=422
+                    )
+                update[field] = ref_id
+    updated = db.cl_item_update(item_id, update)
+    return _cl_enrich(
+        updated,
+        checklist.now_vn(),
+        checklist.get_settings(),
+        {u["id"]: u for u in db.list_users()},
+        {s["id"]: s for s in db.shop_list()},
+    )
+
+
+@router.post("/api/checklist/templates", status_code=201)
+async def api_checklist_template_create(request: Request, user: dict = ApiUser):
+    if not _cl_is_admin(user):
+        return JSONResponse({"detail": "Chỉ Quản trị checklist được."}, status_code=403)
+    body, err = await _cl_json_body(request)
+    if err:
+        return err
+    clean, errors = checklist.validate_template_payload(body)
+    if errors:
+        return JSONResponse({"errors": errors}, status_code=422)
+    tid = db.cl_template_create(clean)
+    return JSONResponse(db.cl_template_get(tid), status_code=201)
+
+
+@router.put("/api/checklist/templates/{template_id}")
+async def api_checklist_template_update(
+    template_id: int, request: Request, user: dict = ApiUser
+):
+    if not _cl_is_admin(user):
+        return JSONResponse({"detail": "Chỉ Quản trị checklist được."}, status_code=403)
+    if db.cl_template_get(template_id) is None:
+        return JSONResponse({"detail": "Không tìm thấy mẫu việc."}, status_code=404)
+    body, err = await _cl_json_body(request)
+    if err:
+        return err
+    clean, errors = checklist.validate_template_payload(body, partial=True)
+    if errors:
+        return JSONResponse({"errors": errors}, status_code=422)
+    return db.cl_template_update(template_id, clean)
+
+
+@router.post("/api/checklist/templates/{template_id}/toggle")
+async def api_checklist_template_toggle(template_id: int, user: dict = ApiUser):
+    if not _cl_is_admin(user):
+        return JSONResponse({"detail": "Chỉ Quản trị checklist được."}, status_code=403)
+    tpl = db.cl_template_get(template_id)
+    if tpl is None:
+        return JSONResponse({"detail": "Không tìm thấy mẫu việc."}, status_code=404)
+    return db.cl_template_update(template_id, {"is_active": 0 if tpl.get("is_active") else 1})
+
+
+@router.delete("/api/checklist/templates/{template_id}", status_code=204)
+async def api_checklist_template_delete(template_id: int, user: dict = ApiUser):
+    if not _cl_is_admin(user):
+        return JSONResponse({"detail": "Chỉ Quản trị checklist được."}, status_code=403)
+    if not db.cl_template_delete(template_id):
+        return JSONResponse({"detail": "Không tìm thấy mẫu việc."}, status_code=404)
+    return Response(status_code=204)
+
+
+@router.post("/api/checklist/shops", status_code=201)
+async def api_checklist_shop_create(request: Request, user: dict = ApiUser):
+    if not _cl_is_admin(user):
+        return JSONResponse({"detail": "Chỉ Quản trị checklist được."}, status_code=403)
+    body, err = await _cl_json_body(request)
+    if err:
+        return err
+    name = body.get("name")
+    name = name.strip() if isinstance(name, str) else ""
+    if not name:
+        return JSONResponse({"errors": {"name": "Tên shop không được trống."}}, status_code=422)
+    try:
+        sid = db.shop_create(name)
+    except sqlite3.IntegrityError:
+        return JSONResponse({"detail": "Tên shop đã tồn tại."}, status_code=409)
+    return JSONResponse(db.shop_get(sid), status_code=201)
+
+
+@router.put("/api/checklist/shops/{shop_id}")
+async def api_checklist_shop_update(shop_id: int, request: Request, user: dict = ApiUser):
+    if not _cl_is_admin(user):
+        return JSONResponse({"detail": "Chỉ Quản trị checklist được."}, status_code=403)
+    if db.shop_get(shop_id) is None:
+        return JSONResponse({"detail": "Không tìm thấy shop."}, status_code=404)
+    body, err = await _cl_json_body(request)
+    if err:
+        return err
+    name = body.get("name")
+    name = name.strip() if isinstance(name, str) else ""
+    if not name:
+        return JSONResponse({"errors": {"name": "Tên shop không được trống."}}, status_code=422)
+    try:
+        return db.shop_rename(shop_id, name)
+    except sqlite3.IntegrityError:
+        return JSONResponse({"detail": "Tên shop đã tồn tại."}, status_code=409)
+
+
+@router.delete("/api/checklist/shops/{shop_id}", status_code=204)
+async def api_checklist_shop_delete(shop_id: int, user: dict = ApiUser):
+    if not _cl_is_admin(user):
+        return JSONResponse({"detail": "Chỉ Quản trị checklist được."}, status_code=403)
+    if db.shop_get(shop_id) is None:
+        return JSONResponse({"detail": "Không tìm thấy shop."}, status_code=404)
+    refs = db.shop_ref_count(shop_id)
+    if refs > 0:
+        return JSONResponse(
+            {"detail": f"Không thể xóa: shop còn {refs} tham chiếu (mẫu việc / việc ngày)."},
+            status_code=409,
+        )
+    db.shop_delete(shop_id)
+    return Response(status_code=204)
+
+
+@router.put("/api/checklist/settings")
+async def api_checklist_settings_update(request: Request, user: dict = ApiUser):
+    if not _cl_is_admin(user):
+        return JSONResponse({"detail": "Chỉ Quản trị checklist được."}, status_code=403)
+    body, err = await _cl_json_body(request)
+    if err:
+        return err
+    clean, errors = checklist.validate_settings_payload(body)
+    if errors:
+        return JSONResponse({"errors": errors}, status_code=422)
+    for key, value in clean.items():
+        db.cl_setting_set(key, value)
+    raw = dict(checklist.DEFAULT_SETTINGS)
+    raw.update(db.cl_setting_get_all())
+    return {"settings": raw}
+
+
+@router.get("/api/notifications")
+def api_notifications_list(user: dict = ApiUser):
+    return {
+        "notifications": db.notif_list(user["id"]),
+        "unread": db.notif_unread_count(user["id"]),
+    }
+
+
+@router.post("/api/notifications/read-all")
+def api_notifications_read_all(user: dict = ApiUser):
+    return {"updated": db.notif_mark_all_read(user["id"])}
+
+
+@router.post("/api/notifications/{notif_id}/read")
+def api_notification_read(notif_id: int, user: dict = ApiUser):
+    notif = db.notif_get(notif_id)
+    if notif is None:
+        return JSONResponse({"detail": "Không tìm thấy thông báo."}, status_code=404)
+    if notif.get("user_id") != user.get("id"):
+        return JSONResponse({"detail": "Không phải thông báo của bạn."}, status_code=403)
+    db.notif_mark_read(notif_id)
+    return {"ok": True}

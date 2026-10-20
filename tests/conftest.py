@@ -16,6 +16,7 @@ def make_client(tmp_path, monkeypatch):
     monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "t.db"))
     monkeypatch.setenv("SECRET_KEY", "pytest-secret-key-khong-dung-that")
     monkeypatch.setenv("SESSION_DAYS", "30")
+    monkeypatch.setenv("DISABLE_BACKGROUND", "1")
     for name in [n for n in sys.modules if n == "app" or n.startswith("app.")]:
         sys.modules.pop(name)
     from app.database import init_db

@@ -35,6 +35,36 @@ Nhân sự nhập doanh thu + chi phí mỗi ngày, xuất ảnh PNG gửi Zalo 
   đủ 5 nguồn doanh thu, khối hiệu quả quảng cáo, footer giờ xuất.
 - Phân quyền như các trang khác: xem → nhập/sửa → xóa, kiểm tra ở máy chủ.
 
+## Daily Checklist
+
+Checklist vận hành Shopee đầu ngày (20 việc mẫu, 6 nhóm: Tình trạng shop ·
+Đơn hàng · Tin nhắn & đánh giá · Tồn kho & sản phẩm · Voucher & khuyến mãi ·
+Quảng cáo & báo cáo) với nhắc hạn tự động trong giờ làm việc.
+
+- **Trang của tôi** (sidebar **Daily Checklist**): việc của ngày (mặc định hôm
+  nay, đổi ngày được), nhóm theo nhóm việc, có hạn chót, ô ghi chú và nút
+  Hoàn thành / Mở lại / Hủy.
+- **Màu trạng thái riêng của module** (không theo theme chung): sắp tới hạn =
+  đỏ trên nền hồng nhạt; quá hạn = đỏ đậm + nhãn **QUÁ HẠN**; hoàn thành =
+  xanh lá; đã hủy = xám, gạch ngang.
+- **Bảng Leader** (`/checklist/board`): tổng việc, đã xong, chưa xong, quá
+  hạn, % hoàn thành theo từng nhân viên; bấm tên nhân viên để xem việc của họ.
+- **Quản trị mẫu** (`/checklist/admin`): bật/tắt/sửa mẫu việc, phân công mặc
+  định, quản lý shop, cài đặt giờ làm việc (mặc định 08:00–17:30, Thứ 2–Thứ 7),
+  chu kỳ nhắc lại khi quá hạn (mặc định 30 phút) và ngưỡng "sắp tới hạn"
+  (mặc định 30 phút).
+- **Cơ chế nhắc**: một luồng nền kiểm tra mỗi 60 giây (tắt bằng
+  `DISABLE_BACKGROUND=1`); ngoài ra mỗi lần mở trang checklist/thông báo,
+  app cũng kiểm tra lại (idempotent). Đến hạn → gửi 1 thông báo; quá hạn →
+  nhắc lại theo chu kỳ chỉ trong giờ làm việc. Việc đã hoàn thành/đã hủy
+  ngừng nhắc. Chống gửi trùng bằng điều kiện cập nhật có guard trên
+  `last_reminder_at`/`due_notified_at`. Thông báo xem ở sidebar **Thông báo**
+  (chuông có số chưa đọc).
+- **Phân quyền** (kiểm tra ở máy chủ): Chủ shop = toàn quyền; **Leader
+  checklist** = xem tất cả + bảng thống kê + phân công; **Quản trị
+  checklist** = mẫu việc/shop/cài đặt; nhân viên thường chỉ thấy và xử lý
+  việc được giao cho mình. Hai quyền mới cấp ở trang **Tài khoản**.
+
 ## Tài khoản & bảo mật
 
 - **Lần chạy đầu tiên:** mở trang `/setup` để tạo tài khoản **chủ sở hữu**
@@ -139,11 +169,12 @@ Các bước (làm 1 lần, khoảng 5 phút):
 | `COOKIE_SECURE` | Nên `true` khi deploy | `false` | Cookie chỉ qua HTTPS |
 | `SESSION_DAYS` | Không | `30` | Số ngày duy trì đăng nhập |
 | `LESSONS_DIR` | Không | `./lessons` | Thư mục 58 bài học |
+| `DISABLE_BACKGROUND` | Không | rỗng | Đặt `1` để tắt luồng nền Daily Checklist (dùng cho test) |
 
 ## Kiểm thử
 
 ```bash
-python -m pytest -q        # 41 test: tính toán, auth, phân quyền, CRUD, bài học
+python -m pytest -q        # 98 test: tính toán, auth, phân quyền, CRUD, bài học, checklist
 ruff check app tests       # lint sạch
 ruff format --check app tests
 ```

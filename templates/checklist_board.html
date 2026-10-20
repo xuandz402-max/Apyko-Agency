@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% set nav_active = "checklist_board" %}
+{% block title %}Bảng Leader · Daily Checklist · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>📋 Bảng Leader</h1>
+  <p class="muted">Tổng quan hoàn thành checklist trong ngày — nhấn tên nhân viên để xem việc chưa xong của họ.</p>
+</div>
+
+<form method="get" action="/checklist/board" class="form-inline">
+  <label>Ngày
+    <input type="date" name="date" value="{{ date }}" class="input">
+  </label>
+  <label>Nhân viên
+    <select name="assignee" class="input">
+      <option value="">— Tất cả —</option>
+      {% for u in users %}
+      {% if u.is_active %}<option value="{{ u.id }}" {% if f_assignee == u.id %}selected{% endif %}>{{ u.display_name or u.username }}</option>{% endif %}
+      {% endfor %}
+    </select>
+  </label>
+  <label>Shop
+    <select name="shop" class="input">
+      <option value="">— Tất cả —</option>
+      {% for s in shops %}
+      <option value="{{ s.id }}" {% if f_shop == s.id %}selected{% endif %}>{{ s.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
+  </div>
+</form>
+
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-label">Tổng số công việc</div>
+    <div class="stat-value">{{ stats.total }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Đã hoàn thành</div>
+    <div class="stat-value text-green">{{ stats.done }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Chưa hoàn thành</div>
+    <div class="stat-value">{{ stats.unfinished }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Quá hạn</div>
+    <div class="stat-value text-red">{{ stats.overdue }}</div>
+  </div>
+</div>
+
+{% if stats.overdue_users %}
+<div class="card">
+  <div class="card-head"><h2>⚠️ Nhân viên còn việc quá hạn</h2></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Nhân viên</th><th>Việc quá hạn</th><th></th></tr></thead>
+    <tbody>
+    {% for u in stats.overdue_users %}
+      <tr>
+        <td><strong>{{ u.name }}</strong></td>
+        <td><span class="cl-badge cl-overdue">{{ u.overdue }}</span></td>
+        <td><a href="/checklist?date={{ stats.date }}&assignee={{ u.user_id }}" class="link">Xem việc chưa xong →</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-head"><h2>Tỷ lệ hoàn thành theo nhân viên</h2></div>
+  {% if stats.per_user %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Nhân viên</th><th>Hoàn thành</th><th>Tổng</th><th>Tỷ lệ</th><th>Quá hạn</th><th></th></tr></thead>
+    <tbody>
+    {% for u in stats.per_user %}
+      <tr>
+        <td><a href="/checklist?date={{ stats.date }}&assignee={{ u.user_id }}" class="link"><strong>{{ u.name }}</strong></a></td>
+        <td>{{ u.done }}</td>
+        <td>{{ u.total }}</td>
+        <td>
+          <div class="progress" style="width:120px"><div class="progress-bar" style="width: {{ u.pct }}%"></div></div>
+          <span class="muted">{{ u.pct }}%</span>
+        </td>
+        <td>{% if u.overdue %}<span class="cl-badge cl-overdue">{{ u.overdue }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td><a href="/checklist?date={{ stats.date }}&assignee={{ u.user_id }}" class="link">Xem chi tiết →</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="muted">Chưa có việc nào được giao cho nhân viên trong ngày này.</p>
+  {% endif %}
+</div>
+{% endblock %}

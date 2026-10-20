@@ -55,6 +55,8 @@ USER_COLUMNS = [
     "can_add_edit_products",
     "can_delete_products",
     "can_view_uni",
+    "can_checklist_leader",
+    "can_checklist_admin",
     "created_at",
     "updated_at",
 ]
@@ -149,7 +151,66 @@ CREATE TABLE IF NOT EXISTS daily_reports (
     updated_by TEXT DEFAULT '',
     updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS shops (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS checklist_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_name TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL,
+    sort INTEGER NOT NULL DEFAULT 0,
+    due_time TEXT NOT NULL DEFAULT '09:00',
+    assignee_id INTEGER,
+    shop_id INTEGER,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS checklist_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    template_id INTEGER,
+    group_name TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL,
+    sort INTEGER NOT NULL DEFAULT 0,
+    due_time TEXT NOT NULL DEFAULT '09:00',
+    assignee_id INTEGER,
+    shop_id INTEGER,
+    status TEXT NOT NULL DEFAULT 'pending',
+    note TEXT DEFAULT '',
+    completed_by TEXT DEFAULT '',
+    completed_at TEXT DEFAULT '',
+    due_notified_at TEXT,
+    last_reminder_at TEXT,
+    reminder_count INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (date, template_id)
+);
+CREATE TABLE IF NOT EXISTS checklist_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    item_id INTEGER,
+    title TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    link TEXT NOT NULL DEFAULT '',
+    is_read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
 """
+
+# Migration cộng thêm cho các DB đã tồn tại trước module Daily Checklist:
+# 2 cột quyền mới trên bảng users (ALTER TABLE chạy khi cột còn thiếu).
+_USER_MIGRATION_COLUMNS = [
+    ("can_checklist_leader", "INTEGER NOT NULL DEFAULT 0"),
+    ("can_checklist_admin", "INTEGER NOT NULL DEFAULT 0"),
+]
 
 
 def _utcnow() -> str:
@@ -335,9 +396,23 @@ def get_conn() -> "sqlite3.Connection | _TursoConnection":
     return conn
 
 
+def _migrate_users_columns(conn) -> None:
+    """Thêm cột quyền checklist vào bảng users của DB cũ (idempotent)."""
+    rows = conn.execute("PRAGMA table_info(users)").fetchall()
+    existing = {r["name"] for r in rows}
+    for col, ddl in _USER_MIGRATION_COLUMNS:
+        if col not in existing:
+            conn.execute(f"ALTER TABLE users ADD COLUMN {col} {ddl}")
+
+
 def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(_SCHEMA)
+        _migrate_users_columns(conn)
+    # Import trễ để tránh vòng lặp module (checklist.py dùng database.py).
+    from . import checklist
+
+    checklist.seed_defaults()
 
 
 # ------------------------------ products ----------------------------------
@@ -808,3 +883,257 @@ def gmv_seed_defaults() -> int:
                 (name, now),
             )
     return len(GMV_SEED_PRODUCTS)
+
+
+# --------------------------- daily checklist ------------------------------
+# CRUD thuần cho module Daily Checklist. Logic nghiệp vụ (tạo việc theo
+# ngày, trạng thái hiển thị, nhắc hạn, thống kê) nằm ở app/checklist.py.
+
+
+def shop_list() -> list:
+    with get_conn() as conn:
+        rows = conn.execute("SELECT * FROM shops ORDER BY id ASC").fetchall()
+    return [dict(r) for r in rows]
+
+
+def shop_get(shop_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM shops WHERE id = ?", (shop_id,)).fetchone()
+    return dict(row) if row is not None else None
+
+
+def shop_create(name: str) -> int:
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("Tên shop không được trống.")
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO shops (name, created_at) VALUES (?, ?)", (name, _utcnow())
+        )
+        return cur.lastrowid
+
+
+def shop_rename(shop_id: int, name: str) -> dict | None:
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("Tên shop không được trống.")
+    with get_conn() as conn:
+        cur = conn.execute("UPDATE shops SET name = ? WHERE id = ?", (name, shop_id))
+        if cur.rowcount == 0:
+            return None
+    return shop_get(shop_id)
+
+
+def shop_ref_count(shop_id: int) -> int:
+    """Số template/item đang tham chiếu shop (để chặn xóa shop đang dùng)."""
+    with get_conn() as conn:
+        a = conn.execute(
+            "SELECT COUNT(*) AS c FROM checklist_templates WHERE shop_id = ?", (shop_id,)
+        ).fetchone()
+        b = conn.execute(
+            "SELECT COUNT(*) AS c FROM checklist_items WHERE shop_id = ?", (shop_id,)
+        ).fetchone()
+    return (a["c"] or 0) + (b["c"] or 0)
+
+
+def shop_delete(shop_id: int) -> bool:
+    with get_conn() as conn:
+        cur = conn.execute("DELETE FROM shops WHERE id = ?", (shop_id,))
+        return cur.rowcount > 0
+
+
+CL_TEMPLATE_COLUMNS = [
+    "group_name",
+    "title",
+    "sort",
+    "due_time",
+    "assignee_id",
+    "shop_id",
+    "is_active",
+]
+
+
+def cl_template_list() -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM checklist_templates ORDER BY sort ASC, id ASC"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def cl_template_get(template_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM checklist_templates WHERE id = ?", (template_id,)
+        ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def cl_template_create(d: dict) -> int:
+    data = {k: v for k, v in d.items() if k in CL_TEMPLATE_COLUMNS}
+    data["created_at"] = _utcnow()
+    data["updated_at"] = _utcnow()
+    cols = list(data.keys())
+    placeholders = ", ".join("?" for _ in cols)
+    with get_conn() as conn:
+        cur = conn.execute(
+            f"INSERT INTO checklist_templates ({', '.join(cols)}) VALUES ({placeholders})",
+            [data[c] for c in cols],
+        )
+        return cur.lastrowid
+
+
+def cl_template_update(template_id: int, d: dict) -> dict | None:
+    data = {k: v for k, v in d.items() if k in CL_TEMPLATE_COLUMNS}
+    if not data:
+        return cl_template_get(template_id)
+    data["updated_at"] = _utcnow()
+    with get_conn() as conn:
+        cur = conn.execute(
+            f"UPDATE checklist_templates SET {', '.join(f'{k} = ?' for k in data)}"
+            " WHERE id = ?",
+            [*data.values(), template_id],
+        )
+        if cur.rowcount == 0:
+            return None
+    return cl_template_get(template_id)
+
+
+def cl_template_delete(template_id: int) -> bool:
+    """Xóa mẫu việc; các item đã tạo từ mẫu này được giữ nguyên."""
+    with get_conn() as conn:
+        cur = conn.execute("DELETE FROM checklist_templates WHERE id = ?", (template_id,))
+        return cur.rowcount > 0
+
+
+def cl_item_list(
+    date_str: str,
+    assignee_id: int | None = None,
+    shop_id: int | None = None,
+    status: str | None = None,
+) -> list:
+    clauses = ["date = ?"]
+    params: list = [date_str]
+    if assignee_id is not None:
+        clauses.append("assignee_id = ?")
+        params.append(assignee_id)
+    if shop_id is not None:
+        clauses.append("shop_id = ?")
+        params.append(shop_id)
+    if status:
+        clauses.append("status = ?")
+        params.append(status)
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM checklist_items WHERE "
+            + " AND ".join(clauses)
+            + " ORDER BY sort ASC, id ASC",
+            params,
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def cl_item_get(item_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM checklist_items WHERE id = ?", (item_id,)).fetchone()
+    return dict(row) if row is not None else None
+
+
+def cl_item_count(date_str: str) -> int:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS c FROM checklist_items WHERE date = ?", (date_str,)
+        ).fetchone()
+    return row["c"]
+
+
+CL_ITEM_UPDATE_COLUMNS = [
+    "status",
+    "note",
+    "completed_by",
+    "completed_at",
+    "assignee_id",
+    "shop_id",
+    "due_notified_at",
+    "last_reminder_at",
+    "reminder_count",
+]
+
+
+def cl_item_update(item_id: int, d: dict) -> dict | None:
+    data = {k: v for k, v in d.items() if k in CL_ITEM_UPDATE_COLUMNS}
+    if not data:
+        return cl_item_get(item_id)
+    data["updated_at"] = _utcnow()
+    with get_conn() as conn:
+        cur = conn.execute(
+            f"UPDATE checklist_items SET {', '.join(f'{k} = ?' for k in data)} WHERE id = ?",
+            [*data.values(), item_id],
+        )
+        if cur.rowcount == 0:
+            return None
+    return cl_item_get(item_id)
+
+
+def cl_setting_get_all() -> dict:
+    with get_conn() as conn:
+        rows = conn.execute("SELECT key, value FROM checklist_settings").fetchall()
+    return {r["key"]: r["value"] for r in rows}
+
+
+def cl_setting_set(key: str, value: str) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO checklist_settings (key, value) VALUES (?, ?)"
+            " ON CONFLICT(key) DO UPDATE SET value = ?",
+            (key, value, value),
+        )
+
+
+def notif_create(user_id: int, item_id, title: str, body: str, link: str) -> int:
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO notifications (user_id, item_id, title, body, link, is_read,"
+            " created_at) VALUES (?, ?, ?, ?, ?, 0, ?)",
+            (user_id, item_id, title, body, link, _utcnow()),
+        )
+        return cur.lastrowid
+
+
+def notif_list(user_id: int, limit: int = 100) -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT ?",
+            (user_id, limit),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def notif_get(notif_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM notifications WHERE id = ?", (notif_id,)).fetchone()
+    return dict(row) if row is not None else None
+
+
+def notif_unread_count(user_id: int) -> int:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS c FROM notifications WHERE user_id = ? AND is_read = 0",
+            (user_id,),
+        ).fetchone()
+    return row["c"]
+
+
+def notif_mark_read(notif_id: int) -> bool:
+    with get_conn() as conn:
+        cur = conn.execute("UPDATE notifications SET is_read = 1 WHERE id = ?", (notif_id,))
+        return cur.rowcount > 0
+
+
+def notif_mark_all_read(user_id: int) -> int:
+    with get_conn() as conn:
+        cur = conn.execute(
+            "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0",
+            (user_id,),
+        )
+        return cur.rowcount

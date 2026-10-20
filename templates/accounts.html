@@ -57,6 +57,8 @@
           {{ "· Sửa SP" if u.can_add_edit_products else "" }}
           {{ "· Xóa SP" if u.can_delete_products else "" }}
           {{ "· Uni" if u.can_view_uni else "" }}
+          {{ "· Leader CL" if u.can_checklist_leader else "" }}
+          {{ "· Admin CL" if u.can_checklist_admin else "" }}
           {% endif %}
         </td>
         <td>

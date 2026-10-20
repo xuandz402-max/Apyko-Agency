@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% set nav_active = "checklist_admin" %}
+{% block title %}Mẫu checklist · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>⚙️ Quản lý mẫu checklist</h1>
+  <p class="muted">Bật/tắt, sửa tên, đổi thứ tự, đổi giờ hạn và phân công mặc định. Sửa mẫu chỉ ảnh hưởng các ngày tạo sau này — việc đã tạo giữ nguyên.</p>
+</div>
+<div id="clErr" class="alert alert-error hidden"></div>
+
+<div class="card">
+  <div class="card-head"><h2>Thêm mẫu việc</h2></div>
+  <div class="form-inline">
+    <label class="grow">Nhóm
+      <input type="text" id="ntGroup" class="input" placeholder="vd: B. Đơn hàng">
+    </label>
+    <label class="grow">Tên công việc
+      <input type="text" id="ntTitle" class="input" placeholder="Nhập tên công việc">
+    </label>
+    <label>Giờ đến hạn
+      <input type="time" id="ntDue" class="input" value="09:00">
+    </label>
+    <label>Thứ tự
+      <input type="number" id="ntSort" class="input" value="100" min="0">
+    </label>
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary btn-sm" id="ntAdd">Thêm</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Danh sách mẫu việc ({{ templates|length }})</h2></div>
+  <div class="table-wrap"><table class="table" id="tplTable">
+    <thead><tr><th>Thứ tự</th><th>Nhóm</th><th>Tên công việc</th><th>Hạn mặc định</th><th>Phân công mặc định</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for t in templates %}
+      <tr data-tpl-id="{{ t.id }}">
+        <td class="nowrap"><input type="number" class="input t-sort" value="{{ t.sort }}" style="width:70px"></td>
+        <td><input type="text" class="input t-group" value="{{ t.group_name or '' }}" style="min-width:160px"></td>
+        <td><input type="text" class="input t-title" value="{{ t.title }}" style="min-width:220px"></td>
+        <td class="nowrap"><input type="time" class="input t-due" value="{{ t.due_time }}"></td>
+        <td class="nowrap">
+          <select class="input t-assignee">
+            <option value="">— Chưa giao —</option>
+            {% for u in users %}{% if u.is_active %}<option value="{{ u.id }}" {% if t.assignee_id == u.id %}selected{% endif %}>{{ u.display_name or u.username }}</option>{% endif %}{% endfor %}
+          </select>
+          <select class="input t-shop">
+            <option value="">— Chưa chọn shop —</option>
+            {% for s in shops %}<option value="{{ s.id }}" {% if t.shop_id == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+          </select>
+        </td>
+        <td>
+          {% if t.is_active %}<span class="cl-badge cl-done">Đang bật</span>{% else %}<span class="cl-badge cl-cancelled">Đã tắt</span>{% endif %}
+          <button type="button" class="btn btn-ghost btn-sm" data-tpl-toggle>{% if t.is_active %}Tắt{% else %}Bật{% endif %}</button>
+        </td>
+        <td class="nowrap">
+          <button type="button" class="btn btn-primary btn-sm" data-tpl-save>Lưu</button>
+          <button type="button" class="btn btn-danger btn-sm" data-tpl-del>Xóa</button>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="muted">Xóa mẫu không xóa các việc đã tạo từ mẫu đó.</p>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Shops</h2></div>
+  <div class="form-inline">
+    <label class="grow">Tên shop
+      <input type="text" id="shopName" class="input" placeholder="Tên shop mới">
+    </label>
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary btn-sm" id="shopAdd">Thêm shop</button>
+    </div>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Shop</th><th>Thao tác</th></tr></thead>
+    <tbody id="shopBody">
+    {% for s in shops %}
+      <tr data-shop-id="{{ s.id }}">
+        <td><input type="text" class="input shop-name" value="{{ s.name }}" style="min-width:200px"></td>
+        <td class="nowrap">
+          <button type="button" class="btn btn-primary btn-sm" data-shop-save>Lưu</button>
+          <button type="button" class="btn btn-danger btn-sm" data-shop-del>Xóa</button>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="muted">Không thể xóa shop đang còn mẫu việc hoặc việc ngày tham chiếu.</p>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Cài đặt nhắc & giờ làm việc</h2></div>
+  <div class="form-inline">
+    <label>Giờ bắt đầu
+      <input type="time" id="setStart" class="input" value="{{ settings.work_start }}">
+    </label>
+    <label>Giờ kết thúc
+      <input type="time" id="setEnd" class="input" value="{{ settings.work_end }}">
+    </label>
+    <label>Ngày làm việc (1=T2 … 7=CN)
+      <input type="text" id="setDays" class="input" value="{{ settings.work_days }}" placeholder="1,2,3,4,5,6">
+    </label>
+    <label>Chu kỳ nhắc quá hạn (phút)
+      <input type="number" id="setInterval" class="input" value="{{ settings.reminder_interval_min }}" min="5">
+    </label>
+    <label>Ngưỡng "sắp tới hạn" (phút)
+      <input type="number" id="setDueSoon" class="input" value="{{ settings.due_soon_min }}" min="0">
+    </label>
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary btn-sm" id="setSave">Lưu cài đặt</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var errEl = document.getElementById('clErr');
+  function showErr(msg) { errEl.textContent = msg; errEl.classList.remove('hidden'); window.scrollTo(0, 0); }
+  function post(url, body) {
+    return fetch(url, {method: 'POST', credentials: 'same-origin',
+      headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body || {})});
+  }
+  function put(url, body) {
+    return fetch(url, {method: 'PUT', credentials: 'same-origin',
+      headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body || {})});
+  }
+  function handle(r) {
+    if (r.ok) { location.reload(); return; }
+    r.json().then(function(d) {
+      var e = d.errors || {};
+      showErr(e[Object.keys(e)[0]] || d.detail || 'Có lỗi xảy ra.');
+    });
+  }
+  function optVal(sel) { var v = sel.value; return v === '' ? null : parseInt(v, 10); }
+
+  document.getElementById('ntAdd').addEventListener('click', function() {
+    post('/api/checklist/templates', {
+      group_name: document.getElementById('ntGroup').value,
+      title: document.getElementById('ntTitle').value,
+      due_time: document.getElementById('ntDue').value,
+      sort: parseInt(document.getElementById('ntSort').value, 10) || 100,
+      assignee_id: null, shop_id: null
+    }).then(handle);
+  });
+
+  document.querySelectorAll('#tplTable tr[data-tpl-id]').forEach(function(row) {
+    var id = row.getAttribute('data-tpl-id');
+    row.querySelector('[data-tpl-save]').addEventListener('click', function() {
+      put('/api/checklist/templates/' + id, {
+        group_name: row.querySelector('.t-group').value,
+        title: row.querySelector('.t-title').value,
+        due_time: row.querySelector('.t-due').value,
+        sort: parseInt(row.querySelector('.t-sort').value, 10) || 0,
+        assignee_id: optVal(row.querySelector('.t-assignee')),
+        shop_id: optVal(row.querySelector('.t-shop'))
+      }).then(handle);
+    });
+    row.querySelector('[data-tpl-toggle]').addEventListener('click', function() {
+      post('/api/checklist/templates/' + id + '/toggle').then(handle);
+    });
+    row.querySelector('[data-tpl-del]').addEventListener('click', function() {
+      if (!confirm('Xóa mẫu việc này? Việc đã tạo trước đó vẫn được giữ.')) return;
+      fetch('/api/checklist/templates/' + id, {method: 'DELETE', credentials: 'same-origin'}).then(handle);
+    });
+  });
+
+  document.getElementById('shopAdd').addEventListener('click', function() {
+    post('/api/checklist/shops', {name: document.getElementById('shopName').value}).then(handle);
+  });
+  document.querySelectorAll('#shopBody tr[data-shop-id]').forEach(function(row) {
+    var id = row.getAttribute('data-shop-id');
+    row.querySelector('[data-shop-save]').addEventListener('click', function() {
+      put('/api/checklist/shops/' + id, {name: row.querySelector('.shop-name').value}).then(handle);
+    });
+    row.querySelector('[data-shop-del]').addEventListener('click', function() {
+      if (!confirm('Xóa shop này?')) return;
+      fetch('/api/checklist/shops/' + id, {method: 'DELETE', credentials: 'same-origin'}).then(handle);
+    });
+  });
+
+  document.getElementById('setSave').addEventListener('click', function() {
+    put('/api/checklist/settings', {
+      work_start: document.getElementById('setStart').value,
+      work_end: document.getElementById('setEnd').value,
+      work_days: document.getElementById('setDays').value,
+      reminder_interval_min: parseInt(document.getElementById('setInterval').value, 10),
+      due_soon_min: parseInt(document.getElementById('setDueSoon').value, 10)
+    }).then(handle);
+  });
+})();
+</script>
+{% endblock %}

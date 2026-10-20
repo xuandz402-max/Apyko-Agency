@@ -6,6 +6,8 @@ Cấu hình qua biến môi trường, xem app/config.py và .env.example.
 
 import logging
 import os
+import threading
+import time
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -51,6 +53,45 @@ def _bootstrap_owner_from_env() -> None:
     log.warning("Đã tạo tài khoản chủ sở hữu '%s' từ biến môi trường.", config.OWNER_USERNAME)
 
 
+_BG_THREAD_STARTED = False
+
+
+def _checklist_tick() -> None:
+    """Một vòng tạo checklist ngày + gửi nhắc hạn (idempotent, chống trùng)."""
+    try:
+        from . import checklist
+
+        now = checklist.now_vn()
+        made = checklist.generate_for_date(now.date().isoformat())
+        sent = checklist.process_reminders(now)
+        if made or sent:
+            log.info("Checklist nền: tạo mới %d việc, gửi %d nhắc.", made, sent)
+    except Exception:
+        log.exception("Lỗi vòng lặp nền Daily Checklist")
+
+
+def _checklist_loop() -> None:
+    while True:
+        _checklist_tick()
+        time.sleep(60)
+
+
+def _start_background() -> None:
+    """Scheduler nền cho Daily Checklist. Tắt bằng DISABLE_BACKGROUND=1."""
+    global _BG_THREAD_STARTED
+    if _BG_THREAD_STARTED:
+        return
+    if os.environ.get("DISABLE_BACKGROUND") == "1":
+        log.info("DISABLE_BACKGROUND=1 — bỏ qua scheduler nền Daily Checklist.")
+        return
+    _BG_THREAD_STARTED = True
+    thread = threading.Thread(
+        target=_checklist_loop, name="checklist-bg", daemon=True
+    )
+    thread.start()
+    log.warning("Đã bật scheduler nền Daily Checklist (tick mỗi 60 giây).")
+
+
 @app.on_event("startup")
 def _startup() -> None:
     db.init_db()
@@ -58,6 +99,7 @@ def _startup() -> None:
     if seeded:
         log.warning("GMV Max: đã tạo sẵn %d sản phẩm (bảng đang trống).", seeded)
     _bootstrap_owner_from_env()
+    _start_background()
     n = len(lessons.list_lessons())
     log.warning("Apyko Agency sẵn sàng — %d bài học Apyko Uni, DB: %s", n, config.DATABASE_PATH)
     if not config.SECRET_KEY:

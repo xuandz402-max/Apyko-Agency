@@ -29,29 +29,29 @@ a:hover { text-decoration: underline; }
 /* ---------- layout ---------- */
 .app { display: flex; min-height: 100vh; }
 .sidebar {
-  width: 248px; flex-shrink: 0;
+  width: 208px; flex-shrink: 0;
   background: #fff; border-right: 1px solid var(--line);
   display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh;
   z-index: 40;
 }
-.brand { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px 16px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 10px; border-bottom: 1px solid var(--line); }
 .brand:hover { text-decoration: none; }
 .brand-name { font-weight: 800; font-size: 17px; color: var(--ink); }
 .logo { display: inline-flex; font-weight: 900; letter-spacing: 0.5px; font-size: 20px; }
 .logo-apy { color: #111; }
 .logo-ko { color: #fff; background: var(--brand); padding: 1px 7px; border-radius: 5px; margin-left: 2px; }
-.brand-img { height: 34px; width: auto; display: block; }
+.brand-img { height: 28px; width: auto; display: block; }
 .auth-logo img { height: 46px; width: auto; }
-.nav { padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.nav { padding: 8px 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; overflow-y: auto; }
 .nav-item {
-  display: block; padding: 10px 12px; border-radius: 9px;
-  color: var(--ink); font-weight: 500;
+  display: block; padding: 7px 10px; border-radius: 999px;
+  color: var(--ink); font-weight: 500; font-size: 14px; white-space: nowrap;
 }
 .nav-item:hover { background: var(--brand-soft); text-decoration: none; }
 .nav-item.active { background: var(--brand); color: #fff; font-weight: 700; }
-.sidebar-foot { padding: 14px 16px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.me-name { font-weight: 700; font-size: 14px; }
+.sidebar-foot { padding: 10px 12px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.me-name { font-weight: 700; font-size: 13px; }
 .me-role { font-size: 12px; color: var(--muted); }
 .main { flex: 1; padding: 26px 30px; max-width: none; min-width: 0; }
 .foot { margin-top: 40px; color: var(--muted); font-size: 12px; text-align: center; }

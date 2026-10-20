@@ -12,6 +12,15 @@ Ngưỡng cảnh báo mặc định (chỉnh trong code này):
 Tốc độ: toàn bộ dữ liệu nạp bằng 5 câu query cố định (báo cáo ngày 1 query
 cho mọi ngày cần xem, entry GMV 1 query cho mọi sản phẩm, checklist qua
 board_stats). cached_overview() nhớ kết quả 60 giây vì trang chỉ đọc.
+
+So sánh theo kỳ (period_compare): Doanh thu / Chi phí ads / ROAS (từ Báo
+cáo ngày) và GMV quảng cáo VNĐ (từ GMV Max) của kỳ này so với kỳ trước
+LIỀN KỀ DÀI BẰNG NHAU — Ngày: hôm nay vs hôm qua; Tuần: thứ Hai -> hôm
+nay vs cùng số ngày đầu tuần trước; Tháng: ngày 1 -> hôm nay vs cùng số
+ngày đầu tháng trước. Kỳ trước = 0 hoặc thiếu dữ liệu -> delta = None
+(giao diện hiện "—", không bịa %). % tăng/giảm trên trang dùng màu xanh
+lá #15803D / đỏ #DC2626 (class .delta-up/.delta-down) — ngoại lệ màu duy
+nhất ngoài theme đen trắng, do chủ shop chốt riêng cho số tăng/giảm.
 """
 
 import threading
@@ -217,3 +226,179 @@ def cached_overview(today: str) -> dict:
             if key != today and exp <= now:
                 del _overview_cache[key]
     return data
+
+
+# -------------------- so sánh theo kỳ + doanh thu 30 ngày --------------------
+
+PERIODS = ("day", "week", "month")
+_PERIOD_NAMES = {
+    "day": ("Hôm nay", "hôm qua"),
+    "week": ("Tuần này", "tuần trước"),
+    "month": ("Tháng này", "tháng trước"),
+}
+
+_period_cache: dict[tuple, tuple[float, dict]] = {}
+_period_lock = threading.Lock()
+
+
+def _to_date(date_str: str):
+    return datetime.strptime(date_str, "%Y-%m-%d").date()
+
+
+def period_ranges(today: str, period: str) -> tuple[tuple[str, str], tuple[str, str]]:
+    """Khoảng ((kỳ này), (kỳ trước)) dài bằng nhau cho day/week/month.
+
+    - day:   hôm nay vs hôm qua.
+    - week:  thứ Hai tuần này -> hôm nay vs thứ Hai tuần trước -> cùng thứ
+             trong tuần trước (VD hôm nay thứ Ba: 19/10-20/10 vs 12/10-13/10).
+    - month: ngày 1 tháng này -> hôm nay vs ngày 1 tháng trước -> cùng số
+             ngày đầu tháng trước (tháng trước ngắn hơn — VD tháng 2 — thì
+             dừng ở ngày cuối của tháng trước).
+    period không hợp lệ -> day.
+    """
+    if period not in PERIODS:
+        period = "day"
+    d = _to_date(today)
+    if period == "week":
+        monday = d - timedelta(days=d.weekday())
+        prev_monday = monday - timedelta(days=7)
+        prev_end = prev_monday + timedelta(days=d.weekday())
+        cur = (monday.isoformat(), d.isoformat())
+        prev = (prev_monday.isoformat(), prev_end.isoformat())
+        return cur, prev
+    if period == "month":
+        first = d.replace(day=1)
+        prev_last = first - timedelta(days=1)  # ngày cuối tháng trước
+        prev_first = prev_last.replace(day=1)
+        n = min(d.day, prev_last.day)
+        prev_end = prev_first + timedelta(days=n - 1)
+        cur = (first.isoformat(), d.isoformat())
+        prev = (prev_first.isoformat(), prev_end.isoformat())
+        return cur, prev
+    prev_day = d - timedelta(days=1)
+    return (d.isoformat(), d.isoformat()), (prev_day.isoformat(), prev_day.isoformat())
+
+
+def _fmt_dm(iso: str) -> str:
+    return f"{iso[8:10]}/{iso[5:7]}"
+
+
+def _range_label(start: str, end: str) -> str:
+    return _fmt_dm(start) if start == end else f"{_fmt_dm(start)} – {_fmt_dm(end)}"  # noqa: RUF001
+
+
+def _aggregate(reports: dict, entries: list, start: str, end: str) -> dict:
+    """Cộng dồn 1 khoảng ngày từ báo cáo ngày + entry GMV đã nạp sẵn.
+
+    Ngày không có báo cáo thì bỏ qua (không tính là 0); cả khoảng không có
+    ngày nào có báo cáo -> revenue/ads_cost/roas = None. GMV tương tự:
+    không entry nào trong khoảng -> None.
+    """
+    revenue = 0
+    ads_cost = 0.0
+    ad_gmv = 0.0
+    has_report = False
+    day = _to_date(start)
+    last = _to_date(end)
+    while day <= last:
+        report = reports.get(day.isoformat())
+        if report is not None:
+            has_report = True
+            revenue += calc_daily(report)["total_rev"]
+            ads_cost += float(report.get("ad_cost") or 0)
+            ad_gmv += float(report.get("ad_gmv") or 0)
+        day += timedelta(days=1)
+    gmv_rm = 0.0
+    has_gmv = False
+    for entry in entries:
+        if start <= entry["date"] <= end:
+            has_gmv = True
+            gmv_rm += float(entry.get("revenue_rm") or 0)
+    return {
+        "revenue": revenue if has_report else None,
+        "ads_cost": round(ads_cost) if has_report else None,
+        "roas": round(ad_gmv / ads_cost, 2) if has_report and ads_cost != 0 else None,
+        "gmv_vnd": round(gmv_rm * RM_VND_RATE) if has_gmv else None,
+    }
+
+
+def _with_delta(cur, prev) -> dict:
+    """% thay đổi; kỳ trước = 0 hoặc thiếu 1 trong 2 kỳ -> None (hiện "—")."""
+    delta = None
+    if cur is not None and prev is not None and prev != 0:
+        delta = round((cur - prev) / prev * 100, 1)
+    return {"cur": cur, "prev": prev, "delta_pct": delta}
+
+
+def period_compare(today: str, period: str) -> dict:
+    """So sánh 4 chỉ số giữa kỳ này và kỳ trước (nạp dữ liệu 1 lần)."""
+    if period not in PERIODS:
+        period = "day"
+    cur_range, prev_range = period_ranges(today, period)
+    reports = {r["date"]: r for r in db.daily_list()}
+    entries = db.gmv_all_entries()
+    cur = _aggregate(reports, entries, *cur_range)
+    prev = _aggregate(reports, entries, *prev_range)
+    cur_name, prev_name = _PERIOD_NAMES[period]
+    return {
+        "period": period,
+        "cur_start": cur_range[0],
+        "cur_end": cur_range[1],
+        "prev_start": prev_range[0],
+        "prev_end": prev_range[1],
+        "cur_name": cur_name,
+        "prev_name": prev_name,
+        "cur_label": _range_label(*cur_range),
+        "prev_label": _range_label(*prev_range),
+        "metrics": {
+            key: _with_delta(cur[key], prev[key])
+            for key in ("revenue", "ads_cost", "roas", "gmv_vnd")
+        },
+    }
+
+
+def revenue_series(today: str, days: int = 30) -> dict:
+    """Doanh thu từng ngày trong `days` ngày gần nhất (gồm hôm nay).
+
+    Ngày chưa nhập Báo cáo ngày -> None (biểu đồ để trống, không vẽ 0).
+    """
+    reports = {r["date"]: r for r in db.daily_list()}
+    labels: list[str] = []
+    values: list[int | None] = []
+    d0 = _to_date(today)
+    for back in range(days - 1, -1, -1):
+        day = (d0 - timedelta(days=back)).isoformat()
+        labels.append(day)
+        report = reports.get(day)
+        values.append(calc_daily(report)["total_rev"] if report is not None else None)
+    return {"labels": labels, "revenue": values}
+
+
+def _ttl_get(key: tuple, producer) -> dict:
+    """Cache TTL dùng chung cho so sánh kỳ + series (khoá theo (loại, ngày, kỳ))."""
+    now = time.monotonic()
+    with _period_lock:
+        entry = _period_cache.get(key)
+        if entry is not None and entry[0] > now:
+            return entry[1]
+    data = producer()
+    with _period_lock:
+        _period_cache[key] = (now + OVERVIEW_CACHE_TTL, data)
+        for k, (exp, _) in list(_period_cache.items()):
+            if k != key and exp <= now:
+                del _period_cache[k]
+    return data
+
+
+def cached_period_compare(today: str, period: str) -> dict:
+    """period_compare() với cache 60 giây, khoá theo (ngày, kỳ)."""
+    if period not in PERIODS:
+        period = "day"
+    return _ttl_get(
+        ("period", today, period), lambda: period_compare(today, period)
+    )
+
+
+def cached_revenue_series(today: str) -> dict:
+    """revenue_series(30 ngày) với cache 60 giây, khoá theo ngày."""
+    return _ttl_get(("series30", today), lambda: revenue_series(today))

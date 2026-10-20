@@ -5,7 +5,25 @@
 <div class="page-head">
   <h1>👑 Dashboard CEO</h1>
   <p class="muted">Tổng quan toàn hệ thống ngày {{ today[8:10] }}/{{ today[5:7] }}/{{ today[0:4] }} — số thật từ Báo cáo ngày, GMV Max Shopee và Daily Checklist.</p>
+  <p class="ceo-clock" id="ceoClock">🕒 {{ now_text }} (giờ Việt Nam)</p>
 </div>
+
+{% macro metric_card(label, metric, kind) %}
+  <div class="stat-card">
+    <div class="stat-label">{{ label }}</div>
+    {% if metric.cur is not none %}
+    <div class="stat-value">{% if kind == "money" %}{{ "{:,.0f}".format(metric.cur) }}₫{% else %}{{ metric.cur }}{% endif %}</div>
+    {% if metric.delta_pct is not none %}
+    <div class="{% if metric.delta_pct >= 0 %}delta-up{% else %}delta-down{% endif %}">{% if metric.delta_pct >= 0 %}▲{% else %}▼{% endif %} {{ "%+.1f"|format(metric.delta_pct) }}% so với kỳ trước</div>
+    {% else %}
+    <div class="muted">— (chưa so sánh được)</div>
+    {% endif %}
+    {% else %}
+    <div class="stat-value">—</div>
+    <div class="muted">Chưa có dữ liệu kỳ này</div>
+    {% endif %}
+  </div>
+{% endmacro %}
 
 <div class="stats">
   <div class="stat-card">
@@ -47,6 +65,30 @@
     <div class="stat-value">{{ ov.checklist_today.done }}/{{ ov.checklist_today.tasks }} xong</div>
     <div class="muted">{{ ov.checklist_today.pct }}% hoàn thành{% if ov.checklist_today.overdue %} · <span class="text-red"><strong>{{ ov.checklist_today.overdue }} quá hạn</strong></span>{% endif %}</div>
   </div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2>📈 So sánh theo kỳ</h2>
+    <div class="row-actions">
+      <a href="/ceo?period=day" class="btn btn-sm {% if period == 'day' %}btn-primary{% else %}btn-ghost{% endif %}">Ngày</a>
+      <a href="/ceo?period=week" class="btn btn-sm {% if period == 'week' %}btn-primary{% else %}btn-ghost{% endif %}">Tuần</a>
+      <a href="/ceo?period=month" class="btn btn-sm {% if period == 'month' %}btn-primary{% else %}btn-ghost{% endif %}">Tháng</a>
+    </div>
+  </div>
+  <p class="muted">{{ cmp.cur_name }}: <strong>{{ cmp.cur_label }}</strong> · so với <strong>{{ cmp.prev_label }}</strong> {{ cmp.prev_name }}. Số tăng hiện màu xanh lá ▲, giảm hiện màu đỏ ▼; kỳ trước = 0 hoặc thiếu dữ liệu thì không hiện %.</p>
+  <div class="stats">
+    {{ metric_card("Doanh thu (" ~ cmp.cur_name|lower ~ ")", cmp.metrics.revenue, "money") }}
+    {{ metric_card("Chi phí quảng cáo (" ~ cmp.cur_name|lower ~ ")", cmp.metrics.ads_cost, "money") }}
+    {{ metric_card("ROAS (" ~ cmp.cur_name|lower ~ ")", cmp.metrics.roas, "roas") }}
+    {{ metric_card("GMV quảng cáo VNĐ (" ~ cmp.cur_name|lower ~ ")", cmp.metrics.gmv_vnd, "money") }}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>📊 Doanh thu 30 ngày gần nhất</h2><a href="/bao-cao" class="link">Báo cáo ngày →</a></div>
+  <p class="muted">Ngày chưa nhập Báo cáo ngày được để trống trên biểu đồ (không tính là 0). Rê chuột lên cột để xem số.</p>
+  <div id="ceoRevChart" class="gmv-chart"></div>
 </div>
 
 <div class="card">
@@ -109,4 +151,68 @@
     </tbody>
   </table></div>
 </div>
+
+<script>
+(function () {
+  // ---- đồng hồ giờ Việt Nam: cập nhật mỗi 30 giây ----
+  var clockEl = document.getElementById("ceoClock");
+  function tickClock() {
+    if (!clockEl) return;
+    var now = new Date();
+    var wd = new Intl.DateTimeFormat("vi-VN", {timeZone: "Asia/Ho_Chi_Minh", weekday: "long"}).format(now);
+    wd = wd.charAt(0).toUpperCase() + wd.slice(1);
+    var dmy = new Intl.DateTimeFormat("vi-VN", {timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric"}).format(now);
+    var hm = new Intl.DateTimeFormat("vi-VN", {timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", hour12: false}).format(now);
+    clockEl.textContent = "🕒 " + wd + ", " + dmy + " · " + hm + " (giờ Việt Nam)";
+  }
+  tickClock();
+  setInterval(tickClock, 30000);
+
+  // ---- biểu đồ cột doanh thu 30 ngày (SVG thuần, ngày thiếu = để trống) ----
+  var SERIES = {{ rev_series | tojson }};
+  var NS = "http://www.w3.org/2000/svg";
+  function mk(tag, attrs, parent) {
+    var el = document.createElementNS(NS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(el);
+    return el;
+  }
+  function fmtVnd(v) { return Number(Math.round(v)).toLocaleString("vi-VN") + "đ"; }
+
+  var host = document.getElementById("ceoRevChart");
+  if (!host) return;
+  var vals = SERIES.revenue.filter(function (v) { return v != null; });
+  if (!vals.length) {
+    host.innerHTML = '<p class="muted">Chưa có dữ liệu doanh thu trong 30 ngày gần nhất.</p>';
+    return;
+  }
+  var W = 720, H = 220, PL = 76, PR = 12, PT = 12, PB = 22;
+  var iw = W - PL - PR, ih = H - PT - PB;
+  var max = Math.max.apply(null, vals);
+  if (max <= 0) max = 1;
+  var n = SERIES.labels.length;
+  var bw = iw / n;
+  var svg = mk("svg", {viewBox: "0 0 " + W + " " + H, "class": "gmv-chart-svg", role: "img"}, host);
+  mk("line", {x1: PL, y1: PT + ih, x2: PL + iw, y2: PT + ih, stroke: "#E5E5E5"}, svg);
+  var tTop = mk("text", {x: PL - 6, y: PT + 4, "text-anchor": "end", "class": "gmv-axis"}, svg);
+  tTop.textContent = fmtVnd(max);
+  var tBot = mk("text", {x: PL - 6, y: PT + ih + 4, "text-anchor": "end", "class": "gmv-axis"}, svg);
+  tBot.textContent = "0đ";
+  SERIES.revenue.forEach(function (v, i) {
+    var lab = SERIES.labels[i];
+    if (i % 5 === 0 || i === n - 1) {
+      var t = mk("text", {x: PL + bw * i + bw / 2, y: H - 6, "text-anchor": "middle", "class": "gmv-axis"}, svg);
+      t.textContent = lab.slice(8, 10) + "/" + lab.slice(5, 7);
+    }
+    if (v == null) return;
+    var h = ih * (v / max);
+    var rect = mk("rect", {
+      x: PL + bw * i + 1, y: PT + ih - h,
+      width: Math.max(1, bw - 2), height: h, rx: 2, "class": "ceo-bar"
+    }, svg);
+    var title = mk("title", {}, rect);
+    title.textContent = lab + " · Doanh thu: " + fmtVnd(v);
+  });
+})();
+</script>
 {% endblock %}

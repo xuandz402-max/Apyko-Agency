@@ -341,7 +341,7 @@ def _ceo_can_view(user: dict) -> bool:
 
 
 @router.get("/ceo", response_class=HTMLResponse)
-def page_ceo(request: Request):
+def page_ceo(request: Request, period: str = "day"):
     user, redir = auth.page_guard(request)
     if redir:
         return redir
@@ -349,9 +349,35 @@ def page_ceo(request: Request):
         raise HTTPException(
             status_code=403, detail="Chỉ chủ sở hữu / Leader / Quản trị được xem."
         )
+    if period not in ceo.PERIODS:
+        period = "day"
     today = checklist.today_str()
+    now = checklist.now_vn()
+    weekday_names = [
+        "Thứ Hai",
+        "Thứ Ba",
+        "Thứ Tư",
+        "Thứ Năm",
+        "Thứ Sáu",
+        "Thứ Bảy",
+        "Chủ Nhật",
+    ]
+    now_text = (
+        f"{weekday_names[now.weekday()]}, {now.day:02d}/{now.month:02d}/{now.year}"
+        f" · {now.hour:02d}:{now.minute:02d}"
+    )
     return templates.TemplateResponse(
-        "ceo.html", _ctx(request, user, ov=ceo.cached_overview(today), today=today)
+        "ceo.html",
+        _ctx(
+            request,
+            user,
+            ov=ceo.cached_overview(today),
+            today=today,
+            period=period,
+            cmp=ceo.cached_period_compare(today, period),
+            rev_series=ceo.cached_revenue_series(today),
+            now_text=now_text,
+        ),
     )
 
 

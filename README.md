@@ -124,6 +124,22 @@ bảng dữ liệu riêng, chỉ đọc tổng hợp từ các module khác:
   từng nhân viên; bấm tên để mở checklist của nhân viên đó.
 - **Bảng Doanh thu 7 ngày** — ngày nào chưa nhập báo cáo hiện "—" (không
   tính là 0).
+- **Đồng hồ ngày giờ** — đầu trang hiện ngày giờ Việt Nam hiện tại, tự cập
+  nhật mỗi 30 giây.
+- **📈 So sánh theo kỳ** — 4 thẻ Doanh thu / Chi phí quảng cáo / ROAS / GMV
+  quảng cáo VNĐ của kỳ hiện tại kèm **% thay đổi so với kỳ trước**, có nút
+  chuyển **Ngày / Tuần / Tháng** (mặc định Ngày). Cách so kỳ: **Ngày** =
+  hôm nay vs hôm qua; **Tuần** = thứ Hai -> hôm nay vs cùng số ngày đầu
+  tuần trước (VD 19/10 – 20/10 vs 12/10 – 13/10); **Tháng** = ngày 1 ->
+  hôm nay vs cùng số ngày đầu tháng trước (tháng trước ngắn hơn thì dừng ở
+  ngày cuối của tháng trước). Hai khoảng luôn dài bằng nhau và giao diện
+  ghi rõ nhãn khoảng ngày. **Tăng hiện màu xanh lá #15803D kèm ▲ và dấu +,
+  giảm hiện màu đỏ #DC2626 kèm ▼** — đây là ngoại lệ màu duy nhất ngoài
+  theme đen trắng, do chủ shop chốt riêng cho số tăng/giảm. Kỳ trước = 0
+  hoặc thiếu dữ liệu thì hiện "—", không bịa %.
+- **📊 Biểu đồ doanh thu 30 ngày gần nhất** — biểu đồ cột doanh thu từng
+  ngày (SVG vẽ bằng JS thuần); ngày chưa nhập Báo cáo ngày được để trống,
+  không vẽ 0.
 
 Ngưỡng cảnh báo mặc định (chỉnh trong `app/ceo.py`): `ROAS_WARN = 2.0`
 (entry GMV mới nhất của sản phẩm có ROAS dưới 2.0 thì cảnh báo) và
@@ -138,7 +154,9 @@ cảnh báo "chưa có dữ liệu gần đây").
 **60 giây** (hàm `cached_overview` trong `app/ceo.py`) vì trang chỉ đọc —
 sửa dữ liệu ở các module khác (Báo cáo ngày, GMV Max, checklist...) có thể
 mất tối đa ~1 phút mới hiện lên trang CEO. Các trang còn lại không dùng
-cache này.
+cache này. Khu so sánh theo kỳ và biểu đồ 30 ngày cũng cache 60 giây
+tương tự (`cached_period_compare` khoá theo ngày + kỳ, và
+`cached_revenue_series`).
 
 ## 🏷️ Định giá sản phẩm
 

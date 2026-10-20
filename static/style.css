@@ -303,3 +303,12 @@ a:hover { text-decoration: underline; }
   .gmv-bar-row { grid-template-columns: 110px 1fr; }
   .gmv-bar-value { grid-column: 2; white-space: normal; }
 }
+
+/* ---------- Dashboard CEO: đồng hồ + delta tăng/giảm + biểu đồ doanh thu ---------- */
+/* Màu xanh/đỏ dưới đây là ngoại lệ do chủ shop chốt riêng cho số tăng/giảm,
+   phần còn lại của app giữ theme đen trắng. */
+.ceo-clock { font-size: 15px; font-weight: 600; margin-top: 2px; }
+.delta-up { color: #15803D; font-weight: 700; }
+.delta-down { color: #DC2626; font-weight: 700; }
+.ceo-bar { fill: #7C3AED; }
+.ceo-bar:hover { fill: #6D28D9; }

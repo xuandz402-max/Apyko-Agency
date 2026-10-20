@@ -8,9 +8,9 @@
   --line: #E5E5E5;
   --bg: #FFFFFF;
   --card: #FFFFFF;
-  --green: #15803D;
-  --red: #DC2626;
-  --amber: #B45309;
+  --green: #111111;
+  --red: #111111;
+  --amber: #555555;
   --radius: 12px;
   --shadow: 0 1px 3px rgba(31, 41, 55, 0.08);
 }
@@ -120,18 +120,18 @@ a:hover { text-decoration: underline; }
 /* ---------- badges / alerts ---------- */
 .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
 .badge-score { background: var(--brand); color: #fff; }
-.badge-need { background: #FEF3C7; color: var(--amber); }
-.badge-demo { background: #E0E7FF; color: #3730A3; }
+.badge-need { background: #EDEDED; color: var(--amber); }
+.badge-demo { background: #EDEDED; color: var(--brand-dark); }
 .badge-label { background: var(--brand-soft); color: var(--brand-dark); }
-.badge-done { background: #DCFCE7; color: var(--green); }
+.badge-done { background: #EDEDED; color: var(--green); }
 .badge-todo { background: var(--brand-soft); color: var(--brand-dark); }
 .badge-owner { background: #111; color: #fff; }
 .badge-locked { background: #F3F4F6; color: var(--muted); }
 .text-green { color: var(--green); }
 .text-red { color: var(--red); }
 .alert { padding: 12px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 14px; }
-.alert-ok { background: #DCFCE7; color: #14532D; }
-.alert-error { background: #FEE2E2; color: #991B1B; }
+.alert-ok { background: #EDEDED; color: #111111; }
+.alert-error { background: #EDEDED; color: #111111; }
 .code-big { font-size: 20px; font-weight: 800; letter-spacing: 2px; color: var(--brand-dark); }
 .field-error { display: block; color: var(--red); font-size: 13px; margin-top: 4px; }
 
@@ -156,7 +156,7 @@ a:hover { text-decoration: underline; }
 .btn:hover { text-decoration: none; filter: brightness(0.96); }
 .btn-primary { background: var(--brand); color: #fff; }
 .btn-secondary { background: var(--brand-soft); color: var(--brand-dark); }
-.btn-danger { background: #FEE2E2; color: var(--red); }
+.btn-danger { background: #EDEDED; color: var(--red); }
 .btn-ghost { background: #fff; border-color: var(--line); color: var(--ink); }
 .btn-sm { padding: 6px 12px; font-size: 13px; }
 .btn-block { width: 100%; }
@@ -168,9 +168,9 @@ a:hover { text-decoration: underline; }
 .perm-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; border-top: 1px dashed var(--line); padding-top: 8px; }
 
 /* ---------- progress / scores ---------- */
-.progress { height: 10px; background: #F3EDE8; border-radius: 999px; overflow: hidden; margin-top: 6px; }
+.progress { height: 10px; background: #EEEEEE; border-radius: 999px; overflow: hidden; margin-top: 6px; }
 .progress-lg { height: 14px; }
-.progress-bar { height: 100%; background: linear-gradient(90deg, var(--brand), #FF7A45); border-radius: 999px; transition: width 0.4s; }
+.progress-bar { height: 100%; background: var(--brand); border-radius: 999px; transition: width 0.4s; }
 .progress-meta { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
 .score-row { margin-bottom: 12px; }
 .score-head { display: flex; justify-content: space-between; font-size: 14px; }

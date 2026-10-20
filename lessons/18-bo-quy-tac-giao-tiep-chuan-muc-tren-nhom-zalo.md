@@ -4,7 +4,7 @@
 
 ✓ Đã học
 
-🎧 Video tóm tắt (~1,2 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1,2 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Việc trao đổi trên nhóm Zalo làm việc không phải là hình thức nhắn tin thông thường — đây là hoạt động báo cáo tiến độ và chăm sóc khách hàng CHÍNH THỨC. Toàn bộ nhân sự bắt buộc áp dụng các tiêu chuẩn sau.
 
@@ -38,7 +38,7 @@ Mẫu tham khảo:
 
 Tuyệt đối không sử dụng
 
-❌ Cấm
+ Cấm
 
 "Em đảm bảo với anh chị tháng này sẽ đạt 500 đơn hàng."
 
@@ -50,7 +50,7 @@ VS
 
 Ngôn từ chuẩn mực
 
-✅ Nên dùng
+ Nên dùng
 
 "Mục tiêu bộ phận vận hành hướng tới trong tháng này là..."
 

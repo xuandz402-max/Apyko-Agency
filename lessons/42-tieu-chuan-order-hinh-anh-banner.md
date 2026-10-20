@@ -8,7 +8,7 @@ Hướng dẫn tư duy khi đặt order Banner/Ảnh SP trên App Care — viế
 
 ## Trước khi đặt order — Trả lời đủ 5 câu hỏi
 
-🎧 Video tóm tắt bài học cũ — đang chờ dựng lại theo quy trình mới, tạm thời đọc phần chữ bên dưới là bản cập nhật chính xác nhất.
+ Video tóm tắt bài học cũ — đang chờ dựng lại theo quy trình mới, tạm thời đọc phần chữ bên dưới là bản cập nhật chính xác nhất.
 
 Order càng rõ ràng ngay từ đầu, Team Design càng ít phải hỏi lại/sửa lại — tiết kiệm thời gian cho cả 2 bên. Trước khi mở form "Đặt order thiết kế", kiểm tra 1 điều kiện cần và tự trả lời đủ 5 câu hỏi sau.
 
@@ -40,13 +40,13 @@ Nhớ lại quy trình đã học: nếu Team Design giao demo chưa đúng ý, 
 
 ## Viết Brief rõ ràng — theo đúng từng ô trên form Order
 
-🎧 Video tóm tắt bài học cũ — đang chờ dựng lại theo quy trình mới, tạm thời đọc phần chữ bên dưới là bản cập nhật chính xác nhất.
+ Video tóm tắt bài học cũ — đang chờ dựng lại theo quy trình mới, tạm thời đọc phần chữ bên dưới là bản cập nhật chính xác nhất.
 
 ## So sánh Brief mơ hồ và Brief cụ thể
 
 Brief mơ hồ
 
-❌ Khó làm
+ Khó làm
 
 "Brief banner: làm đẹp là được, sale tháng 12."
 
@@ -56,7 +56,7 @@ VS
 
 Brief cụ thể
 
-✅ Dễ làm đúng ngay lần đầu
+ Dễ làm đúng ngay lần đầu
 
 "Banner sale 12/12, dùng cho trang chủ gian hàng. Tông đỏ-vàng nổi bật, có chữ 'SALE 50%' và logo shop ở góc trên phải, phong cách trẻ trung. Đính kèm 2 ảnh banner tham khảo cùng style mong muốn."
 
@@ -88,11 +88,11 @@ Mô tả đủ: tông màu, nội dung chữ cần có, phong cách mong muốn,
 
 ## Dùng AI hỗ trợ đúng cách khi đặt order
 
-Nên làm ✅
+Nên làm 
 
 Shop chưa có mẫu/ý tưởng sẵn → tự gen nhanh 1–2 ảnh AI để shop tham khảo hoặc để đính kèm brief. Team Design nhìn ảnh AI đó sẽ hiểu hướng làm nhanh hơn nhiều so với chỉ đọc mô tả bằng chữ.
 
-Không nên làm ❌
+Không nên làm 
 
 Lấy chính ảnh Team Design đã thiết kế, đưa cho AI "chấm điểm/nhận xét", rồi copy nguyên lời AI để feedback lại cho Team Design. Nhận xét của AI chỉ nên để tự mình tham khảo — nếu bản thiết kế chưa đạt, hãy tự đọc và góp ý bằng lời của chính mình, hoặc trả job kèm lý do rõ ràng. Team Design đã bỏ công sức và chất xám vào sản phẩm, cần được góp ý một cách tôn trọng.
 
@@ -105,7 +105,6 @@ Số liệu tổng hợp từ trang chính thức Shopee Seller Education Hub v�
 ## Banner trang trí gian hàng Shopee (Shop Decoration)
 
 | Loại banner | Kích thước khuyến nghị | Tỷ lệ | Dung lượng tối đa |
-|---|---|---|---|
 | Banner ngang chính | 1200 × 600 px | 2:1 | 2 MB |
 | Banner vuông | 600 × 600 px | 1:1 | 2 MB |
 | Banner dạng carousel (trượt ngang) | 2000 × 1000 px | 2:1 | 2 MB |
@@ -114,13 +113,11 @@ Số liệu tổng hợp từ trang chính thức Shopee Seller Education Hub v�
 ## Ảnh bìa Livestream Shopee
 
 | Loại | Kích thước | Tỷ lệ | Dung lượng tối đa |
-|---|---|---|---|
 | Ảnh bìa Livestream | 500 × 500 px | 1:1 | 200 KB |
 
 ## Ảnh sản phẩm Shopee
 
 | Loại | Kích thước | Tỷ lệ | Ghi chú |
-|---|---|---|---|
 | Ảnh đại diện SP (Cover) — tối thiểu | 600 × 600 px | 1:1 | Bật được zoom |
 | Ảnh đại diện SP — khuyến nghị | 1024 × 1024 px | 1:1 | Nét hơn khi khách zoom |
 | Ảnh trong bộ sưu tập (Gallery) | 900 × 900 px | 1:1 | Ngành thời trang có thể dùng 900 × 1200 px (3:4) |
@@ -130,7 +127,6 @@ Cảnh báo: ảnh dưới 500 × 500 px dễ bị vỡ/mờ (pixelation) khi kh
 ## Banner Shopee Ads (quảng cáo trên sàn)
 
 | Loại | Kích thước | Tỷ lệ |
-|---|---|---|
 | Banner chuẩn (phổ biến nhất) | 2000 × 1000 px | 2:1 |
 | Banner thay thế | 2000 × 1125 px | 16:9 |
 | Banner dạng carousel 4 ảnh | 2668 × 1334 px | 2:1 |
@@ -140,7 +136,6 @@ Shopee không có kích thước riêng cho Shopee Ads — dùng chung bộ kíc
 ## Ảnh đăng bài Facebook (bài đăng thường, không phải quảng cáo)
 
 | Loại | Kích thước | Tỷ lệ |
-|---|---|---|
 | Ảnh vuông | 1080 × 1080 px | 1:1 |
 | Ảnh dọc (chiếm nhiều màn hình mobile hơn) | 1080 × 1350 px | 4:5 |
 | Ảnh ngang | 1200 × 630 px | 1.91:1 |
@@ -149,7 +144,6 @@ Shopee không có kích thước riêng cho Shopee Ads — dùng chung bộ kíc
 ## Banner quảng cáo Facebook Ads
 
 | Loại | Kích thước | Tỷ lệ |
-|---|---|---|
 | Quảng cáo vuông | 1080 × 1080 px | 1:1 |
 | Quảng cáo dọc (khuyến nghị — chiếm màn hình tốt hơn trên mobile) | 1080 × 1350 px | 4:5 |
 | Story/Reels quảng cáo | 1080 × 1920 px | 9:16 |

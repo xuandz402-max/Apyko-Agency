@@ -4,7 +4,7 @@
 
 ✓ Đã học
 
-🎧 Video tóm tắt (~1,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Khủng hoảng quan hệ khách hàng hiếm khi bùng phát đột ngột — thường có dấu hiệu cảnh báo từ trước, và cách phản hồi ngay LẦN ĐẦU khi khách nói thẳng sự không hài lòng sẽ quyết định tình huống có leo thang hay được xử lý êm xuôi.
 
@@ -24,7 +24,7 @@ Nguyên tắc phản hồi khi khách đã nói thẳng sự không hài lòng:
 
 Phản ứng phòng thủ ngay
 
-❌ Sai
+ Sai
 
 Khách: "Tháng này doanh số giảm hẳn, bên em làm ăn kiểu gì vậy?"
 
@@ -34,7 +34,7 @@ VS
 
 Ghi nhận trước, giải quyết sau
 
-✅ Đúng
+ Đúng
 
 "Dạ em hiểu anh/chị đang lo lắng về việc doanh số giảm ạ. Để em kiểm tra kỹ lại số liệu chi tiết và có báo cáo phân tích nguyên nhân cụ thể gửi anh/chị trong hôm nay, mong anh/chị cho em thời gian rà soát kỹ trước khi kết luận."
 

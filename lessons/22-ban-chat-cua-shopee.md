@@ -79,14 +79,13 @@ Gõ "Áo thun nam trắng" nghĩa là đã cầm tiền sẵn. Mở 7–10 shop 
 ## Phần 3: So sánh triển khai thực tế — ví dụ bán áo thun
 
 | Hạng mục | Làm trên Facebook (sai lầm nếu bê lên Shopee) | Làm trên Shopee (chuẩn mực vận hành) |
-|---|---|---|
 | Ảnh đại diện | Người mẫu tạo dáng quán cà phê, phong cảnh mờ ảo. | Ảnh cắt nền rõ, áo chiếm 70% khung hình, kèm text to: "CHỐNG NHĂN – MUA 1 TẶNG 1". |
 | Tiêu đề SP | "Góc pass đồ", "Áo thun siêu hot thu đông". | Chứa đúng từ khóa khách gõ: Áo thun nam Polo cổ bẻ chất Cotton không nhăn phom dáng ôm mã T01. |
 | Mô tả SP | Kể chuyện dài 2.000 chữ, chèn 50 icon bông hoa. | Gạch đầu dòng: chất liệu → bảng size → chính sách đổi trả. Khách rất lười đọc! |
 | Tư duy CSKH | Chờ khách hỏi "Giá bao nhiêu ạ", tư vấn nài nỉ. | Khách tự mua. Chat chỉ để xử lý khiếu nại/tư vấn size, tốc độ dưới 5 phút. |
 | Chốt Sale | Giảm giá trực tiếp qua tin nhắn. | Cài Mua kèm deal sốc, tạo Voucher — khách thấy hời tự bấm thanh toán. |
 
-🎯 Tóm lại cho nhân sự mới: Bạn là một kỹ thuật viên tối ưu hệ thống, không phải copywriter. Mọi việc bạn làm — điền đúng cân nặng, thiết kế ảnh bìa, trả lời đánh giá 1 sao tử tế — đều nhằm giúp sản phẩm chiến thắng khi bị đặt lên bàn cân so sánh với 10 shop đối thủ bên cạnh.
+ Tóm lại cho nhân sự mới: Bạn là một kỹ thuật viên tối ưu hệ thống, không phải copywriter. Mọi việc bạn làm — điền đúng cân nặng, thiết kế ảnh bìa, trả lời đánh giá 1 sao tử tế — đều nhằm giúp sản phẩm chiến thắng khi bị đặt lên bàn cân so sánh với 10 shop đối thủ bên cạnh.
 
 Hãy đọc kỹ tài liệu này. Nếu đã hiểu rõ luật chơi, chúng ta sẽ bước vào bài học tối ưu hình ảnh và đăng sản phẩm chuẩn thuật toán!
 
@@ -167,7 +166,6 @@ Shop cần làm: trả lời tin nhắn nhanh nhất (chờ lâu khách bỏ đi
 ## 5. Đúc rút: shop cần làm gì để thỏa mãn khách?
 
 | Bước trong phễu | Việc shop cần làm |
-|---|---|
 | Làm sản phẩm dễ được nhìn thấy (tìm kiếm/khám phá) | Chạy Ads tìm kiếm để xuất hiện khi gõ đúng từ khóa; chạy Ads khám phá, đẩy Shopee Video/Live tiếp cận khách đang lướt; đặt tiêu đề chứa đúng từ khóa khách hay gõ; phân loại đúng ngành hàng để sàn phân phối đúng người. |
 | Chiến thắng khi bị so sánh (so sánh/cân nhắc) | Đầu tư ảnh bìa rõ/nổi bật; niêm yết giá hợp lý kèm voucher/giá gạch ngang tạo cảm giác hời; gom đủ lượt bán/đánh giá tốt; viết mô tả đầy đủ, đính kèm chính sách ship rõ ràng. |
 | Xóa bỏ phân vân ở phút chót (ra quyết định) | Bày sẵn voucher/ưu đãi trên trang sản phẩm; ghi rõ chính sách đổi trả/bảo hành; trả lời tin nhắn nhanh đúng lúc khách cân nhắc; cài tin nhắn tự động ngoài giờ làm việc. |

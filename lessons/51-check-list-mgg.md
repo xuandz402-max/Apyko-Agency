@@ -1,6 +1,6 @@
 # Check List MGG
 
-✅ CHECKLIST CÀI ĐẶT CTKM
+ CHECKLIST CÀI ĐẶT CTKM
 
 1. MÃ GIẢM GIÁ (MGG)
 
@@ -14,8 +14,6 @@
 
 - [ ] **Sau 1 tháng:** Review lại tất cả MGG để đánh giá hiệu quả
 
----
-
 2. COMBO KHUYẾN MÃI (Combo KM)
 
 - [ ] **Cài đặt 1 tháng 1 lần** (lặp lại hàng tháng)
@@ -26,17 +24,13 @@
 
 - [ ] **Sau 1 tháng:** Review lại Combo KM để điều chỉnh
 
----
-
 3. XU THƯỞNG ĐÁNH GIÁ
 
 - [ ] **Cài đặt 1 lần** (không cần cài lại hàng tháng)
 
 - [ ] **Áp dụng trên Shopee** (chương trình thưởng xu cho đánh giá)
 
----
-
-📌 KIỂM TRA TỔNG THỂ
+ KIỂM TRA TỔNG THỂ
 
 - [ ] Đã cài đủ **4 MGG + 1 mã Follow**?
 

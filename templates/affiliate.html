@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% set nav_active = "affiliate" %}
+{% block title %}Affiliate · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>🔗 Affiliate</h1>
+  <p class="muted">Theo dõi link tiếp thị liên kết theo từng sản phẩm / bài quảng cáo (Sub ID)
+  và đọc lại nguyên văn bài học "Shopee tiếp thị liên kết".</p>
+</div>
+
+{% if err %}<div class="alert alert-error">{{ err }}</div>{% endif %}
+{% if msg %}<div class="alert alert-ok">{{ msg }}</div>{% endif %}
+
+<div class="tabs">
+  <a href="/affiliate?tab=theo-doi" class="tab{% if tab == 'theo-doi' %} active{% endif %}">📊 Bảng theo dõi</a>
+  <a href="/affiliate?tab=noi-dung" class="tab{% if tab == 'noi-dung' %} active{% endif %}">📖 Nội dung bài: Shopee tiếp thị liên kết</a>
+</div>
+
+{% if tab == 'noi-dung' %}
+<div class="card">
+  <div class="card-head"><h2>{{ deck.title }}</h2></div>
+  {% if deck.subtitle %}<p><strong>{{ deck.subtitle }}</strong></p>{% endif %}
+  {% if deck.source %}<p class="muted">{{ deck.source }} — đồng bộ nguyên văn, không cắt bỏ.</p>{% endif %}
+</div>
+{% for s in deck.slides %}
+<article class="card aff-slide">
+  {% if s.has_text %}
+  <div class="card-head"><h2>Slide {{ s.slide }}</h2></div>
+  {% for p in s.paragraphs %}
+  <p>{{ p }}</p>
+  {% endfor %}
+  {% else %}
+  <p class="muted">Slide {{ s.slide }} — ảnh chụp minh họa trong bản gốc (không có chữ)</p>
+  {% endif %}
+</article>
+{% endfor %}
+
+{% else %}
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-label">Tổng link</div>
+    <div class="stat-value">{{ totals.links }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Tổng click</div>
+    <div class="stat-value">{{ "{:,}".format(totals.clicks).replace(",", ".") }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Tổng đơn</div>
+    <div class="stat-value">{{ "{:,}".format(totals.orders).replace(",", ".") }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Hoa hồng thực nhận (VNĐ)</div>
+    <div class="stat-value">{{ "{:,.0f}".format(totals.commission_received).replace(",", ".") }}đ</div>
+    <div class="muted">Chỉ tính số đã thực nhận — con số sự thật cuối cùng</div>
+  </div>
+</div>
+
+<div class="card">
+  <form method="get" action="/affiliate" class="form-inline">
+    <label>Tìm theo tên sản phẩm / Sub ID
+      <input type="text" name="q" value="{{ q }}" class="input" placeholder="Gõ tên sản phẩm hoặc Sub ID...">
+    </label>
+    <label>Nền tảng
+      <select name="platform" class="input">
+        <option value="">— Tất cả —</option>
+        {% for p in platforms %}
+        <option value="{{ p }}"{% if platform == p %} selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">🔎 Tìm</button>
+      {% if q or platform %}<a href="/affiliate" class="btn btn-ghost">Xóa lọc</a>{% endif %}
+      <a href="/affiliate/export{% if q or platform %}?{% if q %}q={{ q }}{% endif %}{% if q and platform %}&{% endif %}{% if platform %}platform={{ platform }}{% endif %}{% endif %}" class="btn btn-ghost">⬇️ Xuất CSV</a>
+    </div>
+  </form>
+</div>
+
+{% if can_edit %}
+<div class="card">
+  <div class="card-head"><h2>{% if edit_item %}✏️ Sửa link affiliate{% else %}➕ Thêm link affiliate{% endif %}</h2></div>
+  <form method="post" action="{% if edit_item %}/affiliate/{{ edit_item.id }}/edit{% else %}/affiliate{% endif %}" class="form">
+    <label>Tên sản phẩm
+      <input type="text" name="product_name" required value="{{ edit_item.product_name if edit_item else '' }}" placeholder="VD: Rơ le nhiệt RL-NC-01">
+    </label>
+    <label>Nền tảng
+      <select name="platform">
+        {% for p in platforms %}
+        <option value="{{ p }}"{% if edit_item and edit_item.platform == p %} selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Link affiliate
+      <input type="text" name="affiliate_link" value="{{ edit_item.affiliate_link if edit_item else '' }}" placeholder="https://...">
+    </label>
+    <label>Sub ID (mã định danh theo bài quảng cáo)
+      <input type="text" name="sub_id" value="{{ edit_item.sub_id if edit_item else '' }}" placeholder="VD: video-rl01-01">
+    </label>
+    <label>% hoa hồng
+      <input type="text" name="commission_rate" inputmode="decimal" value="{{ ('%g'|format(edit_item.commission_rate)) if edit_item else '' }}" placeholder="VD: 10">
+    </label>
+    <label>Lượt click
+      <input type="text" name="clicks" inputmode="numeric" value="{{ edit_item.clicks if edit_item else '' }}" placeholder="0">
+    </label>
+    <label>Số đơn
+      <input type="text" name="orders" inputmode="numeric" value="{{ edit_item.orders if edit_item else '' }}" placeholder="0">
+    </label>
+    <label>Hoa hồng dự kiến (VNĐ)
+      <input type="text" name="commission_estimated" inputmode="numeric" value="{{ ('%.0f'|format(edit_item.commission_estimated)) if edit_item else '' }}" placeholder="0">
+    </label>
+    <label>Hoa hồng thực nhận (VNĐ)
+      <input type="text" name="commission_received" inputmode="numeric" value="{{ ('%.0f'|format(edit_item.commission_received)) if edit_item else '' }}" placeholder="0">
+    </label>
+    <label>Nguồn dữ liệu
+      <input type="text" name="data_source" value="{{ edit_item.data_source if edit_item else '' }}" placeholder="VD: Báo cáo Shopee Affiliate">
+    </label>
+    <label>Ghi chú
+      <textarea name="note" rows="2" placeholder="Ghi chú thêm...">{{ edit_item.note if edit_item else '' }}</textarea>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">{{ 'Lưu thay đổi' if edit_item else 'Thêm link' }}</button>
+      {% if edit_item %}<a href="/affiliate" class="btn btn-ghost">Hủy sửa</a>{% endif %}
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-head"><h2>Danh sách link affiliate</h2></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr>
+      <th>Sản phẩm</th><th>Nền tảng</th><th>Sub ID</th><th>Link</th>
+      <th>% HH</th><th>Click</th><th>Đơn</th><th>CVR</th>
+      <th>HH dự kiến</th><th>HH thực nhận</th><th>EPC</th>
+      <th>Nguồn dữ liệu</th><th>Ghi chú</th><th>Cập nhật</th><th></th>
+    </tr></thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td><strong>{{ row.product_name }}</strong></td>
+        <td>{{ row.platform }}</td>
+        <td>{{ row.sub_id or "—" }}</td>
+        <td>{% if row.affiliate_link %}<a href="{{ row.affiliate_link }}" target="_blank" rel="noopener">Mở link</a>{% else %}—{% endif %}</td>
+        <td class="num">{{ "%g"|format(row.commission_rate) }}%</td>
+        <td class="num">{{ "{:,}".format(row.clicks).replace(",", ".") }}</td>
+        <td class="num">{{ "{:,}".format(row.orders).replace(",", ".") }}</td>
+        <td class="num">{{ "—" if row.calc.cvr is none else "%.2f"|format(row.calc.cvr) ~ "%" }}</td>
+        <td class="num">{{ "{:,.0f}".format(row.commission_estimated).replace(",", ".") }}đ</td>
+        <td class="num"><strong>{{ "{:,.0f}".format(row.commission_received).replace(",", ".") }}đ</strong></td>
+        <td class="num">{{ "—" if row.calc.epc is none else "{:,.0f}".format(row.calc.epc).replace(",", ".") ~ "đ" }}</td>
+        <td>{{ row.data_source or "—" }}</td>
+        <td>{{ row.note or "" }}</td>
+        <td class="nowrap">{{ row.updated_at[8:10] }}/{{ row.updated_at[5:7] }}/{{ row.updated_at[0:4] }}{% if row.updated_by %}<br><span class="muted">{{ row.updated_by }}</span>{% endif %}</td>
+        <td class="nowrap">
+          {% if can_edit %}<a href="/affiliate?edit={{ row.id }}{% if q %}&q={{ q }}{% endif %}{% if platform %}&platform={{ platform }}{% endif %}" class="btn btn-ghost btn-sm">✏️ Sửa</a>{% endif %}
+          {% if can_delete %}
+          <form method="post" action="/affiliate/{{ row.id }}/delete" class="inline"
+                onsubmit="return confirm('Xóa link affiliate {{ row.product_name }}?');">
+            <button type="submit" class="btn btn-danger btn-sm">🗑️ Xóa</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="15" class="muted">Chưa có link affiliate nào{% if q or platform %} khớp bộ lọc{% endif %}{% if can_edit %} — thêm link ở form phía trên{% endif %}.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="muted">CVR = Đơn / Click. EPC = Hoa hồng <strong>thực nhận</strong> / Click. Click = 0 thì hai chỉ số hiện "—".
+  Số liệu trên bảng là số tích lũy theo từng link, nhập từ báo cáo của nền tảng (ghi ở cột Nguồn dữ liệu).</p>
+</div>
+{% endif %}
+{% endblock %}

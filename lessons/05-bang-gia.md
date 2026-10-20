@@ -7,7 +7,6 @@
 ## Apyko Uni Care — gói vận hành tiêu chuẩn
 
 | Hạng mục | 1 Tháng | 3 Tháng | 6 Tháng | 12 Tháng |
-|---|---|---|---|---|
 | Phí cứng | 6.000.000đ | 16.000.000đ | 30.000.000đ | 55.000.000đ |
 | VAT 8% | +480.000đ | +1.280.000đ | +2.400.000đ | +4.400.000đ |
 | Tổng thanh toán | 6.480.000đ | 17.280.000đ | 32.400.000đ | 59.400.000đ |
@@ -29,7 +28,6 @@ Hạng mục công việc triển khai:
 Chỉ áp dụng cam kết doanh số với gói từ 3 tháng trở lên.
 
 | Hạng mục | 1 Tháng | 3 Tháng | 6 Tháng | 12 Tháng |
-|---|---|---|---|---|
 | Phí cứng | 8.500.000đ | 24.000.000đ | 45.000.000đ | 86.000.000đ |
 | VAT 8% | +680.000đ | +1.920.000đ | +3.600.000đ | +6.880.000đ |
 | Tổng thanh toán | 9.180.000đ | 25.920.000đ | 48.600.000đ | 92.880.000đ |
@@ -41,7 +39,6 @@ Master Care có đầy đủ hạng mục như Apyko Uni Care (số lượng SP/
 ### Cam kết doanh số Master Care
 
 | Hồ sơ shop | Cam kết doanh số |
-|---|---|
 | Shop mới hoặc doanh thu dưới 50 triệu/tháng | Sau 3 tháng vận hành đạt tổng tối thiểu 150.000.000đ |
 | Shop đã có doanh thu từ 50 triệu/tháng trở lên | Cần kiểm định shop để đưa ra cam kết cụ thể |
 | Shop doanh thu từ 300 triệu/tháng trở lên | Cam kết tăng trưởng tối thiểu 30% so với cùng kỳ 3 tháng trước |
@@ -49,7 +46,6 @@ Master Care có đầy đủ hạng mục như Apyko Uni Care (số lượng SP/
 Hoàn tiền nếu không đạt KPI cam kết:
 
 | Mức đạt KPI | Hoàn phí cứng |
-|---|---|
 | Dưới 70% | Hoàn 20% phí cứng |
 | Dưới 80% | Hoàn 15% phí cứng |
 | Dưới 90% | Hoàn 10% phí cứng |
@@ -59,7 +55,6 @@ Miễn phí tư vấn khắc phục nếu shop vi phạm chính sách sàn (khô
 ## Hoa hồng doanh thu (áp dụng chung cả 2 gói)
 
 | Mức doanh thu/tháng | Hoa hồng | Quyền lợi thêm |
-|---|---|---|
 | Dưới 50 triệu | 0% | — |
 | Từ 50 đến 500 triệu | 2% | — |
 | Từ 500 triệu đến 1 tỷ | 1,5% | Miễn phí nhân bản 1 gian hàng vệ tinh |

@@ -2,17 +2,11 @@
 
 Dưới đây là **Checklist Combo Mua Kèm Deal Sốc** được rút gọn, trình bày khoa học, dễ áp dụng ngay:
 
----
-
-✅ CHECKLIST – COMBO MUA KÈM DEAL SỐC
-
----
+ CHECKLIST – COMBO MUA KÈM DEAL SỐC
 
 1. XÁC ĐỊNH MỤC TIÊU COMBO
 
 | Loại combo | Mục đích | Lãi/lỗ | Thời gian áp dụng |
-
-|------------|----------|--------|-------------------|
 
 | **Lấy đánh giá** | Gom đánh giá cho SP mới | Chấp nhận lỗ | Ngừng sau 1 thời gian |
 
@@ -20,11 +14,9 @@ Dưới đây là **Checklist Combo Mua Kèm Deal Sốc** được rút gọn, t
 
 | **Đẩy hàng tồn** | Thanh lý hàng kém chạy, trả phí lưu kho | Linh hoạt | Theo tiến độ bán hàng |
 
----
-
 2. CHECKLIST TỪNG LOẠI
 
-🔹 LOẠI 1 – LẤY ĐÁNH GIÁ (Lỗ)
+ LOẠI 1 – LẤY ĐÁNH GIÁ (Lỗ)
 
 - [ ] Chọn sản phẩm mới hoặc ít review
 
@@ -38,9 +30,7 @@ Dưới đây là **Checklist Combo Mua Kèm Deal Sốc** được rút gọn, t
 
 - [ ] Đặt lịch **ngừng sau 1 thời gian** ( tuỳ chỉnh)
 
----
-
-🔹 LOẠI 2 – LẤY SỐ BÁN (Không lỗ)
+ LOẠI 2 – LẤY SỐ BÁN (Không lỗ)
 
 - [ ] Chọn sản phẩm tiềm năng, đủ lượng
 
@@ -50,17 +40,15 @@ Dưới đây là **Checklist Combo Mua Kèm Deal Sốc** được rút gọn, t
 
 - [ ] Theo dõi số lượng bán ra, **ngừng ngay** khi đạt mục tiêu (ví dụ: 500 đơn)
 
----
+ LOẠI 3 – ĐẨY HÀNG TỒN (Thanh lý)
 
-🔹 LOẠI 3 – ĐẨY HÀNG TỒN (Thanh lý)
-
-✅ Kịch bản A – Tặng kèm SP mới
+ Kịch bản A – Tặng kèm SP mới
 
 - [ ] Đơn hàng **≥ 99k** → tặng kèm SP **giá 1.000đ** (thực tế cho về 0đ)
 
 - [ ] Ưu tiên sản phẩm mới để có đánh giá
 
-✅ Kịch bản B – Tặng kèm hàng tồn
+ Kịch bản B – Tặng kèm hàng tồn
 
 - [ ] Đơn hàng ≥ **12 × N.k** → tặng kèm SP tồn **N** với giá 0đ
 
@@ -68,15 +56,13 @@ Dưới đây là **Checklist Combo Mua Kèm Deal Sốc** được rút gọn, t
 
 - [ ] Ví dụ: SP tồn giá 10k → đơn tối thiểu **120k** mới được tặng
 
-✅ Kịch bản C – Giảm giá SP kèm (3–5%)
+ Kịch bản C – Giảm giá SP kèm (3–5%)
 
 - [ ] Đơn ≥ 120k → được mua SP đi kèm với **giảm 3–5%**
 
 - [ ] SP kèm **liên quan** đến SP chính (VD: hộp cơm → túi cá)
 
 - [ ] **Giá trị đơn = đơn TB × 1.2** (tăng 20% so với đơn trung bình)
-
----
 
 3. MẸO TẠO SP TẶNG KÈM
 
@@ -88,9 +74,7 @@ Dưới đây là **Checklist Combo Mua Kèm Deal Sốc** được rút gọn, t
 
 - Cho khách mua với giá **ưu đãi (5k)** hoặc đăng dạng **"miếng dán"** để linh hoạt
 
----
-
-📌 KIỂM TRA CUỐI
+ KIỂM TRA CUỐI
 
 - [ ] Đã chọn đúng loại combo theo mục đích?
 

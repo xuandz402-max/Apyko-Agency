@@ -2,7 +2,7 @@
 
 ## 6 Giá trị cốt lõi APYKO Group
 
-🎧 Video tóm tắt (~1,6 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1,6 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 6 giá trị này là kim chỉ nam cho mọi suy nghĩ và hành động tại Apyko Uni Group — không phải khẩu hiệu treo tường, mà là tiêu chuẩn thật để đánh giá cách làm việc hằng ngày. Từ ngày thứ 2 trở đi, bạn sẽ ôn lại 1 giá trị mỗi sáng (Ôn hằng ngày) cho tới khi thấm.
 

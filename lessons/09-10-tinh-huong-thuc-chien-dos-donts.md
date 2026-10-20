@@ -4,12 +4,11 @@
 
 ✓ Đã học
 
-🎧 Video tóm tắt (~40 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~40 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Bảng dưới đây là 10 tình huống thực chiến thường gặp nhất khi chăm sóc khách hàng — thuộc lòng cách xử lý CHUẨN MỰC trước khi làm việc trực tiếp với khách.
 
-| Tình huống | ❌ SAI (Cấm sử dụng) | ✅ CHUẨN MỰC (Cần áp dụng) |
-|---|---|---|
+| Tình huống | SAI (Cấm sử dụng) | CHUẨN MỰC (Cần áp dụng) |
 | 1. Nhắc khách gửi tài liệu/thông tin | "Anh/chị chưa gửi em thông tin đăng nhập nên em không làm được." (Trách móc) | "Dạ để kịp tiến độ, anh/chị hỗ trợ gửi giúp em thông tin đăng nhập trong sáng nay nha ạ." |
 | 2. Chưa biết cách trả lời ngay | "Cái này em chưa rõ" / "Cái này em không biết." (Thiếu uy tín) | "Dạ vấn đề này em xin phép ghi nhận. Em sẽ kiểm tra lại hệ thống và phản hồi chi tiết lại anh/chị trước [14h chiều nay] nha ạ." |
 | 3. Từ chối yêu cầu ngoài hợp đồng | "Bên em không làm cái này" / "Cái này không có trong hợp đồng." (Cụt lủn) | "Dạ hạng mục này hiện chưa nằm trong gói dịch vụ hiện tại. Để hỗ trợ tốt nhất, em xin gửi anh/chị tham khảo thêm gói [Tên gói] bên em nha ạ." |

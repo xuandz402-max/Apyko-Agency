@@ -4,7 +4,7 @@
 
 ✓ Đã học
 
-🎧 Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 ## Khi khách dọa dừng hợp đồng
 
@@ -26,7 +26,7 @@ Khi báo cáo lên cấp trên, cần có đủ 3 thông tin:
 
 Tuyệt đối không làm
 
-❌ Cấm
+ Cấm
 
 "Dạ bên kia họ làm ẩu lắm, không uy tín đâu anh/chị." (nói xấu đối thủ)
 
@@ -36,7 +36,7 @@ VS
 
 Chuẩn mực
 
-✅ Đúng
+ Đúng
 
 "Dạ em ghi nhận ý kiến của anh/chị ạ. Em xin phép trao đổi lại với quản lý để có buổi trao đổi cụ thể hơn về giá trị và định hướng hợp tác, đảm bảo phù hợp nhất với mong muốn của anh/chị."
 

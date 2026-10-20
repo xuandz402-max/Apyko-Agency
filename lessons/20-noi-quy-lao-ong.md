@@ -67,7 +67,6 @@ Khen thưởng: hoàn thành xuất sắc/vượt KPI từ 120% trở lên, đó
 Kỷ luật: vi phạm bị lập biên bản xử phạt 3 lần trong 1 tháng sẽ buộc thôi việc. Số lần vi phạm tính lại từ đầu mỗi khi sang tháng mới.
 
 | Loại vi phạm | Mức xử lý |
-|---|---|
 | Đi muộn 10–30 phút | Làm bù 30 phút |
 | Đi muộn 30–60 phút | Tính 50% công buổi sáng |
 | Đi muộn trên 60 phút | Không tính công buổi sáng |

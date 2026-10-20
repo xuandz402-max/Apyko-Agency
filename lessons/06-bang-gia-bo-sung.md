@@ -11,7 +11,6 @@ Ngoài 2 gói vận hành chính (Apyko Uni Care/Master Care), team còn có cá
 ### Tăng chỉ số lượt bán
 
 | Gói | Số sản phẩm | Tổng số lượt bán | Phí dịch vụ |
-|---|---|---|---|
 | A1 | 5-10 SP | 200 lượt bán | 300.000đ |
 | A2 | 5-10 SP | 500 lượt bán | 675.000đ |
 | A3 | 5-10 SP | 1.000 lượt bán | 1.300.000đ |
@@ -25,7 +24,6 @@ Ngoài 2 gói vận hành chính (Apyko Uni Care/Master Care), team còn có cá
 ### Tăng Follow
 
 | Số lượng Follow | Phí dịch vụ |
-|---|---|
 | 1.000 | 150.000đ |
 | 3.000 | 400.000đ |
 | 5.000 | 650.000đ |
@@ -41,7 +39,6 @@ Chính sách bảo hành: lần 1 — TA Team hỗ trợ phí xử lý đơn, sh
 ### Bảng giá đăng sản phẩm
 
 | Gói | S1 (Dưới 15 SP) | S2 (15-30 SP) | S3 (30-50 SP) | S4 (50-100 SP) | S5 (Trên 100 SP) |
-|---|---|---|---|---|---|
 | Cơ bản (khách gửi link SP tương tự/thông tin SP) | 200.000đ | 10.000đ/SP | 9.000đ/SP | 8.000đ/SP | 7.000đ/SP |
 | Plus (tối ưu tên + mô tả) | 300.000đ | 18.000đ/SP | 17.000đ/SP | 16.000đ/SP | 15.000đ/SP |
 | Pro (tối ưu tên, mô tả, ảnh bìa) | 500.000đ | 28.000đ/SP | 27.000đ/SP | 26.000đ/SP | 25.000đ/SP |
@@ -49,7 +46,6 @@ Chính sách bảo hành: lần 1 — TA Team hỗ trợ phí xử lý đơn, sh
 ### Thiết kế lẻ
 
 | Dịch vụ | Chi phí |
-|---|---|
 | 1 Banner | 250.000đ |
 | 2 Banner | 450.000đ |
 | 3 Banner | 600.000đ |
@@ -65,7 +61,6 @@ Thanh toán trước 100%, kích hoạt trong 1-2 ngày làm việc sau khi Apyk
 An toàn với sàn Shopee — dịch vụ được sàn công bố và chấp nhận, hiện không vi phạm chính sách.
 
 | Hạng mục | Khởi nghiệp | Nâng cao | Siêu cấp |
-|---|---|---|---|
 | Phù hợp | Shop mới | Shop tăng trưởng | Shop quy mô lớn |
 | Thời hạn gói | 1 tháng | 3 tháng | 3 tháng |
 | Phí cứng | 3.500.000đ | 10.000.000đ | 15.000.000đ |
@@ -85,7 +80,6 @@ Lưu ý: gói Nâng Cao và Siêu Cấp có nhiều tùy biến và tiêu chuẩ
 ## 4. Gói Tối ưu Quảng cáo
 
 | Hạng mục | 1 Tháng | 3 Tháng | 6 Tháng | 12 Tháng |
-|---|---|---|---|---|
 | Phí cứng (tối đa 5 SP) | 2.000.000đ | 6.000.000đ | 12.000.000đ | 23.000.000đ |
 | Tổng thanh toán (tối đa 5 SP) | 2.160.000đ | 6.480.000đ | 12.960.000đ | 24.840.000đ |
 | Phí cứng (tối đa 10 SP) | 3.000.000đ | 9.000.000đ | 18.000.000đ | 35.000.000đ |

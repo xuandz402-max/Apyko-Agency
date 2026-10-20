@@ -4,7 +4,7 @@
 
 ✓ Đã học
 
-🎧 Video tóm tắt (~1,2 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1,2 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Nhiều nhân sự nghĩ chat với khách chỉ là việc "trả lời cho lịch sự" — thực ra đây là 1 trong những điểm chạm ảnh hưởng trực tiếp nhất tới việc chốt đơn. Khách đang phân vân giữa 2-3 shop bán y hệt nhau, ai trả lời nhanh và đúng trọng tâm hơn thường là người chốt được đơn trước.
 

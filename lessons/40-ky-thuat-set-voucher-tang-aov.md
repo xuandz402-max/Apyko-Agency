@@ -2,7 +2,7 @@
 
 ## 2 Kỹ thuật Set Voucher tăng AOV + Xây bậc thang khuyến mãi
 
-🎧 Video tóm tắt (~1,8 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1,8 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Từ tư duy "voucher = đòn bẩy AOV" ở bài trước, dưới đây là 2 kỹ thuật cụ thể để áp dụng, và cách xây cả hệ thống bậc thang khuyến mãi cho 1 gian hàng.
 
@@ -33,7 +33,6 @@ Thay vì áp cho toàn shop kèm điều kiện, tạo 1 mã giảm giá cố đ
 Một gian hàng hoàn toàn có thể setup nhiều mã giảm giá theo nhiều mức (level) cùng lúc, áp dụng đúng nguyên tắc "chi càng nhiều, ưu đãi càng tốt" để tạo cảm giác mua hời thật sự ở mọi phân khúc khách hàng:
 
 | Mức | Ngưỡng đơn hàng | Mức giảm | Mục tiêu |
-|---|---|---|---|
 | 1 | Ngang giá 1 sản phẩm phổ biến | Giảm nhỏ | Chuyển đổi khách mới, chưa cần đẩy AOV mạnh |
 | 2 | Cao hơn giá 1 sản phẩm chủ lực | Giảm vừa | Ép mua thêm 1 sản phẩm phụ — đúng nguyên tắc mồi nhử AOV |
 | 3 | Cao hơn hẳn, tương đương 2-3 sản phẩm | Giảm sâu nhất | Khách chi tiêu lớn cảm thấy xứng đáng, tối đa AOV |

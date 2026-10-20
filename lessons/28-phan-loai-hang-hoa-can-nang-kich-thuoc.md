@@ -2,7 +2,7 @@
 
 ## Phân loại hàng hóa, cân nặng/kích thước
 
-🎧 Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Đây là bước kiểm soát chi phí then chốt. Thiết lập sai sẽ gây hao hụt trực tiếp vào hiệu suất doanh thu của gian hàng.
 

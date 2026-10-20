@@ -10,7 +10,7 @@ Cài đặt Mã giảm giá (Voucher), Deal Sốc (Mua kèm deal sốc), Combo k
 
 # Công cụ giữ chân khách hàng
 
-🎧 Video tóm tắt (~1,6 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1,6 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Phần lớn nhân sự khi mới vận hành chỉ tập trung vào việc tìm khách mới (chạy quảng cáo, tối ưu hiển thị) mà quên mất 1 nguồn doanh thu rẻ hơn nhiều: khách đã từng mua rồi quay lại mua tiếp. Để có 1 khách mới, shop phải tốn chi phí quảng cáo/khuyến mãi để họ biết tới mình lần đầu — còn khách cũ đã tin tưởng sẵn, chi phí để họ quay lại luôn thấp hơn hẳn.
 

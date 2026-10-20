@@ -12,7 +12,7 @@ Quản trị và xây hệ thống
 
 Quy trình bên dưới áp dụng theo Quy định Đặt & Xử lý Order Thiết kế — Số QĐ-DESIGN-01/2026 (Apyko Uni Group, ban hành 08/2026), thay thế quy trình 7 bước TK-01 Giai đoạn 2 (18/07/2026) đã học trước đây.
 
-🎨 Mở phần mềm Đặt thiết kế trên App Care →
+ Mở phần mềm Đặt thiết kế trên App Care →
 
 Văn bản áp dụng: QĐ-DESIGN-01/2026 · Phạm vi: Apyko Uni Group · Apyko Uni Care · Apyko Uni Win · Cập nhật bài học: 10/08/2026.
 
@@ -106,7 +106,7 @@ Bước 2-3-4-6 (Team Design nhận job, làm demo, xuất file) diễn ra trên
 
 ## Nguyên tắc bắt buộc
 
-⚠️ Bắt buộc — không được bỏ qua
+ Bắt buộc — không được bỏ qua
 
 - Order thường chỉ đặt được trong 2 khung giờ cố định: Ngày 1–5 hàng tháng, hoặc sáng Thứ Ba & Thứ Sáu 9:00–12:00. Ngoài 2 khung này không đặt được.
 

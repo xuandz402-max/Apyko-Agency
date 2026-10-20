@@ -9,7 +9,6 @@ Tài liệu này phân chân dung khách hàng Apyko Uni Care theo nguồn lực
 ## Bảng tổng hợp 3 nhóm khách hàng
 
 | Tiêu chí | Chân dung 1 — Người mới | Chân dung 2 — Đã có kinh nghiệm | Chân dung 3 — Chuyên nghiệp |
-|---|---|---|---|
 | Kinh nghiệm bán sàn | Chưa có hoặc rất ít | Đã có kinh nghiệm nhất định | Dày dặn |
 | Doanh thu hiện tại | Rất thấp hoặc chưa có | Đang mắc kẹt ở một mức doanh thu nhất định | Tối thiểu 300 triệu mỗi tháng |
 | Nguồn lực | Chủ yếu cá nhân, ít ngân sách | Có nguồn lực hàng hóa tốt nhưng chưa làm bài bản | Có vốn, nguồn hàng và nhân sự |

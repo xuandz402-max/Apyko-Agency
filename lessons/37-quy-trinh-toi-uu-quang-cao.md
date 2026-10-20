@@ -4,7 +4,7 @@
 
 ✓ Đã học
 
-🎧 Video tóm tắt (~3,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~3,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 ## Giai đoạn 1: Phân tích insight khách hàng để nắm Key
 
@@ -31,7 +31,6 @@ Biến KEY thành thứ khách nhìn thấy (hình ảnh, mô tả, giá) và th
 ### Ba mức từ khóa theo nhu cầu
 
 | Mức | Loại từ khóa | Ví dụ | Vai trò trong tên sản phẩm | ROAS dự kiến |
-|---|---|---|---|---|
 | 1 | Khám phá rộng | "áo thun nam" | Đặt vào, phải kèm thuộc tính | Thấp, cạnh tranh cao |
 | 2 | Có thuộc tính | "áo thun form rộng" | Chủ lực, bắt buộc có | Ổn, khả năng lãi cao |
 | 3 | Đích danh Brand | "Coolmate" | Bắt buộc có nếu có Brand | Cao nhất |
@@ -69,7 +68,6 @@ Hỏi câu quan trọng trước khi đặt ROAS: đã và đang có gì? Có Br
 ### Lộ trình 4 tuần chạy quảng cáo
 
 | Tuần | Việc làm |
-|---|---|
 | Tuần 1: Test | Cài ROAS mục tiêu, ngân sách thử. Xem chỉ số thu về. Chưa kết luận lời/lỗ. |
 | Tuần 2: Quyết định | Dựa vào data Tuần 1. Tốt → giữ/tăng. Ít View → hạ ROAS. Nhiều click ít đơn → sửa sản phẩm. |
 | Tuần 3: Kết quả rõ | Vẫn ít đơn/ROAS thấp → vấn đề do sản phẩm (quay lại Giai đoạn 2). Bơm tiền vào sản phẩm yếu là phí tiền. |

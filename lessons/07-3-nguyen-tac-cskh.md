@@ -4,7 +4,7 @@
 
 ✓ Đã học
 
-🎧 Video tóm tắt (~1,1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1,1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Đây là 3 nguyên tắc bắt buộc tuân thủ khi giao tiếp với khách hàng tại Apyko Uni Care — vi phạm làm giảm sự chuyên nghiệp và uy tín của cả team trong mắt khách hàng. Áp dụng cho MỌI kênh: chat, gọi điện, email, họp trực tiếp.
 
@@ -14,7 +14,7 @@ Tư duy: Khách hàng trả tiền để sử dụng dịch vụ, chúng ta khô
 
 Nghiêm cấm
 
-❌ Sai
+ Sai
 
 "Anh chị đợi chút em gửi cho anh chị ạ."
 
@@ -24,7 +24,7 @@ VS
 
 Chuẩn mực
 
-✅ Đúng
+ Đúng
 
 "Dạ anh chị đợi một lát, em chuẩn bị tài liệu rồi gửi anh/chị ạ."
 
@@ -36,7 +36,7 @@ Tư duy: Từ "nhé" mang tính chất suồng sã, làm mất đi sự trang tr
 
 Nghiêm cấm
 
-❌ Sai
+ Sai
 
 "Anh chị gửi file giúp em nhé."
 
@@ -46,7 +46,7 @@ VS
 
 Chuẩn mực
 
-✅ Đúng
+ Đúng
 
 Thay thế hoàn toàn bằng từ "nha ạ" hoặc "ạ".
 
@@ -58,7 +58,7 @@ Tư duy: Khách hàng mua "Kết quả" từ Apyko Uni Care, không quan tâm n�
 
 Nghiêm cấm — đùn đẩy
 
-❌ Sai
+ Sai
 
 "Dạ ảnh này bên Design làm, anh chị đợi lát em nhắn bạn ấy sửa."
 
@@ -66,7 +66,7 @@ VS
 
 Chuẩn mực
 
-✅ Đúng
+ Đúng
 
 "Dạ vâng ạ, em đã ghi nhận yêu cầu. Em sẽ lên phương án tối ưu lại và gửi anh/chị bản mới nha ạ."
 

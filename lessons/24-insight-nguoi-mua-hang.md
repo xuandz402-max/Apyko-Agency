@@ -38,7 +38,7 @@ Ghép lại theo công thức, ra đúng insight đã học ở ví dụ dưới
 
 Hiểu hời hợt
 
-❌ Ai cũng nói được
+ Ai cũng nói được
 
 Ngành mẹ và bé: "Khách mua đồ cho con vì cần đồ dùng cho bé." — đúng nhưng vô nghĩa, không giúp biết nên viết nội dung nhấn vào điều gì.
 
@@ -46,7 +46,7 @@ VS
 
 Insight thật
 
-✅ Đây mới dùng được
+ Đây mới dùng được
 
 Ngành mẹ và bé: mẹ mua đồ cho con sợ nhất là mua phải hàng kém an toàn — luôn ưu tiên sản phẩm có bằng chứng rõ ràng (chứng nhận, nguồn gốc) hơn là sản phẩm chỉ đẹp/rẻ. Biết insight này thì mới biết nội dung PHẢI nhấn vào đâu.
 
@@ -114,7 +114,7 @@ Khách DỪNG LẠI (vì thấy đúng nỗi lo/mong muốn của mình) → kh�
 
 Mô tả sản phẩm chung chung
 
-❌ Chỉ liệt kê thông số
+ Chỉ liệt kê thông số
 
 "Bình sữa cho bé, dung tích 250ml, chất liệu nhựa PP, có 3 màu." — đúng thông tin nhưng không có lý do gì khiến khách chọn shop này thay vì shop khác bán y hệt.
 
@@ -122,7 +122,7 @@ VS
 
 Mô tả đúng insight
 
-✅ Chạm đúng nỗi lo
+ Chạm đúng nỗi lo
 
 "Bình sữa chất liệu PP nguyên sinh, ĐÃ KIỂM NGHIỆM an toàn không BPA — mẹ yên tâm cho bé dùng hằng ngày, đầy đủ giấy chứng nhận đính kèm khi giao hàng." — chạm đúng nỗi lo "sợ mua phải hàng kém an toàn" của người mua ngành mẹ và bé.
 

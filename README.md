@@ -198,6 +198,33 @@ tài khoản đã đăng nhập đều xem được**:
   `{san_pham}`: nhân viên tự thay bằng thông tin thật trước khi gửi,
   app không tự điền.
 
+## 🔗 Affiliate
+
+Trang **🔗 Affiliate** (sidebar sau GMV Max Shopee, `/affiliate`) gồm 2
+tab, xem được khi có quyền **Xem sản phẩm** (kiểm tra ở máy chủ, thiếu
+quyền thì ẩn menu + chặn 403):
+
+- **📊 Bảng theo dõi** — bảng `affiliate_links`: mỗi dòng là 1 link tiếp
+  thị liên kết với tên sản phẩm (gõ tay, không khóa cứng vào bảng sản
+  phẩm), nền tảng (Shopee/TikTok/Facebook/Zalo/Khác), link affiliate,
+  **Sub ID** (mã định danh theo bài quảng cáo), % hoa hồng, lượt click,
+  số đơn, hoa hồng dự kiến và hoa hồng **thực nhận**, nguồn dữ liệu +
+  ghi chú. Số liệu là số **tích lũy theo từng link**, nhập tay từ báo
+  cáo của nền tảng — vì vậy trang **không dùng thanh chọn kỳ** (lọc
+  theo ngày cập nhật với số tích lũy là vô nghĩa); thay vào đó có ô tìm
+  kiếm theo tên sản phẩm/Sub ID, lọc theo nền tảng và nút **Xuất CSV**.
+  Chỉ số server tự tính: **CVR = Đơn / Click (%)** và
+  **EPC = Hoa hồng thực nhận / Click (VNĐ/click)**; click = 0 thì hiện
+  "—". Thêm/sửa cần quyền **Thêm/sửa sản phẩm**, xóa cần quyền **Xóa
+  sản phẩm**. Thẻ tổng đầu trang chỉ cộng hoa hồng **thực nhận** — con
+  số sự thật cuối cùng, không dùng số dự kiến.
+- **📖 Nội dung bài: Shopee tiếp thị liên kết** — toàn bộ bài thuyết
+  trình Google Slides do chủ shop cung cấp, **đồng bộ nguyên văn 100%,
+  không cắt bỏ, không tóm tắt**: đủ **54 slide** theo đúng thứ tự, dữ
+  liệu tĩnh ở `app/data/affiliate_deck.json`. 26 slide có chữ được in
+  nguyên văn từng đoạn; 28 slide chỉ gồm ảnh chụp minh họa trong bản
+  gốc (không có chữ) được ghi chú rõ ngay tại vị trí của slide.
+
 ## Dashboard CEO
 
 Trang **👑 Dashboard CEO** (sidebar, ngay dưới Dashboard, đường dẫn `/ceo`)

@@ -24,7 +24,19 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 
-from . import auth, backup, ceo, checklist, config, gmv_charts, importer, lessons, periods, pricing
+from . import (
+    affiliate,
+    auth,
+    backup,
+    ceo,
+    checklist,
+    config,
+    gmv_charts,
+    importer,
+    lessons,
+    periods,
+    pricing,
+)
 from . import database as db
 from .auth import (
     ApiCanDeleteProducts,
@@ -2894,4 +2906,164 @@ def page_cskh_delete(request: Request, item_id: int):
         raise HTTPException(status_code=404, detail="Không tìm thấy mẫu.")
     return RedirectResponse(
         url="/cskh?msg=" + quote("Đã xóa mẫu."), status_code=303
+    )
+
+
+# ------------------------------ affiliate ----------------------------------
+# Trang /affiliate gồm 2 tab: "theo-doi" (bảng tracker số tích lũy theo
+# link) và "noi-dung" (bài "Shopee tiếp thị liên kết" nguyên văn từ file
+# app/data/affiliate_deck.json). Tracker KHÔNG dùng thanh chọn kỳ: số liệu
+# là tích lũy theo link (không phải theo ngày) nên lọc kỳ theo updated_at
+# là vô nghĩa — thay bằng tìm kiếm tên sản phẩm/Sub ID + lọc nền tảng.
+
+
+def _affiliate_rows(q: str | None, platform: str | None) -> list:
+    rows = db.affiliate_list(q, platform)
+    for row in rows:
+        row["calc"] = affiliate.calc_affiliate(row)
+    return rows
+
+
+@router.get("/affiliate", response_class=HTMLResponse)
+def page_affiliate(
+    request: Request,
+    tab: str | None = None,
+    q: str | None = None,
+    platform: str | None = None,
+    edit: int | None = None,
+    err: str | None = None,
+    msg: str | None = None,
+):
+    user, redir = auth.page_guard(request, "can_view_products")
+    if redir:
+        return redir
+    tab = tab if tab in ("theo-doi", "noi-dung") else "theo-doi"
+    platform = platform if platform in affiliate.PLATFORMS else None
+    rows = _affiliate_rows(q, platform)
+    edit_item = db.affiliate_get(edit) if edit and tab == "theo-doi" else None
+    return templates.TemplateResponse(
+        "affiliate.html",
+        _ctx(
+            request,
+            user,
+            tab=tab,
+            rows=rows,
+            totals=affiliate.affiliate_totals(rows),
+            platforms=affiliate.PLATFORMS,
+            q=q or "",
+            platform=platform or "",
+            edit_item=edit_item,
+            deck=affiliate.load_deck() if tab == "noi-dung" else None,
+            can_edit=bool(user.get("can_add_edit_products")),
+            can_delete=bool(user.get("can_delete_products")),
+            err=err,
+            msg=msg,
+        ),
+    )
+
+
+_AFFILIATE_CSV_FIELDS = [
+    ("product_name", "Sản phẩm"),
+    ("platform", "Nền tảng"),
+    ("affiliate_link", "Link affiliate"),
+    ("sub_id", "Sub ID"),
+    ("commission_rate", "% hoa hồng"),
+    ("clicks", "Click"),
+    ("orders", "Đơn"),
+    ("cvr", "CVR (%)"),
+    ("commission_estimated", "Hoa hồng dự kiến (VNĐ)"),
+    ("commission_received", "Hoa hồng thực nhận (VNĐ)"),
+    ("epc", "EPC (VNĐ/click)"),
+    ("data_source", "Nguồn dữ liệu"),
+    ("note", "Ghi chú"),
+    ("updated_by", "Cập nhật bởi"),
+    ("updated_at", "Cập nhật lúc"),
+]
+
+
+@router.get("/affiliate/export")
+def page_affiliate_export(
+    request: Request,
+    q: str | None = None,
+    platform: str | None = None,
+):
+    user, redir = auth.page_guard(request, "can_view_products")
+    if redir:
+        return redir
+    platform = platform if platform in affiliate.PLATFORMS else None
+    rows = _affiliate_rows(q, platform)
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([label for _, label in _AFFILIATE_CSV_FIELDS])
+    for row in rows:
+        values = []
+        for field, _label in _AFFILIATE_CSV_FIELDS:
+            if field in ("cvr", "epc"):
+                v = row["calc"][field]
+                values.append("" if v is None else v)
+            else:
+                values.append(row.get(field, ""))
+        writer.writerow(values)
+    payload = buf.getvalue().encode("utf-8-sig")
+    filename = "affiliate_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".csv"
+    return StreamingResponse(
+        io.BytesIO(payload),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+async def _affiliate_form_payload(request: Request) -> tuple:
+    form = await request.form()
+    return affiliate.validate_affiliate_payload(dict(form))
+
+
+def _affiliate_err_redirect(errors: dict, edit_id: int | None = None):
+    message = "; ".join(errors.values()) or "Dữ liệu chưa hợp lệ."
+    url = "/affiliate?err=" + quote(message)
+    if edit_id:
+        url += f"&edit={edit_id}"
+    return RedirectResponse(url=url, status_code=303)
+
+
+@router.post("/affiliate")
+async def page_affiliate_create(request: Request):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    clean, errors = await _affiliate_form_payload(request)
+    if errors:
+        return _affiliate_err_redirect(errors)
+    db.affiliate_upsert(clean, _cskh_actor(user))
+    return RedirectResponse(
+        url="/affiliate?msg=" + quote("Đã thêm link affiliate."), status_code=303
+    )
+
+
+@router.post("/affiliate/{item_id}/edit")
+async def page_affiliate_edit(request: Request, item_id: int):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    if db.affiliate_get(item_id) is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy link affiliate.")
+    clean, errors = await _affiliate_form_payload(request)
+    if errors:
+        return _affiliate_err_redirect(errors, edit_id=item_id)
+    clean["id"] = item_id
+    db.affiliate_upsert(clean, _cskh_actor(user))
+    return RedirectResponse(
+        url="/affiliate?msg=" + quote("Đã lưu thay đổi."), status_code=303
+    )
+
+
+@router.post("/affiliate/{item_id}/delete")
+def page_affiliate_delete(request: Request, item_id: int):
+    user, redir = auth.page_guard(request, "can_delete_products")
+    if redir:
+        return redir
+    if not db.affiliate_delete(item_id):
+        raise HTTPException(status_code=404, detail="Không tìm thấy link affiliate.")
+    return RedirectResponse(
+        url="/affiliate?msg=" + quote("Đã xóa link affiliate."), status_code=303
     )

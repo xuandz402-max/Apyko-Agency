@@ -2,25 +2,25 @@
 
 ## Apyko Uni là gì?
 
-🎧 Video tóm tắt (~2,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~2,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 →
 
 Đọc bài này đầu tiên — 3 phút để hiểu rõ Apyko Uni Care Uni dùng để làm gì, trước khi bắt đầu học hoặc tra cứu bất kỳ nội dung nào khác.
 
-## 1.  Uni là gì?
+## 1. Uni là gì?
 
 Apyko Uni Care Uni (gọi tắt là "Uni") là nền tảng đào tạo và tra cứu quy trình nội bộ của Apyko Uni Care — nơi lưu toàn bộ kiến thức, quy trình làm việc và bài đánh giá năng lực của công ty ở một chỗ duy nhất, thay vì rải rác trong nhiều file/nhóm chat khác nhau.
 
-📚 Khóa học
+ Khóa học
 
 Kiến thức chuyên môn Shopee, CSKH, văn hóa công ty, bảng giá dịch vụ...
 
-🔁 Quy trình làm việc
+ Quy trình làm việc
 
 Tài liệu tra cứu các bước thao tác thực tế — mở ra là dùng ngay khi cần, không phải bài học để đọc-rồi-tick.
 
-📝 Bài thi
+ Bài thi
 
 Kiểm tra năng lực định kỳ theo từng chuyên môn.
 
@@ -71,7 +71,6 @@ Xem Mô tả công việc đúng vị trí đang đảm nhận.
 ## 4. Dẫn đường từng mục trong menu
 
 | Nhóm | Mục | Dùng để làm gì | Ai thấy được |
-|---|---|---|---|
 | — | Tổng quan | Trang chủ — ô tìm kiếm quy trình/khóa học, tiến độ học/thi cá nhân, checklist Onboarding hôm nay (nếu đang chạy chương trình) | Tất cả |
 | Đào tạo | Khóa học | Toàn bộ khóa học, chia theo nhóm: CSKH & Quan hệ khách hàng, Quy định công ty, Chuyên môn vận hành | Tất cả |
 | Đào tạo | Quy trình làm việc | Tài liệu tra cứu thao tác thực tế — mở ra dùng ngay khi cần, chia theo quy trình hằng ngày/cố định/tiêu chuẩn | Tất cả |

@@ -2,7 +2,7 @@
 
 ## Khi cam kết bị "trôi" — Lỡ hứa mà chưa làm kịp, đừng để khách phải hỏi lại
 
-🎧 Video tóm tắt (~1,4 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1,4 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Bài trước đã học nguyên tắc "chủ động báo trước" — bài này đi sâu vào 1 tình huống rất hay gặp khi KHÔNG áp dụng đúng nguyên tắc đó: nhân sự đã hứa với khách 1 việc cụ thể ("em gửi ngay trong hôm nay", "chiều em báo lại anh/chị") nhưng chưa làm kịp — và không chủ động báo lại, để lời hứa đó "trôi" cho tới khi khách phải tự nhắn hỏi lại "sao chưa thấy gửi vậy em".
 
@@ -10,7 +10,7 @@ Vì sao "trôi" nguy hiểm hơn cả trễ: trễ nhưng có báo trước vẫ
 
 Để cam kết bị trôi
 
-❌ Sai
+ Sai
 
 Hứa "chiều nay em gửi báo cáo" nhưng bận việc khác nên quên mất. Đến tối vẫn chưa gửi, không báo gì. Hôm sau khách nhắn: "Ủa báo cáo chiều qua sao chưa thấy gửi em ơi?"
 
@@ -18,7 +18,7 @@ VS
 
 Chủ động báo ngay khi nhận ra sắp trễ
 
-✅ Đúng
+ Đúng
 
 Giữa chiều nhận ra không kịp làm báo cáo như đã hứa → chủ động nhắn ngay: "Dạ em xin lỗi, chiều nay em phát sinh việc gấp nên báo cáo sẽ gửi anh/chị chậm hơn dự kiến, chắc chắn có trước 9h sáng mai ạ." — báo TRƯỚC khi khách kịp hỏi.
 

@@ -238,6 +238,22 @@ CREATE TABLE IF NOT EXISTS cskh_templates (
     updated_by TEXT DEFAULT '',
     updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS affiliate_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_name TEXT NOT NULL,
+    platform TEXT NOT NULL DEFAULT 'Shopee',
+    affiliate_link TEXT NOT NULL DEFAULT '',
+    sub_id TEXT NOT NULL DEFAULT '',
+    commission_rate REAL NOT NULL DEFAULT 0,
+    clicks INTEGER NOT NULL DEFAULT 0,
+    orders INTEGER NOT NULL DEFAULT 0,
+    commission_estimated REAL NOT NULL DEFAULT 0,
+    commission_received REAL NOT NULL DEFAULT 0,
+    data_source TEXT NOT NULL DEFAULT '',
+    note TEXT NOT NULL DEFAULT '',
+    updated_by TEXT DEFAULT '',
+    updated_at TEXT NOT NULL
+);
 """
 
 # Migration cộng thêm cho các DB đã tồn tại trước module Daily Checklist:
@@ -1463,4 +1479,86 @@ def cskh_upsert(d: dict, updated_by: str = "") -> int:
 def cskh_delete(template_id: int) -> bool:
     with get_conn() as conn:
         cur = conn.execute("DELETE FROM cskh_templates WHERE id = ?", (template_id,))
+        return cur.rowcount > 0
+
+
+# ------------------------------ affiliate tracker ------------------------------
+# Bảng theo dõi link tiếp thị liên kết (thiết kế §6 của chủ shop): số liệu
+# TÍCH LŨY theo từng link, nhập tay từ báo cáo của nền tảng (Shopee
+# Affiliate, TikTok Shop...). commission_received là con số sự thật cuối
+# cùng; CVR/EPC do server tính ở app/affiliate.py, không lưu xuống DB.
+
+AFFILIATE_COLUMNS = [
+    "id",
+    "product_name",
+    "platform",
+    "affiliate_link",
+    "sub_id",
+    "commission_rate",
+    "clicks",
+    "orders",
+    "commission_estimated",
+    "commission_received",
+    "data_source",
+    "note",
+    "updated_by",
+    "updated_at",
+]
+
+
+def affiliate_list(q: str | None = None, platform: str | None = None) -> list:
+    """Danh sách link affiliate; `q` lọc theo tên sản phẩm hoặc Sub ID."""
+    clauses: list[str] = []
+    params: list = []
+    if q and q.strip():
+        like = "%" + q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+        clauses.append("(product_name LIKE ? ESCAPE '\\' OR sub_id LIKE ? ESCAPE '\\')")
+        params.extend([like, like])
+    if platform:
+        clauses.append("platform = ?")
+        params.append(platform)
+    sql = "SELECT * FROM affiliate_links"
+    if clauses:
+        sql += " WHERE " + " AND ".join(clauses)
+    sql += " ORDER BY updated_at DESC, id DESC"
+    with get_conn() as conn:
+        rows = conn.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+def affiliate_get(item_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM affiliate_links WHERE id = ?", (item_id,)
+        ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def affiliate_upsert(d: dict, updated_by: str = "") -> int:
+    """Thêm mới hoặc cập nhật link affiliate (theo "id" nếu có). Trả về id."""
+    data = {k: v for k, v in d.items() if k in AFFILIATE_COLUMNS and k != "id"}
+    data["updated_by"] = updated_by
+    data["updated_at"] = _utcnow()
+    item_id = d.get("id")
+    with get_conn() as conn:
+        if item_id:
+            cur = conn.execute(
+                f"UPDATE affiliate_links SET {', '.join(f'{k} = ?' for k in data)}"
+                " WHERE id = ?",
+                [*data.values(), item_id],
+            )
+            if cur.rowcount:
+                return int(item_id)
+        cols = list(data.keys())
+        placeholders = ", ".join("?" for _ in cols)
+        cur = conn.execute(
+            f"INSERT INTO affiliate_links ({', '.join(cols)}) VALUES ({placeholders})",
+            [data[c] for c in cols],
+        )
+        return cur.lastrowid
+
+
+def affiliate_delete(item_id: int) -> bool:
+    with get_conn() as conn:
+        cur = conn.execute("DELETE FROM affiliate_links WHERE id = ?", (item_id,))
         return cur.rowcount > 0

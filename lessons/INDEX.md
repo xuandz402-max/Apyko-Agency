@@ -39,7 +39,7 @@
 37. [Công cụ quảng cáo Shopee](36-cong-cu-quang-cao-shopee.md) (1952 ký tự)
 38. [Quy trình tối ưu quảng cáo](37-quy-trinh-toi-uu-quang-cao.md) (4476 ký tự)
 39. [Xây dựng hệ sinh thái Traffic](38-xay-dung-he-sinh-thai-traffic.md) (1565 ký tự)
-40. [Tư duy AOV:  "giảm giá"](39-tu-duy-aov-giam-gia.md) (2171 ký tự)
+40. [Tư duy AOV: "giảm giá"](39-tu-duy-aov-giam-gia.md) (2171 ký tự)
 41. [Kỹ thuật Set Voucher tăng AOV](40-ky-thuat-set-voucher-tang-aov.md) (3059 ký tự)
 42. [Quy trình làm việc](41-quy-trinh-lam-viec.md) (1805 ký tự)
 43. [Tiêu chuẩn Order — Hình ảnh & Banner](42-tieu-chuan-order-hinh-anh-banner.md) (7515 ký tự)

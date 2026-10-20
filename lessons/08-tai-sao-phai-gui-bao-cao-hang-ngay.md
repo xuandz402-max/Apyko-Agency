@@ -4,7 +4,7 @@
 
 ✓ Đã học
 
-🎧 Video tóm tắt (~1,1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1,1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 →
 
@@ -28,7 +28,7 @@ Nếu không may xảy ra tranh chấp với khách hàng, lịch sử báo cáo
 
 Không gửi báo cáo hàng ngày
 
-❌ Không có gì đối chứng
+ Không có gì đối chứng
 
 Khách thuê vận hành hoặc chạy ads. Công việc vẫn đang làm nhưng Zalo không hề có tin nhắn báo cáo ngày/tuần/tháng nào. Đúng lúc công việc không thuận lợi (VD quảng cáo chưa hiệu quả tuần đầu, shop bị hạn chế tính năng), khách lập tức phản ứng, quy chụp "bên mình không làm gì cả" — nhân sự không có gì để chứng minh ngược lại, chỉ biết giải thích bằng miệng.
 
@@ -36,7 +36,7 @@ VS
 
 Gửi báo cáo đều đặn mỗi ngày
 
-✅ Có bằng chứng rõ ràng
+ Có bằng chứng rõ ràng
 
 Cùng tình huống công việc gặp khó khăn, nhân sự mở lại lịch sử Zalo: đủ báo cáo ngày/tuần suốt thời gian qua, cho khách thấy rõ vẫn đang làm việc đều đặn, chỉ là kết quả cần thêm thời gian. Khách bình tĩnh lại vì có căn cứ thực tế, thay vì chỉ nghe lời giải thích suông.
 

@@ -12,7 +12,7 @@ Cách chuyển shop kèm toàn bộ việc đang dở sang nhân sự khác, xá
 
 Bàn giao chuyển shop kèm toàn bộ việc đang dở sang nhân sự khác — người nhận chỉ cần làm phần việc còn lại, tiến độ giữ nguyên theo shop.
 
-🔁 Mở trang Bàn giao shop trên App Care →
+ Mở trang Bàn giao shop trên App Care →
 
 ## Mục đích
 
@@ -72,7 +72,7 @@ Ngày bàn giao là mốc chia hiệu suất giữa 2 người: người cũ gi�
 
 - Hủy bàn giao: người bàn giao có thể chủ động hủy khi bàn giao còn ở trạng thái "Chờ xác nhận" (trước khi người nhận phản hồi) — bấm "Hủy bàn giao" ngay tại trang chi tiết shop.
 
-⚠️ Quy tắc quan trọng cần nhớ:
+ Quy tắc quan trọng cần nhớ:
 
 - Mỗi shop chỉ có 1 bàn giao đang chờ tại một thời điểm — muốn đổi người nhận thì phải hủy bàn giao cũ trước.
 

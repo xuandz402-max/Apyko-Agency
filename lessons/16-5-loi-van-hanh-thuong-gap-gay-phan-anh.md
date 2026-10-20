@@ -7,7 +7,6 @@ Khác với bài trước (khách không hài lòng nhưng chưa rõ nguyên nh�
 Mức độ nghiêm trọng phụ thuộc vào THỜI ĐIỂM phát hiện:
 
 | Tình huống | Phát hiện SỚM (trước khi ảnh hưởng khách) | Phát hiện MUỘN (khách đã phản ánh) |
-|---|---|---|
 | Cài sai giá sản phẩm | Tự sửa ngay, không cần báo cáo — đây là lỗi nội bộ tự khắc phục kịp thời. | Nếu đã có đơn với giá sai: báo cáo NGAY cho cấp trên/khách hàng thuê dịch vụ kèm số đơn bị ảnh hưởng. Tuyệt đối không tự ý huỷ đơn của người mua mà chưa có chỉ đạo — huỷ đơn ảnh hưởng trực tiếp tới tỷ lệ huỷ đơn và đánh giá của shop. |
 | Cài sai voucher (sai đối tượng/mức giảm/thời gian) | Tắt/sửa lại ngay khi phát hiện, kiểm tra không có đơn nào bị ảnh hưởng. | Kiểm tra chính xác số đơn đã dùng voucher sai + mức chênh lệch tài chính cụ thể. Báo cáo minh bạch, không làm nhẹ mức độ. Đề xuất phương án (giữ nguyên ưu đãi đã lỡ áp dụng hay xử lý khác) — đây là quyết định phải hỏi trước, không tự quyết. |
 | Quên cài CTKM đã lên kế hoạch | Cài bù ngay lập tức, báo cáo ngắn gọn về sự chậm trễ đã xử lý xong. | Nếu đã lỡ mất khung giờ vàng (VD qua hẳn ngày Sale lớn): đây là thiệt hại KHÔNG thể khắc phục được. Phải báo cáo trung thực, không né tránh, kèm đề xuất phương án bù đắp (VD ưu tiên CTKM tốt hơn ở đợt kế tiếp). |

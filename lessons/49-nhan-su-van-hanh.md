@@ -13,7 +13,6 @@ Sứ mệnh vị trí: Nhân sự Vận hành là người trực tiếp vận h
 ## Phạm vi phụ trách
 
 | Hạng mục | Mức quy chuẩn |
-|---|---|
 | Số shop phụ trách | 6 shop / nhân sự (Junior: tiêu chuẩn · Middle, Senior: tối thiểu) |
 | Cấp bậc áp dụng | Intern · Junior · Middle · Senior |
 | Gói dịch vụ vận hành | Apyko Uni Care · Master Care · Gói Tối ưu Quảng cáo (5 SP / 10 SP) |
@@ -46,7 +45,6 @@ Không bịa số liệu, không đổ lỗi cho yếu tố khách quan; nếu g
 Nhân sự Vận hành được đánh giá theo 3 nhóm KPI (áp dụng cho Junior, Middle, Senior — Intern không áp dụng KPI thưởng phạt):
 
 | Nhóm | Nội dung | Trọng số | Cách tính |
-|---|---|---|---|
 | Nhóm 1 — Đầu mục công việc | Báo cáo tuần, báo cáo tháng, kế hoạch tháng, ảnh/banner thiết kế đúng deadline | 60% | Tổng số tác vụ đã hoàn thành ÷ Tổng số tác vụ đã cam kết (cộng dồn tất cả shop) |
 | Nhóm 2 — Chăm sóc và Gia hạn | Chất lượng chăm sóc khách hàng + tỷ lệ đạt chỉ tiêu gia hạn hợp đồng | 25% | 50% × Điểm Chăm sóc khách hàng + 50% × Điểm Gia hạn hợp đồng |
 | Nhóm 3 — Cam kết doanh số | Tỷ lệ shop đạt mục tiêu doanh số đã chốt đầu tháng | 15% | Theo tỷ lệ shop đạt mục tiêu doanh số |
@@ -90,7 +88,6 @@ Nhóm 3 — Cam kết doanh số
 ## Đầu mục công việc cụ thể mỗi shop
 
 | Đầu mục | Số lượng cam kết | Deadline |
-|---|---|---|
 | Báo cáo hàng ngày | 1 báo cáo / ngày, điền tại mục "Báo cáo hàng ngày" | Trước 12h trưa hàng ngày, trên Apyko Uni |
 | Báo cáo tuần | 4 báo cáo / tháng | Trước 12h thứ Hai hàng tuần (báo cáo của tuần liền trước) |
 | Báo cáo tháng | 1 báo cáo / tháng | Trước 17h ngày kế tiếp khi kết thúc 1 tháng gói dịch vụ (không tính chủ nhật) |
@@ -124,12 +121,11 @@ Nhóm 3 — Cam kết doanh số
 
 ## Nhịp làm việc, Yêu cầu năng lực & Cơ chế lương
 
-🎧 Video tóm tắt (~2,7 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~2,7 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 ## Nhịp làm việc theo ngày, tuần, tháng
 
 | Nhịp | Đầu mục công việc |
-|---|---|
 | Hàng ngày | Buổi sáng: mở dashboard 6 shop, kiểm tra đơn hàng đêm qua, tỷ lệ chuyển đổi 24h, ngân sách quảng cáo còn lại · Phản hồi shop trong SLA 30 phút giờ làm việc · Cập nhật APP QLCV (báo cáo, ảnh, banner, doanh số thực tế) · điền báo cáo hàng ngày trước 12h trưa tại Apyko Uni · Cuối ngày: tổng kết trạng thái từng shop, ghi chú công việc ưu tiên hôm sau |
 | Hàng tuần | Nhân sự đánh dấu hoàn thành báo cáo tuần đã gửi shop trước 12h thứ Hai hàng tuần (báo cáo của tuần liền trước) · Họp giao ban nhóm 30 phút với Trưởng phòng Vận hành (đánh giá tuần vừa qua và định hướng tuần tới) · Tham gia buổi chia sẻ chuyên môn nội bộ (nếu có) |
 | Cuối tháng dịch vụ shop | Cập nhật số ảnh đã làm, số banner đã làm, doanh số thực tế, đánh dấu báo cáo tháng và kế hoạch tháng đã gửi shop trước 17h ngày kế tiếp khi kết thúc 1 tháng gói dịch vụ (không tính chủ nhật) |
@@ -137,7 +133,6 @@ Nhóm 3 — Cam kết doanh số
 ## Quy trình đánh giá KPI hàng tháng
 
 | Thời điểm | Hoạt động | Người thực hiện |
-|---|---|---|
 | Ngày 1 – 3 đầu tháng | Họp 1-1 chốt: mục tiêu doanh số từng shop, số ảnh/banner cam kết, chỉ tiêu gia hạn. Giám đốc chốt số cuối, ghi vào Lark Sheet "KPI VH Tháng X.YYYY" | Trưởng phòng Vận hành + Nhân sự + Giám đốc |
 | Trong tháng | Bộ phận Kiểm soát chất lượng rà soát nhóm chat shop, ghi nhận lỗi Chăm sóc khách hàng (lỗi nhẹ, lỗi nghiêm trọng, khiếu nại) | Kiểm soát chất lượng |
 | Ngày 3 tháng sau | Khóa toàn bộ số liệu đầu mục công việc và doanh số — sau ngày 3 không được sửa | Nhân sự |
@@ -170,7 +165,6 @@ Cơ chế khiếu nại kết quả KPI:
 Bài kiểm tra năng lực đầu vào: ứng viên và nhân sự nội bộ được đánh giá năng lực bằng Bài test KNL-VH-001 (40 câu trắc nghiệm) chia làm 4 tiêu chí:
 
 | Tiêu chí đánh giá | Trọng số | Số câu |
-|---|---|---|
 | Chuyên môn Vận hành và Quảng cáo Shopee | 40% | 16 |
 | Chăm sóc khách hàng | 25% | 10 |
 | Gia hạn hợp đồng | 15% | 6 |
@@ -181,7 +175,6 @@ Bài kiểm tra năng lực đầu vào: ứng viên và nhân sự nội bộ �
 Nhân sự Vận hành nhận thu nhập gồm 5 cấu phần. Intern chỉ áp dụng P1 + Trợ cấp (không có P2–P5, không áp dụng KPI thưởng phạt); từ Junior trở lên áp dụng đủ P1–P5 + Trợ cấp:
 
 | Mã | Cấu phần | Intern | Junior | Middle | Senior |
-|---|---|---|---|---|---|
 | P1 | Lương cơ bản | 4.000.000đ (thử việc 100%) | 7.000.000đ (thử việc 85%) | 7.500.000đ | 8.000.000đ |
 | — | Định biên shop | — | 6 shop (tiêu chuẩn) | 6 shop (tối thiểu) | 6 shop (tối thiểu) |
 | — | Chưa đủ năng lực cầm 6 shop | — | Khấu trừ 300.000đ/shop thiếu | Không áp dụng (bắt buộc đủ 6 shop) | Không áp dụng (bắt buộc đủ 6 shop) |
@@ -201,7 +194,6 @@ Xem đầy đủ 7 mức thưởng/phạt P2 (96–99%, 90–95%, 70–79%, 60�
 Tổng thu nhập dự kiến mỗi cấp:
 
 | Cấp | Tổng thu nhập dự kiến / tháng |
-|---|---|
 | Intern | 4.000.000đ |
 | Junior | 9.880.000đ |
 | Middle | 10.780.000đ |

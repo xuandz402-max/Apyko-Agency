@@ -8,7 +8,7 @@ Mốc triển khai và việc nhân sự cần làm ở từng gói Master Care 
 
 ## Gói Master 1 Tháng — Lộ trình 30 ngày
 
-🎧 Video tóm tắt (~1 phút 50 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1 phút 50 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 →
 
@@ -123,7 +123,6 @@ Quyền lợi độc quyền cho shop: tham gia SSP Apyko Uni Group (đối tác
 ## Cam kết doanh số và hoàn tiền KPI
 
 | Đối tượng shop | Mức cam kết |
-|---|---|
 | Shop mới hoặc dưới 50tr/tháng | Sau 3 tháng đạt tổng tối thiểu 150.000.000đ |
 | Shop đã có 50tr/tháng trở lên | Cần kiểm định shop để đưa ra cam kết cụ thể trong hợp đồng (theo từng case) |
 | Shop từ 300tr/tháng trở lên | Sau 3 tháng tăng tối thiểu +30% so với cùng kỳ 3 tháng trước |
@@ -247,7 +246,6 @@ Quyền lợi độc quyền cho shop: tham gia SSP Apyko Uni Group (đối tác
 ## Cam kết doanh số và hoàn tiền KPI
 
 | Đối tượng shop | Mức cam kết |
-|---|---|
 | Shop mới hoặc dưới 50tr/tháng | Sau 3 tháng đạt tổng tối thiểu 150.000.000đ |
 | Shop đã có 50tr/tháng trở lên | Cần kiểm định shop để đưa ra cam kết cụ thể trong hợp đồng (theo từng case) |
 | Shop từ 300tr/tháng trở lên | Sau 3 tháng tăng tối thiểu +30% so với cùng kỳ 3 tháng trước |

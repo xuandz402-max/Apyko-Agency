@@ -8,7 +8,7 @@ Nhận diện 100% rủi ro tiềm ẩn, đánh giá chính xác "sức khỏe" 
 
 ## Tổng quan quy trình & 7 bước rà soát
 
-🎧 Video tóm tắt (~1 phút 10 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1 phút 10 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 ## Mục đích
 

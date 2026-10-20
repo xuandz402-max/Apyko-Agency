@@ -4,7 +4,7 @@
 
 ✓ Đã học
 
-🎧 Video tóm tắt (~1,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Rất nhiều gian hàng khi mới vận hành chỉ tập trung vào 1 câu hỏi duy nhất: "làm sao để giá rẻ hơn đối thủ?". Cách này hiệu quả trong ngắn hạn, nhưng đẩy shop vào 1 cuộc đua không có điểm dừng — gọi là cuộc đua giá (race to the bottom).
 
@@ -22,7 +22,7 @@ Khi 5-10 gian hàng cùng bán 1 sản phẩm gần như giống hệt nhau, và
 
 Shop chưa định vị
 
-❌ Đua giá
+ Đua giá
 
 Tên shop không ai nhớ, ảnh sản phẩm rời rạc mỗi cái 1 kiểu, mô tả gian hàng để trống hoặc chép nguyên mẫu có sẵn. Khách chỉ mua vì đang rẻ nhất lúc tìm kiếm, tắt khuyến mãi là mất khách ngay.
 
@@ -30,7 +30,7 @@ VS
 
 Shop đã định vị
 
-✅ Có bản sắc
+ Có bản sắc
 
 Khách nhận ra ngay là "shop quen" chỉ qua 1 tấm ảnh sản phẩm nhờ phong cách nhất quán. Có lý do rõ ràng để quay lại (chất lượng, dịch vụ, chuyên môn ngách) — không chỉ vì giá tại thời điểm đó.
 

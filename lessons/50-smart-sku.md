@@ -6,35 +6,35 @@
 
 ├── 1. TƯ VẤN
 
-│   ├── Tư vấn về sản phẩm
+│ ├── Tư vấn về sản phẩm
 
-│   ├── Tư vấn tạo combo sản phẩm
+│ ├── Tư vấn tạo combo sản phẩm
 
-│   ├── Tư vấn nhân link sản phẩm
+│ ├── Tư vấn nhân link sản phẩm
 
-│   ├── Tư vấn gộp link sản phẩm
+│ ├── Tư vấn gộp link sản phẩm
 
-│   └── Tư vấn thêm phân loại mới
+│ └── Tư vấn thêm phân loại mới
 
 │
 
 ├── 2. THỰC HIỆN ĐĂNG BÀI
 
-│   ├── Đăng sản phẩm mới
+│ ├── Đăng sản phẩm mới
 
-│   ├── Tối ưu lại sản phẩm
+│ ├── Tối ưu lại sản phẩm
 
-│   └── Đăng sản phẩm chuẩn SEO
+│ └── Đăng sản phẩm chuẩn SEO
 
-│       ├── Ảnh
+│ ├── Ảnh
 
-│       ├── Video
+│ ├── Video
 
-│       ├── Bộ từ khóa sản phẩm
+│ ├── Bộ từ khóa sản phẩm
 
-│       ├── Nội dung
+│ ├── Nội dung
 
-│       └── Order thiết kế (ảnh/video)
+│ └── Order thiết kế (ảnh/video)
 
 │
 
@@ -46,7 +46,7 @@
 
 ├── Trong trường hợp thiếu 10 sản phẩm
 
-│   └── Tư vấn tạo combo / nhân link để bù đủ
+│ └── Tư vấn tạo combo / nhân link để bù đủ
 
 ├── Tháng 1: Tối ưu 10 sản phẩm
 

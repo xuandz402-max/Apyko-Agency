@@ -9,7 +9,6 @@ Nắm vững quy định và chính sách của Shopee là yêu cầu bắt bu�
 Sao Quả Tạ là hệ thống đánh giá mức độ tuân thủ của Người bán. Khi vi phạm, gian hàng sẽ bị cộng điểm phạt và áp dụng các biện pháp hạn chế tùy theo mức độ:
 
 | Mức điểm | Hình thức xử lý |
-|---|---|
 | 3 – 5 điểm | Tạm ẩn toàn bộ sản phẩm, mất quyền tham gia các chương trình khuyến mãi lớn của sàn. |
 | 6 – 11 điểm | Ngừng hỗ trợ phí vận chuyển (Freeship Xtra), mất quyền đăng sản phẩm mới. Tác động nghiêm trọng đến quyết định mua của khách hàng. |
 | Từ 15 điểm trở lên | Đình chỉ tài khoản vĩnh viễn và đóng băng số dư trong ví Shopee. |

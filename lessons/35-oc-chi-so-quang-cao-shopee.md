@@ -2,7 +2,7 @@
 
 ## Đọc chỉ số quảng cáo Shopee
 
-🎧 Video tóm tắt (~2,6 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~2,6 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Bài này giả định đã học "Hành trình khách hàng" (Buổi 1) và "Cơ bản về Shopee Ads" (Buổi 6). Nếu chưa nắm, quay lại 2 bài đó trước khi học tiếp phần chỉ số.
 
@@ -19,7 +19,6 @@ Hệ quả: quảng cáo hiển thị đúng người quan trọng hơn bao gi�
 Shop bán áo thun nam, giá 150.000đ/chiếc. 1 tuần chạy ads chi 500.000đ, kết quả:
 
 | Hiển thị | Click | Thêm giỏ | Bán |
-|---|---|---|---|
 | 50.000 lượt | 1.000 người | 100 người | 50 đơn |
 
 ## Các chỉ số hiển thị & tương tác

@@ -4,7 +4,7 @@
 
 ✓ Đã học
 
-🎧 Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+ Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 Cùng 1 lỗi xảy ra nhiều lần có mức độ nguy hiểm khác hẳn lỗi xảy ra 1 lần — vì mỗi lần lặp lại, sức chịu đựng của khách hàng giảm đi rõ rệt:
 
@@ -24,7 +24,7 @@ Nguyên tắc cốt lõi: từ lần lặp lại thứ 2, phải đổi hẳn c�
 
 Lặp lại y nguyên kịch bản cũ
 
-❌ Sai
+ Sai
 
 "Dạ em xin lỗi anh/chị, em sẽ chú ý hơn lần sau ạ."
 
@@ -34,7 +34,7 @@ VS
 
 Có nguyên nhân gốc + biện pháp cụ thể
 
-✅ Đúng
+ Đúng
 
 "Dạ em xin lỗi anh/chị vì lỗi này đã lặp lại. Sau khi rà soát kỹ, em nhận thấy nguyên nhân là [nêu đúng nguyên nhân cụ thể]. Để đảm bảo không lặp lại, em đã bổ sung [biện pháp cụ thể, có thể kiểm chứng được] và sẽ chủ động cập nhật lại tình hình với anh/chị vào [mốc thời gian cụ thể]."
 

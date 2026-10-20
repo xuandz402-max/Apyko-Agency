@@ -9,7 +9,6 @@ Trước giờ nhiều nhân sự chỉ mở Business Insights lên xem số —
 Mọi đơn hàng đều đi qua 1 chuỗi bước, gọi là phễu chuyển đổi (conversion funnel). Mỗi bước giảm xuống bao nhiêu % sẽ kể cho bạn biết vấn đề đang nằm ở khâu nào:
 
 | Giai đoạn | Ý nghĩa | Nếu giai đoạn này SỤT mà giai đoạn trước vẫn ổn |
-|---|---|---|
 | Lượt hiển thị (Impression) | Số lần sản phẩm được hệ thống đưa ra trước mắt khách | Vấn đề thuộc về thuật toán/đấu giá quảng cáo, không phải lỗi của bản thân listing |
 | Lượt truy cập/Click (Traffic) | Số người thực sự bấm vào xem sản phẩm | Ảnh đại diện, tiêu đề, giá hiển thị chưa đủ hấp dẫn để khách bấm vào dù đã được hiển thị |
 | Thêm giỏ hàng / Quan tâm | Khách xem xong có hành động tiếp theo không | Nội dung mô tả, ảnh chi tiết, đánh giá, hoặc mức giá chưa thuyết phục được khách đi tiếp |
@@ -71,7 +70,6 @@ Dù shop chỉ kinh doanh 1 ngành hàng duy nhất (VD chỉ bán thời trang 
 Giả sử shop thời trang nữ có 3 dòng sản phẩm chính: Áo, Quần, Váy. So sánh tỷ trọng doanh thu 2 kỳ liên tiếp:
 
 | Dòng sản phẩm | Tỷ trọng kỳ trước | Tỷ trọng kỳ này | Chênh lệch |
-|---|---|---|---|
 | Áo | 45% | 40% | −5% |
 | Quần | 30% | 32% | +2% |
 | Váy | 25% | 28% | +3% |

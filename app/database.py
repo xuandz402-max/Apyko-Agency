@@ -712,6 +712,19 @@ def gmv_list_entries(product_id: int) -> list:
     return [dict(r) for r in rows]
 
 
+def gmv_all_entries() -> list:
+    """Toàn bộ entry GMV trong 1 query, sắp theo product rồi ngày tăng dần.
+
+    Dùng cho trang tổng hợp (Dashboard CEO) để khỏi query theo từng sản
+    phẩm: thứ tự trong mỗi sản phẩm khớp gmv_list_entries (date ASC).
+    """
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM gmv_entries ORDER BY product_id ASC, date ASC"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def gmv_get_entry(entry_id: int) -> dict | None:
     with get_conn() as conn:
         row = conn.execute("SELECT * FROM gmv_entries WHERE id = ?", (entry_id,)).fetchone()

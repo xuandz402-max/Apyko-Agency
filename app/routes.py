@@ -6,6 +6,8 @@ import logging
 import os
 import re
 import sqlite3
+import threading
+import time
 from datetime import datetime
 from typing import Annotated
 
@@ -141,7 +143,9 @@ def _safe_next(value: str | None) -> str:
 
 def _ctx(request: Request, user: dict, **kw) -> dict:
     base = {"request": request, "user": user, "app_name": config.APP_NAME}
-    if user and user.get("id"):
+    # Caller nào đã tự tính số thông báo chưa đọc (VD: trang /thong-bao) thì
+    # truyền unread_notifications=... để _ctx khỏi hỏi DB thêm 1 lần nữa.
+    if "unread_notifications" not in kw and user and user.get("id"):
         try:
             base["unread_notifications"] = db.notif_unread_count(user["id"])
         except Exception:
@@ -347,7 +351,7 @@ def page_ceo(request: Request):
         )
     today = checklist.today_str()
     return templates.TemplateResponse(
-        "ceo.html", _ctx(request, user, ov=ceo.ceo_overview(today), today=today)
+        "ceo.html", _ctx(request, user, ov=ceo.cached_overview(today), today=today)
     )
 
 
@@ -1174,8 +1178,26 @@ def _cl_valid_date(value: str | None) -> str | None:
         return None
 
 
+# Lưới an toàn là DỰ PHÒNG (scheduler nền đã tick mỗi 60s làm cùng việc,
+# idempotent) nên throttle theo tiến trình: tối đa 1 lần / 60 giây cho mọi
+# trang, tránh trả hàng chục câu query mỗi lần người dùng mở trang.
+_SAFETY_NET_INTERVAL = 60  # giây
+_safety_net_last_run = 0.0
+_safety_net_lock = threading.Lock()
+
+
 def _cl_safety_net(date_str: str) -> None:
-    """Lưới an toàn khi mở trang: tạo việc + gửi nhắc (idempotent)."""
+    """Lưới an toàn khi mở trang: tạo việc + gửi nhắc (idempotent).
+
+    Bị throttle 60 giây/toàn tiến trình — nhắc hạn chậm tối đa ~60 giây so
+    với không throttle, đổi lại mở trang checklist/thông báo nhẹ đi rõ rệt.
+    """
+    global _safety_net_last_run
+    now = time.monotonic()
+    with _safety_net_lock:
+        if now - _safety_net_last_run < _SAFETY_NET_INTERVAL:
+            return
+        _safety_net_last_run = now
     try:
         checklist.seed_defaults()
         checklist.generate_for_date(date_str)
@@ -1233,8 +1255,11 @@ def page_checklist(
     items = db.cl_item_list(date_str, assignee_id=eff_assignee, shop_id=shop)
     settings = checklist.get_settings()
     now = checklist.now_vn()
-    users_map = {u["id"]: u for u in db.list_users()}
-    shops_map = {s["id"]: s for s in db.shop_list()}
+    # Query 1 lần rồi dùng chung cho map hiển thị + dropdown trong template.
+    users_list = db.list_users()
+    shops_list = db.shop_list()
+    users_map = {u["id"]: u for u in users_list}
+    shops_map = {s["id"]: s for s in shops_list}
     enriched = [_cl_enrich(it, now, settings, users_map, shops_map) for it in items]
     groups = []
     for it in enriched:
@@ -1252,8 +1277,8 @@ def page_checklist(
             groups=groups,
             is_leader=leader,
             is_admin=_cl_is_admin(user),
-            users=db.list_users() if leader else [],
-            shops=db.shop_list(),
+            users=users_list if leader else [],
+            shops=shops_list,
             f_assignee=assignee,
             f_shop=shop,
         ),
@@ -1274,7 +1299,10 @@ def page_checklist_board(
         raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
     date_str = _cl_valid_date(date) or checklist.today_str()
     _cl_safety_net(date_str)
-    stats = checklist.board_stats(date_str, assignee_id=assignee, shop_id=shop)
+    users_list = db.list_users()  # 1 lần: board_stats dùng lại + dropdown lọc
+    stats = checklist.board_stats(
+        date_str, assignee_id=assignee, shop_id=shop, users=users_list
+    )
     return templates.TemplateResponse(
         "checklist_board.html",
         _ctx(
@@ -1282,7 +1310,7 @@ def page_checklist_board(
             user,
             stats=stats,
             date=date_str,
-            users=db.list_users(),
+            users=users_list,
             shops=db.shop_list(),
             f_assignee=assignee,
             f_shop=shop,
@@ -1322,7 +1350,8 @@ def page_notifications(request: Request):
     unread = db.notif_unread_count(user["id"])
     return templates.TemplateResponse(
         "notifications.html",
-        _ctx(request, user, notifications=notifs, unread=unread),
+        # unread_notifications=unread: _ctx khỏi COUNT thêm 1 lần nữa.
+        _ctx(request, user, notifications=notifs, unread=unread, unread_notifications=unread),
     )
 
 

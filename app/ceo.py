@@ -8,8 +8,14 @@ Chỉ đọc số thật đã được nhân sự nhập ở các module khác, 
 Ngưỡng cảnh báo mặc định (chỉnh trong code này):
 - ROAS_WARN = 2.0: entry GMV mới nhất có ROAS dưới mức này → cảnh báo.
 - STALE_DAYS = 3: sản phẩm không có entry nào trong 3 ngày gần nhất → cảnh báo.
+
+Tốc độ: toàn bộ dữ liệu nạp bằng 5 câu query cố định (báo cáo ngày 1 query
+cho mọi ngày cần xem, entry GMV 1 query cho mọi sản phẩm, checklist qua
+board_stats). cached_overview() nhớ kết quả 60 giây vì trang chỉ đọc.
 """
 
+import threading
+import time
 from datetime import datetime, timedelta
 
 from . import checklist
@@ -20,15 +26,18 @@ from .gmv import RM_VND_RATE, calc_gmv
 ROAS_WARN = 2.0
 STALE_DAYS = 3
 
+OVERVIEW_CACHE_TTL = 60  # giây — dữ liệu tổng hợp chấp nhận trễ tối đa 1 phút
+_overview_cache: dict[str, tuple[float, dict]] = {}
+_overview_lock = threading.Lock()
+
 
 def _shift(date_str: str, days: int) -> str:
     d = datetime.strptime(date_str, "%Y-%m-%d").date() + timedelta(days=days)
     return d.isoformat()
 
 
-def _report_summary(date_str: str) -> dict | None:
-    """Tóm tắt 1 ngày từ Báo cáo ngày; None nếu ngày đó chưa nhập."""
-    report = db.daily_get(date_str)
+def _summary_from(report: dict | None, date_str: str) -> dict | None:
+    """Tóm tắt 1 ngày từ dòng Báo cáo ngày đã nạp sẵn; None nếu chưa nhập."""
     if report is None:
         return None
     calc = calc_daily(report)
@@ -42,9 +51,11 @@ def _report_summary(date_str: str) -> dict | None:
 
 def ceo_overview(today: str) -> dict:
     """Tổng hợp toàn cảnh cho ngày `today` ('YYYY-MM-DD', giờ Việt Nam)."""
-    # ----- doanh thu (Báo cáo ngày) -----
-    rev_today = _report_summary(today)
-    rev_yesterday = _report_summary(_shift(today, -1))
+    # ----- doanh thu (Báo cáo ngày): 1 query cho mọi ngày cần xem -----
+    reports = {r["date"]: r for r in db.daily_list()}
+    rev_today = _summary_from(reports.get(today), today)
+    yesterday = _shift(today, -1)
+    rev_yesterday = _summary_from(reports.get(yesterday), yesterday)
     rev_change_pct = None
     if rev_today is not None and rev_yesterday is not None and rev_yesterday["total_rev"] != 0:
         rev_change_pct = round(
@@ -55,10 +66,11 @@ def ceo_overview(today: str) -> dict:
         )
     revenue_7d = []
     for back in range(6, -1, -1):
-        summary = _report_summary(_shift(today, -back))
+        day = _shift(today, -back)
+        summary = _summary_from(reports.get(day), day)
         if summary is None:
             summary = {
-                "date": _shift(today, -back),
+                "date": day,
                 "total_rev": None,
                 "ads_cost": None,
                 "roas": None,
@@ -66,13 +78,18 @@ def ceo_overview(today: str) -> dict:
         revenue_7d.append(summary)
 
     # ----- GMV Max: tổng hợp hôm nay + cảnh báo theo sản phẩm -----
+    # 1 query entry cho mọi sản phẩm (thay cho query lặp theo sản phẩm);
+    # gmv_all_entries đã sắp date ASC trong từng sản phẩm như gmv_list_entries.
     stale_cutoff = _shift(today, -(STALE_DAYS - 1))  # ngày cũ nhất còn "gần đây"
     gmv_rev_rm = 0.0
     gmv_cost_rm = 0.0
     gmv_entries_today = 0
     product_alerts = []
+    entries_by_product: dict[int, list] = {}
+    for entry in db.gmv_all_entries():
+        entries_by_product.setdefault(entry["product_id"], []).append(entry)
     for product in db.gmv_list_products():
-        entries = db.gmv_list_entries(product["id"])
+        entries = entries_by_product.get(product["id"], [])
         for entry in entries:
             if entry["date"] == today:
                 gmv_rev_rm += float(entry.get("revenue_rm") or 0)
@@ -178,3 +195,25 @@ def ceo_overview(today: str) -> dict:
         "checklist_today": checklist_today,
         "alerts": alerts,
     }
+
+
+def cached_overview(today: str) -> dict:
+    """ceo_overview() với bộ nhớ đệm in-process 60 giây.
+
+    Trang /ceo chỉ đọc dữ liệu tổng hợp của NGÀY (không phân biệt người xem
+    — owner/leader/admin checklist đều thấy cùng số liệu), nên trễ tối đa
+    60 giây là chấp nhận được và giảm mạnh số vòng hỏi DB khi mở lại trang.
+    Thread-safe: lock bao quanh đọc/ghi cache.
+    """
+    now = time.monotonic()
+    with _overview_lock:
+        entry = _overview_cache.get(today)
+        if entry is not None and entry[0] > now:
+            return entry[1]
+    data = ceo_overview(today)
+    with _overview_lock:
+        _overview_cache[today] = (now + OVERVIEW_CACHE_TTL, data)
+        for key, (exp, _) in list(_overview_cache.items()):
+            if key != today and exp <= now:
+                del _overview_cache[key]
+    return data

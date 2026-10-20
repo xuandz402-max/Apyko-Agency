@@ -11,6 +11,8 @@ import time
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 
 from . import auth, config, lessons
 from . import database as db
@@ -20,7 +22,26 @@ log = logging.getLogger("apyko")
 
 _PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+
+class _StaticCacheMiddleware(BaseHTTPMiddleware):
+    """Cho trình duyệt cache file tĩnh 10 phút (chuyển trang không tải lại CSS).
+
+    max-age ngắn có chủ đích: tránh dính CSS cũ sau khi deploy (đã từng có
+    sự cố giao diện lỗi vì cache trình duyệt giữ bản quá lâu). Chỉ áp dụng
+    cho /static, KHÔNG áp dụng cho trang HTML.
+    """
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "public, max-age=600"
+        return response
+
+
 app = FastAPI(title=config.APP_NAME, docs_url="/docs", redoc_url=None)
+# Nén gzip response >= 1KB: giảm băng thông HTML/JSON trên đường Render free.
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(_StaticCacheMiddleware)
 app.mount("/static", StaticFiles(directory=os.path.join(_PROJECT_DIR, "static")), name="static")
 app.include_router(router)
 

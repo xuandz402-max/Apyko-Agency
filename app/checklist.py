@@ -323,12 +323,17 @@ def board_stats(
     assignee_id: int | None = None,
     shop_id: int | None = None,
     now: datetime | None = None,
+    users: list | None = None,
 ) -> dict:
-    """Thống kê ngày cho Leader: tổng/hoàn thành/quá hạn + theo nhân viên."""
+    """Thống kê ngày cho Leader: tổng/hoàn thành/quá hạn + theo nhân viên.
+
+    `users`: truyền sẵn danh sách user khi caller đã query (tránh hỏi DB 2
+    lần trong cùng 1 request); None -> tự query như trước.
+    """
     now = now or now_vn()
     settings = get_settings()
     items = db.cl_item_list(date_str, assignee_id=assignee_id, shop_id=shop_id)
-    users = {u["id"]: u for u in db.list_users()}
+    users = {u["id"]: u for u in (users if users is not None else db.list_users())}
 
     total = len(items)
     done = sum(1 for it in items if it["status"] == "done")

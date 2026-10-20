@@ -96,6 +96,26 @@ cảnh báo "chưa có dữ liệu gần đây").
 **Leader checklist** / **Quản trị checklist**. Nhân viên thường bị chặn
 (HTTP 403) và không thấy mục này trong sidebar.
 
+**Tốc độ:** số liệu trang này được nhớ tạm (cache) trong bộ nhớ máy chủ
+**60 giây** (hàm `cached_overview` trong `app/ceo.py`) vì trang chỉ đọc —
+sửa dữ liệu ở các module khác (Báo cáo ngày, GMV Max, checklist...) có thể
+mất tối đa ~1 phút mới hiện lên trang CEO. Các trang còn lại không dùng
+cache này.
+
+## Tối ưu tốc độ (gói free)
+
+- **Nén GZip** mọi response ≥ 1KB (`GZipMiddleware` trong `app/main.py`).
+- File tĩnh (`/static/*`) được gắn `Cache-Control: public, max-age=600` —
+  trình duyệt lưu 10 phút, chuyển trang không tải lại CSS. Không đặt lâu
+  hơn để tránh dính giao diện cũ sau mỗi lần deploy.
+- Mỗi trang HTML chỉ hỏi database ít vòng nhất có thể: dữ liệu dùng chung
+  trong 1 request (danh sách nhân viên, shop...) được query 1 lần rồi dùng
+  lại; trang CEO nạp báo cáo ngày/GMV bằng 1 query cho mọi ngày/sản phẩm.
+- **Lưới an toàn của Daily Checklist** (tự tạo việc + gửi nhắc khi mở
+  trang) bị giới hạn tối đa 1 lần / 60 giây cho toàn tiến trình — scheduler
+  nền vẫn tick mỗi 60 giây làm cùng việc đó, lưới an toàn chỉ là dự phòng
+  nên nhắc hạn có thể chậm tối đa ~60 giây nhưng mở trang nhẹ đi nhiều.
+
 ## Tài khoản & bảo mật
 
 - **Lần chạy đầu tiên:** mở trang `/setup` để tạo tài khoản **chủ sở hữu**

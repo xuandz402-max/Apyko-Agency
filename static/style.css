@@ -35,7 +35,7 @@ a:hover { text-decoration: underline; }
   position: sticky; top: 0; height: 100vh;
   z-index: 40;
 }
-.brand { display: flex; align-items: center; gap: 10px; padding: 18px 16px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px 16px; border-bottom: 1px solid var(--line); }
 .brand:hover { text-decoration: none; }
 .brand-name { font-weight: 800; font-size: 17px; color: var(--ink); }
 .logo { display: inline-flex; font-weight: 900; letter-spacing: 0.5px; font-size: 20px; }

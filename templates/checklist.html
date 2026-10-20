@@ -43,10 +43,11 @@
 {% for it in g["items"] %}
 <div class="cl-item cl-{{ it.state }}" data-item-id="{{ it.id }}" data-state="{{ it.state }}">
   <div class="cl-head">
+    {% if it.state == 'done' %}<span class="cl-mark cl-mark-done">✓</span>{% elif it.state == 'overdue' %}<span class="cl-mark cl-mark-over">✕</span>{% else %}<span class="cl-mark cl-mark-pending">○</span>{% endif %}
     <span class="cl-title">{{ it.title }}</span>
     {% if it.state == 'overdue' %}<span class="cl-badge cl-overdue">QUÁ HẠN</span>{% endif %}
     {% if it.state == 'due' %}<span class="cl-badge cl-due">SẮP TỚI HẠN</span>{% endif %}
-    {% if it.state == 'done' %}<span class="cl-badge cl-done">Hoàn thành</span>{% endif %}
+    {% if it.state == 'done' %}<span class="cl-badge cl-done">ĐÃ XONG</span>{% endif %}
     {% if it.state == 'cancelled' %}<span class="cl-badge cl-cancelled">Đã hủy</span>{% endif %}
   </div>
   <div class="cl-meta">

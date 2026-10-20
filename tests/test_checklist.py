@@ -353,3 +353,51 @@ def test_notifications_page_flow(client):
     r = client.post("/api/notifications/read-all")
     assert r.json()["updated"] == before
     assert db.notif_unread_count(staff["id"]) == 0
+
+
+# --- hiển thị trạng thái: dấu ✓ xanh / ✕ đỏ trước tiêu đề, không gạch ngang ---
+
+
+def test_checklist_page_status_marks(client):
+    create_owner(client)
+    db, cl = _db(), _cl()
+    cl.seed_defaults()
+    cl.generate_for_date(MON)
+    items = db.cl_item_list(MON)
+    assert items
+    # Owner hoàn thành 1 việc; các việc còn lại của ngày đã qua -> quá hạn.
+    r = client.post(
+        f"/api/checklist/items/{items[0]['id']}/complete", json={"note": "ok"}
+    )
+    assert r.status_code == 200
+    r = client.get(f"/checklist?date={MON}")
+    assert r.status_code == 200
+    html = r.text
+    # Việc đã xong: ký tự ✓ mang class màu xanh lá + nhãn ĐÃ XONG.
+    assert 'cl-mark cl-mark-done' in html and "✓" in html
+    assert "ĐÃ XONG" in html
+    # Việc quá hạn: ký tự ✕ mang class màu đỏ + nhãn QUÁ HẠN.
+    assert 'cl-mark cl-mark-over' in html and "✕" in html
+    assert "QUÁ HẠN" in html
+
+
+def test_checklist_css_marks_and_no_line_through():
+    import pathlib
+    import re
+
+    css_path = pathlib.Path(__file__).resolve().parent.parent / "static" / "style.css"
+    css = css_path.read_text(encoding="utf-8")
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    # Không rule cl- nào được gạch ngang chữ nữa.
+    for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+        if "cl-" in sel:
+            assert "line-through" not in body, sel
+    # Tiêu đề việc: đậm 700 + đen #111 ở mọi trạng thái.
+    title = re.search(r"\.cl-title\s*\{([^}]*)\}", css)
+    assert title and "font-weight: 700" in title.group(1)
+    assert "color: #111" in title.group(1)
+    # Dấu ✓ xanh #15803D, dấu ✕ đỏ #DC2626.
+    done = re.search(r"\.cl-mark-done\s*\{([^}]*)\}", css)
+    assert done and "#15803D" in done.group(1)
+    over = re.search(r"\.cl-mark-over\s*\{([^}]*)\}", css)
+    assert over and "#DC2626" in over.group(1)

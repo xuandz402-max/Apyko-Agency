@@ -127,7 +127,15 @@ def test_ceo_page_with_data(client):
             "completed_by": "nv_ceo",
         },
     )
-    db.cl_item_update(items[1]["id"], {"assignee_id": staff["id"], "due_time": "00:01"})
+    db.cl_item_update(items[1]["id"], {"assignee_id": staff["id"]})
+    # due_time không nằm trong CL_ITEM_UPDATE_COLUMNS (việc đã tạo không sửa
+    # giờ hạn qua helper) nên test đặt thẳng SQL — nếu không, test chỉ pass
+    # khi chạy sau giờ hạn gốc 08:30 của mẫu.
+    with db.get_conn() as conn:
+        conn.execute(
+            "UPDATE checklist_items SET due_time = '00:01' WHERE id = ?",
+            (items[1]["id"],),
+        )
 
     r = client.get("/ceo")
     assert r.status_code == 200

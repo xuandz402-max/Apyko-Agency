@@ -18,55 +18,55 @@ Dưới đây là **Checklist Combo Mua Kèm Deal Sốc** được rút gọn, t
 
  LOẠI 1 – LẤY ĐÁNH GIÁ (Lỗ)
 
-- [ ] Chọn sản phẩm mới hoặc ít review
+- Chọn sản phẩm mới hoặc ít review
 
-- [ ] Xác định ngành hàng:
+- Xác định ngành hàng:
 
-- [ ] **Ngành gia dụng:** đơn TB 29k → mỗi combo **20 sản phẩm**
+- **Ngành gia dụng:** đơn TB 29k → mỗi combo **20 sản phẩm**
 
-- [ ] **Ngành khác:** giá trị combo **có thể thấp hơn** đơn TB shop
+- **Ngành khác:** giá trị combo **có thể thấp hơn** đơn TB shop
 
-- [ ] Cài combo (giá ưu đãi) – chấp nhận lỗ
+- Cài combo (giá ưu đãi) – chấp nhận lỗ
 
-- [ ] Đặt lịch **ngừng sau 1 thời gian** ( tuỳ chỉnh)
+- Đặt lịch **ngừng sau 1 thời gian** ( tuỳ chỉnh)
 
  LOẠI 2 – LẤY SỐ BÁN (Không lỗ)
 
-- [ ] Chọn sản phẩm tiềm năng, đủ lượng
+- Chọn sản phẩm tiềm năng, đủ lượng
 
-- [ ] Cài combo không lỗ (giá vẫn có lãi nhẹ)
+- Cài combo không lỗ (giá vẫn có lãi nhẹ)
 
-- [ ] Giá trị đơn hàng TB có thể **thay đổi** so với loại 1 (linh hoạt)
+- Giá trị đơn hàng TB có thể **thay đổi** so với loại 1 (linh hoạt)
 
-- [ ] Theo dõi số lượng bán ra, **ngừng ngay** khi đạt mục tiêu (ví dụ: 500 đơn)
+- Theo dõi số lượng bán ra, **ngừng ngay** khi đạt mục tiêu (ví dụ: 500 đơn)
 
  LOẠI 3 – ĐẨY HÀNG TỒN (Thanh lý)
 
  Kịch bản A – Tặng kèm SP mới
 
-- [ ] Đơn hàng **≥ 99k** → tặng kèm SP **giá 1.000đ** (thực tế cho về 0đ)
+- Đơn hàng **≥ 99k** → tặng kèm SP **giá 1.000đ** (thực tế cho về 0đ)
 
-- [ ] Ưu tiên sản phẩm mới để có đánh giá
+- Ưu tiên sản phẩm mới để có đánh giá
 
  Kịch bản B – Tặng kèm hàng tồn
 
-- [ ] Đơn hàng ≥ **12 × N.k** → tặng kèm SP tồn **N** với giá 0đ
+- Đơn hàng ≥ **12 × N.k** → tặng kèm SP tồn **N** với giá 0đ
 
 - (N: giá trị sản phẩm tồn; N.k: giá tiền)
 
-- [ ] Ví dụ: SP tồn giá 10k → đơn tối thiểu **120k** mới được tặng
+- Ví dụ: SP tồn giá 10k → đơn tối thiểu **120k** mới được tặng
 
  Kịch bản C – Giảm giá SP kèm (3–5%)
 
-- [ ] Đơn ≥ 120k → được mua SP đi kèm với **giảm 3–5%**
+- Đơn ≥ 120k → được mua SP đi kèm với **giảm 3–5%**
 
-- [ ] SP kèm **liên quan** đến SP chính (VD: hộp cơm → túi cá)
+- SP kèm **liên quan** đến SP chính (VD: hộp cơm → túi cá)
 
-- [ ] **Giá trị đơn = đơn TB × 1.2** (tăng 20% so với đơn trung bình)
+- **Giá trị đơn = đơn TB × 1.2** (tăng 20% so với đơn trung bình)
 
 3. MẸO TẠO SP TẶNG KÈM
 
-- [ ] **Tạo riêng 1 sản phẩm mới** để làm quà tặng:
+- **Tạo riêng 1 sản phẩm mới** để làm quà tặng:
 
 - Định giá cao (10k, 20k, 30k) trên form đăng
 
@@ -76,12 +76,12 @@ Dưới đây là **Checklist Combo Mua Kèm Deal Sốc** được rút gọn, t
 
  KIỂM TRA CUỐI
 
-- [ ] Đã chọn đúng loại combo theo mục đích?
+- Đã chọn đúng loại combo theo mục đích?
 
-- [ ] Đã tính toán giá đảm bảo không ảnh hưởng đến biên lợi nhuận (trừ loại 1)?
+- Đã tính toán giá đảm bảo không ảnh hưởng đến biên lợi nhuận (trừ loại 1)?
 
-- [ ] Đã đặt thời hạn tạm dừng (loại 1, loại 2)?
+- Đã đặt thời hạn tạm dừng (loại 1, loại 2)?
 
-- [ ] Đã tạo sẵn SP tặng kèm (nếu dùng mẹo)?
+- Đã tạo sẵn SP tặng kèm (nếu dùng mẹo)?
 
-- [ ] Đã kiểm tra link combo hoạt động trên Shopee/TikTok?
+- Đã kiểm tra link combo hoạt động trên Shopee/TikTok?

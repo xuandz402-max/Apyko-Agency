@@ -176,6 +176,17 @@ bảng dữ liệu riêng, chỉ đọc tổng hợp từ các module khác:
   bảng nhân viên) render theo **ngày được chọn** thay vì hôm nay; nhãn thẻ
   đổi từ "hôm nay" sang ngày cụ thể (VD "Doanh thu 20/09") và có nút **Về
   hôm nay**. Ngày sai định dạng hoặc ở tương lai thì tự dùng hôm nay.
+- **🗓️ Xem theo khoảng tự do** — form "Xem khoảng" (`/ceo?vfrom=&vto=`):
+  chọn **Từ ngày – Đến ngày bất kỳ** (không giới hạn tuần/tháng) thì **4
+  thẻ chính hiện TỔNG của cả khoảng** (Doanh thu / Chi phí ads / ROAS /
+  GMV quảng cáo), mỗi thẻ kèm % thay đổi **so với khoảng liền trước dài
+  bằng nhau**; thẻ Checklist cộng dồn việc của cả khoảng. Khu so sánh
+  theo kỳ / biểu đồ / bảng 7 ngày neo tại ngày cuối khoảng. Ngày cuối ở
+  tương lai thì **kẹp về hôm nay**; khoảng sai định dạng, đảo ngày hoặc
+  dài hơn **366 ngày** thì bỏ khoảng, về chế độ xem ngày. Hàng nút **Xem
+  nhanh** có 4 preset dùng đúng cơ chế này, luôn tính theo hôm nay thật:
+  **Hôm nay**, **Hôm qua**, **7 ngày qua** (hôm nay − 6), **30 ngày qua**
+  (hôm nay − 29).
 - **📈 So sánh theo kỳ** — 4 thẻ Doanh thu / Chi phí quảng cáo / ROAS / GMV
   quảng cáo VNĐ của kỳ hiện tại kèm **% thay đổi so với kỳ trước**, có nút
   chuyển **Ngày / Tuần / Tháng / Tự chọn** (mặc định Ngày). Cách so kỳ:
@@ -212,7 +223,8 @@ sửa dữ liệu ở các module khác (Báo cáo ngày, GMV Max, checklist...)
 mất tối đa ~1 phút mới hiện lên trang CEO. Các trang còn lại không dùng
 cache này. Khu so sánh theo kỳ và biểu đồ 30 ngày cũng cache 60 giây
 tương tự (`cached_period_compare` khoá theo ngày + kỳ,
-`cached_period_compare_custom` khoá theo cả 2 khoảng tự chọn, và
+`cached_period_compare_custom` khoá theo cả 2 khoảng tự chọn,
+`cached_range_headline` khoá theo khoảng xem tự do, và
 `cached_revenue_series`).
 
 ## 🗓️ Chọn khoảng thời gian + so sánh kỳ (dùng chung)

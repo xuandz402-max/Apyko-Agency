@@ -21,7 +21,29 @@
     {% if not is_today %}<a href="{{ back_today_url }}" class="btn btn-ghost btn-sm">Về hôm nay</a>{% endif %}
   </div>
 </form>
-{% if not is_today %}
+<div class="row-actions">
+  <span class="muted">Xem nhanh:</span>
+  {% for p in presets %}
+  <a href="/ceo?vfrom={{ p.vfrom }}&vto={{ p.vto }}" class="btn btn-sm {% if p.active %}btn-primary{% else %}btn-ghost{% endif %}">{{ p.label }}</a>
+  {% endfor %}
+</div>
+<form method="get" action="/ceo" class="form-inline per-custom">
+  <label>Xem khoảng — Từ ngày
+    <input type="date" name="vfrom" value="{{ view_range.start if view_range else '' }}" class="input">
+  </label>
+  <label>Đến ngày
+    <input type="date" name="vto" value="{{ view_range.end if view_range else '' }}" class="input">
+  </label>
+  {% if period in ("day", "week", "month") %}
+  <input type="hidden" name="period" value="{{ period }}">
+  {% endif %}
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary btn-sm">Xem khoảng</button>
+  </div>
+</form>
+{% if view_range %}
+<p class="muted">📅 Đang xem khoảng <strong>{{ view_range.label }}</strong> — 4 thẻ đầu dưới đây là TỔNG của cả khoảng. <a href="{{ back_today_url }}" class="btn btn-ghost btn-sm">Về hôm nay</a></p>
+{% elif not is_today %}
 <p class="muted">📅 Đang xem ngày <strong>{{ view_date[8:10] }}/{{ view_date[5:7] }}/{{ view_date[0:4] }}</strong> — toàn bộ số liệu dưới đây là của ngày này.</p>
 {% endif %}
 
@@ -42,6 +64,36 @@
   </div>
 {% endmacro %}
 
+{% macro range_card(label, metric, kind) %}
+  <div class="stat-card">
+    <div class="stat-label">{{ label }}</div>
+    {% if metric.cur is not none %}
+    <div class="stat-value">{% if kind == "money" %}{{ "{:,.0f}".format(metric.cur) }}₫{% else %}{{ metric.cur }}{% endif %}</div>
+    {% if metric.delta_pct is not none %}
+    <div class="{% if metric.delta_pct >= 0 %}delta-up{% else %}delta-down{% endif %}">{% if metric.delta_pct >= 0 %}▲{% else %}▼{% endif %} {{ "%+.1f"|format(metric.delta_pct) }}% so với khoảng liền trước ({{ range_cards.prev_label }})</div>
+    {% else %}
+    <div class="muted">— (chưa so sánh được)</div>
+    {% endif %}
+    {% else %}
+    <div class="stat-value">—</div>
+    <div class="muted">Chưa có dữ liệu trong khoảng</div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% if view_range %}
+<div class="stats">
+  {{ range_card("Doanh thu trong khoảng", range_cards.metrics.revenue, "money") }}
+  {{ range_card("Chi phí ads trong khoảng", range_cards.metrics.ads_cost, "money") }}
+  {{ range_card("ROAS trong khoảng", range_cards.metrics.roas, "roas") }}
+  {{ range_card("GMV quảng cáo trong khoảng (VNĐ)", range_cards.metrics.gmv_vnd, "money") }}
+  <div class="stat-card">
+    <div class="stat-label">Checklist trong khoảng</div>
+    <div class="stat-value">{{ range_cards.checklist.done }}/{{ range_cards.checklist.tasks }} xong</div>
+    <div class="muted">{{ range_cards.checklist.pct }}% hoàn thành{% if range_cards.checklist.overdue %} · <span class="text-red"><strong>{{ range_cards.checklist.overdue }} quá hạn</strong></span>{% endif %}</div>
+  </div>
+</div>
+{% else %}
 <div class="stats">
   <div class="stat-card">
     <div class="stat-label">Doanh thu {{ dlabel }}</div>
@@ -83,6 +135,7 @@
     <div class="muted">{{ ov.checklist_today.pct }}% hoàn thành{% if ov.checklist_today.overdue %} · <span class="text-red"><strong>{{ ov.checklist_today.overdue }} quá hạn</strong></span>{% endif %}</div>
   </div>
 </div>
+{% endif %}
 
 <div class="card">
   <div class="card-head">

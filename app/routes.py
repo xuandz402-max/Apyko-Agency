@@ -380,6 +380,8 @@ def page_ceo(
     date_to: str | None = Query(default=None, alias="to"),
     cfrom: str | None = None,
     cto: str | None = None,
+    vfrom: str | None = None,
+    vto: str | None = None,
 ):
     user, redir = auth.page_guard(request)
     if redir:
@@ -396,6 +398,54 @@ def page_ceo(
     if picked is not None and picked.isoformat() <= real_today:
         view_date = picked.isoformat()
     is_today = view_date == real_today
+
+    # ----- xem theo khoảng tự do (?vfrom=&vto=): cả 2 phải đúng định
+    # dạng, vto >= vfrom, dài <= 366 ngày; vto ở tương lai -> kẹp về
+    # hôm nay (kẹp xong mà vfrom > vto thì bỏ khoảng). Sai -> bỏ khoảng,
+    # về chế độ xem ngày như cũ. Hợp lệ -> 4 thẻ chính hiện TỔNG cả
+    # khoảng và toàn trang neo tại ngày cuối khoảng (vto) -----
+    view_range = None
+    range_cards = None
+    vf = periods._parse_iso(vfrom)
+    vt = periods._parse_iso(vto)
+    if vf is not None and vt is not None and vt >= vf:
+        vt = min(vt, periods._parse_iso(real_today))
+        if vt >= vf and (vt - vf).days + 1 <= 366:
+            v_range = (vf.isoformat(), vt.isoformat())
+            view_range = {
+                "start": v_range[0],
+                "end": v_range[1],
+                # Nhãn "DD/MM - DD/MM/YYYY" (năm lấy của ngày cuối khoảng)
+                "label": f"{ceo._range_label(*v_range)}/{v_range[1][0:4]}",
+            }
+            view_date = v_range[1]
+            is_today = view_date == real_today
+            range_cards = ceo.cached_range_headline(*v_range)
+
+    # ----- nút chọn nhanh (preset): luôn tính theo HÔM NAY thật, không
+    # theo ngày đang xem; active khi khoảng đang xem trùng đúng preset --
+    presets = []
+    for key, label, back_from, back_to in (
+        ("today", "Hôm nay", 0, 0),
+        ("yesterday", "Hôm qua", 1, 1),
+        ("last7", "7 ngày qua", 6, 0),
+        ("last30", "30 ngày qua", 29, 0),
+    ):
+        p_from = ceo._shift(real_today, -back_from)
+        p_to = ceo._shift(real_today, -back_to)
+        presets.append(
+            {
+                "key": key,
+                "label": label,
+                "vfrom": p_from,
+                "vto": p_to,
+                "active": bool(
+                    view_range
+                    and view_range["start"] == p_from
+                    and view_range["end"] == p_to
+                ),
+            }
+        )
 
     # ----- so sánh theo kỳ: day/week/month neo tại ngày xem, hoặc Tự chọn
     # với 2 khoảng tuyệt đối (kỳ xem + kỳ so sánh do người dùng điền) -----
@@ -450,6 +500,9 @@ def page_ceo(
             period=period,
             cmp=cmp_data,
             custom=custom,
+            view_range=view_range,
+            range_cards=range_cards,
+            presets=presets,
             rev_series=ceo.cached_revenue_series(view_date),
             now_text=now_text,
         ),

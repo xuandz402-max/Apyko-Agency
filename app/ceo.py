@@ -23,6 +23,11 @@ trước = 0 hoặc thiếu dữ liệu -> delta = None (giao diện hiện "—
 bịa %). % tăng/giảm trên trang dùng màu xanh lá #15803D / đỏ #DC2626
 (class .delta-up/.delta-down) — ngoại lệ màu duy nhất ngoài theme đen
 trắng, do chủ shop chốt riêng cho số tăng/giảm.
+
+Xem theo khoảng tự do (range_headline): người dùng chọn Từ ngày - Đến
+ngày bất kỳ -> 4 thẻ chính hiện TỔNG cả khoảng (delta % so với khoảng
+liền trước dài bằng nhau), thẻ checklist cộng dồn cả khoảng qua
+checklist.board_range_stats.
 """
 
 import threading
@@ -481,3 +486,43 @@ def cached_period_compare_custom(cur_range, prev_range) -> dict:
 def cached_revenue_series(today: str) -> dict:
     """revenue_series(30 ngày) với cache 60 giây, khoá theo ngày."""
     return _ttl_get(("series30", today), lambda: revenue_series(today))
+
+
+# -------------------- xem theo khoảng tự do (range mode) --------------------
+
+
+def range_headline(vfrom: str, vto: str) -> dict:
+    """Tổng các thẻ chính cho chế độ "Xem khoảng" tự do của /ceo.
+
+    Doanh thu / chi phí ads / ROAS / GMV quảng cáo VNĐ lấy từ
+    period_compare_custom với kỳ so sánh = khoảng liền trước DÀI BẰNG
+    khoảng xem (default_prev_range) — delta % so với khoảng liền trước.
+    Checklist lấy từ checklist.board_range_stats của cả khoảng: tasks =
+    total - cancelled (cùng công thức thẻ checklist của ceo_overview).
+    Ngày trong khoảng chưa có số thì bỏ qua như _aggregate.
+    """
+    prev_range = default_prev_range((vfrom, vto))
+    cmp_data = period_compare_custom(vfrom, (vfrom, vto), prev_range)
+    stats = checklist.board_range_stats(vfrom, vto)
+    return {
+        "start": vfrom,
+        "end": vto,
+        "prev_start": prev_range[0],
+        "prev_end": prev_range[1],
+        "prev_label": _range_label(*prev_range),
+        "metrics": cmp_data["metrics"],
+        "checklist": {
+            "total": stats["total"],
+            "tasks": stats["total"] - stats["cancelled"],
+            "done": stats["done"],
+            "pct": stats["pct"],
+            "overdue": stats["overdue"],
+        },
+    }
+
+
+def cached_range_headline(vfrom: str, vto: str) -> dict:
+    """range_headline() với cache 60 giây, khoá theo (vfrom, vto)."""
+    return _ttl_get(
+        ("range_headline", vfrom, vto), lambda: range_headline(vfrom, vto)
+    )

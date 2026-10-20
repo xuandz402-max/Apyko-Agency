@@ -548,3 +548,139 @@ def test_ceo_route_date_custom_forbidden_for_plain_staff(client):
         client.get("/ceo?period=custom&from=2026-10-01&to=2026-10-20").status_code
         == 403
     )
+
+
+# --- xem theo khoảng tự do (range mode) ---------------------------------------
+
+
+def test_range_headline_totals_and_delta(client):
+    create_owner(client)
+    db, ceo = _db(), _ceo()
+    _report(db, "2026-08-15", 2000, 500, 100)  # nằm trong khoảng liền trước
+    _report(db, "2026-09-20", 5400, 1000, 200)
+    _report(db, "2026-10-20", 5574, 1200, 500)
+    h = ceo.range_headline("2026-09-01", "2026-10-31")
+    m = h["metrics"]
+    assert m["revenue"]["cur"] == 10974  # 5.400 + 5.574
+    assert m["ads_cost"]["cur"] == 700  # 200 + 500
+    assert m["revenue"]["prev"] == 2000
+    assert m["revenue"]["delta_pct"] == 448.7  # (10974-2000)/2000
+    # Khoảng liền trước dài bằng nhau (61 ngày): 02/07 - 31/08
+    assert (h["prev_start"], h["prev_end"]) == ("2026-07-02", "2026-08-31")
+    assert h["prev_label"] == "02/07 – 31/08"  # noqa: RUF001
+    for key in ("total", "tasks", "done", "pct", "overdue"):
+        assert key in h["checklist"]
+
+
+def test_range_headline_no_prev_data(client):
+    create_owner(client)
+    db, ceo = _db(), _ceo()
+    _report(db, "2026-09-20", 5400, 1000, 200)
+    _report(db, "2026-10-20", 5574, 1200, 500)
+    h = ceo.range_headline("2026-09-01", "2026-10-31")
+    assert h["metrics"]["revenue"]["cur"] == 10974
+    assert h["metrics"]["revenue"]["prev"] is None
+    assert h["metrics"]["revenue"]["delta_pct"] is None
+    # Bản cached cho cùng kết quả
+    h2 = ceo.cached_range_headline("2026-09-01", "2026-10-31")
+    assert h2["metrics"]["revenue"]["cur"] == 10974
+    assert h2["checklist"]["done"] == h["checklist"]["done"]
+
+
+def test_ceo_route_range_mode(client):
+    create_owner(client)
+    db = _db()
+    _report(db, "2026-09-20", 5400, 1000, 200)
+    _report(db, "2026-10-20", 5574, 1200, 500)
+    r = client.get("/ceo?vfrom=2026-09-01&vto=2026-10-31")
+    assert r.status_code == 200
+    html = r.text
+    assert "Đang xem khoảng" in html
+    assert "01/09" in html  # nhãn khoảng bắt đầu 01/09 (cuối khoảng có thể bị kẹp về hôm nay)
+    assert "Doanh thu trong khoảng" in html
+    assert "Chi phí ads trong khoảng" in html
+    assert "Checklist trong khoảng" in html
+    assert "10,974" in html  # tổng doanh thu cả khoảng: 5.400 + 5.574
+    # Form Xem khoảng điền sẵn khoảng đang xem
+    assert 'name="vfrom" value="2026-09-01"' in html
+
+
+def test_ceo_route_range_future_clamped(client):
+    create_owner(client)
+    db, cl, ceo = _db(), _cl(), _ceo()
+    today = cl.today_str()
+    _report(db, today, 1_234_000, 100_000, 50_000)
+    r = client.get(f"/ceo?vfrom={ceo._shift(today, -9)}&vto=2999-01-01")
+    assert r.status_code == 200
+    html = r.text
+    assert "Đang xem khoảng" in html
+    # Ngày cuối khoảng bị kẹp về hôm nay (nhãn kết thúc bằng ngày hôm nay)
+    assert f"{today[8:10]}/{today[5:7]}/{today[0:4]}" in html
+    assert "1,234,000" in html
+
+
+def test_ceo_route_range_invalid_falls_back(client):
+    create_owner(client)
+    cl, ceo = _cl(), _ceo()
+    today = cl.today_str()
+    urls = [
+        "/ceo?vfrom=2026-10-31&vto=2026-09-01",  # vto < vfrom
+        "/ceo?vfrom=abc&vto=2026-09-01",  # sai định dạng
+        "/ceo?vfrom=2026-09-01",  # thiếu vto
+        f"/ceo?vfrom={ceo._shift(today, -400)}&vto={today}",  # dài > 366 ngày
+    ]
+    for url in urls:
+        r = client.get(url)
+        assert r.status_code == 200, url
+        assert "Đang xem khoảng" not in r.text, url
+        assert "Doanh thu hôm nay" in r.text, url
+
+
+def test_ceo_route_range_forbidden_for_plain_staff(client):
+    create_owner(client)
+    code = create_staff(client, "nv_range", perms=("can_view_products",))
+    logout(client)
+    activate(client, "nv_range", code)
+    assert client.get("/ceo?vfrom=2026-09-01&vto=2026-10-31").status_code == 403
+
+
+# --- nút chọn nhanh (preset) ---------------------------------------------------
+
+
+def test_ceo_route_presets_present(client):
+    create_owner(client)
+    cl, ceo = _cl(), _ceo()
+    today = cl.today_str()
+    r = client.get("/ceo")
+    assert r.status_code == 200
+    html = r.text
+    # 4 link preset với đúng ngày tính theo HÔM NAY thật (href dùng & thô)
+    assert f"/ceo?vfrom={today}&vto={today}" in html  # Hôm nay
+    y = ceo._shift(today, -1)
+    assert f"/ceo?vfrom={y}&vto={y}" in html  # Hôm qua
+    assert f"/ceo?vfrom={ceo._shift(today, -6)}&vto={today}" in html  # 7 ngày qua
+    assert f"/ceo?vfrom={ceo._shift(today, -29)}&vto={today}" in html  # 30 ngày qua
+    for label in ("Hôm nay", "Hôm qua", "7 ngày qua", "30 ngày qua"):
+        assert label in html
+    # Chưa chọn khoảng nào -> không preset nào active (nút chính có btn-primary)
+    assert "Đang xem khoảng" not in html
+
+
+def test_ceo_route_preset_last7_totals(client):
+    create_owner(client)
+    db, cl, ceo = _db(), _cl(), _ceo()
+    today = cl.today_str()
+    _report(db, today, 1_000_000, 100_000, 50_000)
+    _report(db, ceo._shift(today, -3), 2_000_000, 200_000, 100_000)
+    _report(db, ceo._shift(today, -10), 9_000_000, 900_000, 100_000)  # ngoài 7 ngày
+    f7 = ceo._shift(today, -6)
+    r = client.get(f"/ceo?vfrom={f7}&vto={today}")
+    assert r.status_code == 200
+    html = r.text
+    assert "Đang xem khoảng" in html
+    assert "Doanh thu trong khoảng" in html
+    assert "3,000,000" in html  # chỉ cộng 2 ngày trong 7 ngày qua
+    # Nút preset "7 ngày qua" đang active
+    assert (
+        f'href="/ceo?vfrom={f7}&vto={today}" class="btn btn-sm btn-primary"' in html
+    )

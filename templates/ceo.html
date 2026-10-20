@@ -11,7 +11,7 @@
 {% set dlabel = "hôm nay" if is_today else view_date[8:10] ~ "/" ~ view_date[5:7] %}
 <form method="get" action="/ceo" class="form-inline per-custom">
   <label>Xem ngày
-    <input type="date" name="date" value="{{ view_date }}" class="input">
+    <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="date" value="{{ view_date }}" class="input date-vn">
   </label>
   {% if period in ("day", "week", "month") %}
   <input type="hidden" name="period" value="{{ period }}">
@@ -29,10 +29,10 @@
 </div>
 <form method="get" action="/ceo" class="form-inline per-custom">
   <label>Xem khoảng — Từ ngày
-    <input type="date" name="vfrom" value="{{ view_range.start if view_range else '' }}" class="input">
+    <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="vfrom" value="{{ view_range.start if view_range else '' }}" class="input date-vn">
   </label>
   <label>Đến ngày
-    <input type="date" name="vto" value="{{ view_range.end if view_range else '' }}" class="input">
+    <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="vto" value="{{ view_range.end if view_range else '' }}" class="input date-vn">
   </label>
   {% if period in ("day", "week", "month") %}
   <input type="hidden" name="period" value="{{ period }}">
@@ -151,16 +151,16 @@
     <input type="hidden" name="period" value="custom">
     {% if not is_today %}<input type="hidden" name="date" value="{{ view_date }}">{% endif %}
     <label>Kỳ xem — Từ ngày
-      <input type="date" name="from" value="{{ custom.from }}" class="input">
+      <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="from" value="{{ custom.from }}" class="input date-vn">
     </label>
     <label>Kỳ xem — Đến ngày
-      <input type="date" name="to" value="{{ custom.to }}" class="input">
+      <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="to" value="{{ custom.to }}" class="input date-vn">
     </label>
     <label>Kỳ so sánh — Từ ngày
-      <input type="date" name="cfrom" value="{{ custom.cfrom }}" class="input">
+      <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="cfrom" value="{{ custom.cfrom }}" class="input date-vn">
     </label>
     <label>Kỳ so sánh — Đến ngày
-      <input type="date" name="cto" value="{{ custom.cto }}" class="input">
+      <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="cto" value="{{ custom.cto }}" class="input date-vn">
     </label>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary btn-sm">Áp dụng</button>

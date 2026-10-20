@@ -166,7 +166,7 @@
   <form id="entryForm" class="form form-inline card-flat" autocomplete="off">
     <input type="hidden" id="fEditId" value="">
     <label>Ngày
-      <input type="date" id="fDate" class="input" required>
+      <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" id="fDate" class="input date-vn" required>
     </label>
     <label>Lượt xem
       <input type="number" id="fViews" class="input" min="0" step="1" value="0">
@@ -409,7 +409,7 @@
         btnSubmit = document.getElementById("btnSubmitEntry"),
         btnCancel = document.getElementById("btnCancelEdit"),
         formError = document.getElementById("formError");
-    fDate.value = new Date().toISOString().slice(0, 10);
+    fDate.value = DateVN.toDisplay(new Date().toISOString().slice(0, 10));
 
     function showError(msg) {
       formError.textContent = msg;
@@ -448,7 +448,7 @@
       fEditId.value = "";
       fViews.value = 0; fClicks.value = 0; fConv.value = 0;
       fRevenue.value = 0; fCost.value = 0; fNote.value = "";
-      fDate.value = new Date().toISOString().slice(0, 10);
+      fDate.value = DateVN.toDisplay(new Date().toISOString().slice(0, 10));
       btnSubmit.textContent = "＋ Thêm dòng";
       btnCancel.classList.add("hidden");
       clearError();
@@ -466,7 +466,7 @@
             var e = (data.entries || []).find(function (x) { return String(x.id) === editId; });
             if (!e) return;
             fEditId.value = e.id;
-            fDate.value = e.date; fViews.value = e.views; fClicks.value = e.clicks;
+            fDate.value = DateVN.toDisplay(e.date); fViews.value = e.views; fClicks.value = e.clicks;
             fConv.value = e.conversions; fRevenue.value = e.revenue_rm;
             fCost.value = e.ad_cost; fNote.value = e.action_note || "";
             btnSubmit.textContent = "💾 Cập nhật";

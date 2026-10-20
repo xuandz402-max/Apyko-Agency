@@ -18,7 +18,7 @@
       <input type="text" id="ntTitle" class="input" placeholder="Nhập tên công việc">
     </label>
     <label>Giờ đến hạn
-      <input type="time" id="ntDue" class="input" value="09:00">
+      <input inputmode="numeric" placeholder="HH:MM" type="text" id="ntDue" class="input time-vn" value="09:00">
     </label>
     <label>Thứ tự
       <input type="number" id="ntSort" class="input" value="100" min="0">
@@ -39,7 +39,7 @@
         <td class="nowrap"><input type="number" class="input t-sort" value="{{ t.sort }}" style="width:70px"></td>
         <td><input type="text" class="input t-group" value="{{ t.group_name or '' }}" style="min-width:160px"></td>
         <td><input type="text" class="input t-title" value="{{ t.title }}" style="min-width:220px"></td>
-        <td class="nowrap"><input type="time" class="input t-due" value="{{ t.due_time }}"></td>
+        <td class="nowrap"><input inputmode="numeric" placeholder="HH:MM" type="text" class="input t-due time-vn" value="{{ t.due_time }}"></td>
         <td class="nowrap">
           <select class="input t-assignee">
             <option value="">— Chưa giao —</option>
@@ -96,10 +96,10 @@
   <div class="card-head"><h2>Cài đặt nhắc & giờ làm việc</h2></div>
   <div class="form-inline">
     <label>Giờ bắt đầu
-      <input type="time" id="setStart" class="input" value="{{ settings.work_start }}">
+      <input inputmode="numeric" placeholder="HH:MM" type="text" id="setStart" class="input time-vn" value="{{ settings.work_start }}">
     </label>
     <label>Giờ kết thúc
-      <input type="time" id="setEnd" class="input" value="{{ settings.work_end }}">
+      <input inputmode="numeric" placeholder="HH:MM" type="text" id="setEnd" class="input time-vn" value="{{ settings.work_end }}">
     </label>
     <label>Ngày làm việc (1=T2 … 7=CN)
       <input type="text" id="setDays" class="input" value="{{ settings.work_days }}" placeholder="1,2,3,4,5,6">

@@ -347,3 +347,6 @@ button { border-radius: 999px; }
 
 /* Mẫu trả lời CSKH */
 .cskh-src { width: 100%; }
+
+/* Ô ngày/giờ kiểu VN (static/date-vn.js): viền đỏ khi giá trị sai */
+input.input-invalid { border-color: #DC2626; box-shadow: 0 0 0 1px #DC2626; }

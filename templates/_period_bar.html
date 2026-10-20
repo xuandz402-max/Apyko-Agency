@@ -31,10 +31,10 @@
     <input type="hidden" name="{{ name }}" value="{{ value }}">
     {% endfor %}
     <label>Từ ngày
-      <input type="date" name="from" value="{{ per_info.from }}" class="input">
+      <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="from" value="{{ per_info.from }}" class="input date-vn">
     </label>
     <label>Đến ngày
-      <input type="date" name="to" value="{{ per_info.to }}" class="input">
+      <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="to" value="{{ per_info.to }}" class="input date-vn">
     </label>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary btn-sm">Áp dụng</button>

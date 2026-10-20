@@ -51,7 +51,7 @@
     <input type="hidden" id="fEditDate" value="">
     <div class="form-grid">
       <label>Ngày
-        <input type="date" id="fDate" class="input" required>
+        <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" id="fDate" class="input date-vn" required>
       </label>
       <label>Doanh thu Thẻ sản phẩm (₫)
         <input type="text" inputmode="numeric" id="fRevProduct" class="input money" value="0">
@@ -326,7 +326,7 @@
                 "ad_gmv", "ad_cost", "aov", "conv_rate", "note"];
     var today = localISO(new Date());
     var tomorrow = localISO(new Date(Date.now() + 86400000));
-    fDate.value = today;
+    fDate.value = DateVN.toDisplay(today);
     fDate.max = tomorrow;
 
     function showError(msg) {
@@ -340,7 +340,7 @@
       fields.forEach(function (id) {
         $(id).value = (id === "fNote") ? "" : 0;
       });
-      fDate.value = today;
+      fDate.value = DateVN.toDisplay(today);
       btnSubmit.textContent = "💾 Lưu báo cáo";
       formTitle.textContent = "Nhập báo cáo ngày";
       btnCancel.classList.add("hidden");
@@ -376,7 +376,7 @@
     bindMoneyInputs();
     window.__dailyFillForm = function (r) {
       fEditDate.value = r.date;
-      fDate.value = r.date;
+      fDate.value = DateVN.toDisplay(r.date);
       keys.forEach(function (k, i) {
         var v = r[k] == null ? "" : r[k];
         $(fields[i]).value = (MONEY_KEYS.indexOf(k) >= 0 && v !== "") ? fmtThousand(v) : v;

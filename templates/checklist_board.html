@@ -15,7 +15,7 @@
   <input type="hidden" name="to" value="{{ per_info.to }}">
   {% endif %}
   <label>Ngày
-    <input type="date" name="date" value="{{ date }}" class="input">
+    <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="date" value="{{ date }}" class="input date-vn">
   </label>
   <label>Nhân viên
     <select name="assignee" class="input">

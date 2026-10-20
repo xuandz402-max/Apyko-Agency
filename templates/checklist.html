@@ -9,7 +9,7 @@
 
 <form method="get" action="/checklist" class="form-inline">
   <label>Ngày
-    <input type="date" name="date" value="{{ date }}" class="input">
+    <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="date" value="{{ date }}" class="input date-vn">
   </label>
   {% if is_leader %}
   <label>Nhân viên

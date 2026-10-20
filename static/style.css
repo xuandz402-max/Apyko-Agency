@@ -41,6 +41,8 @@ a:hover { text-decoration: underline; }
 .logo { display: inline-flex; font-weight: 900; letter-spacing: 0.5px; font-size: 20px; }
 .logo-apy { color: #111; }
 .logo-ko { color: #fff; background: var(--brand); padding: 1px 7px; border-radius: 5px; margin-left: 2px; }
+.brand-img { height: 34px; width: auto; display: block; }
+.auth-logo img { height: 46px; width: auto; }
 .nav { padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .nav-item {
   display: block; padding: 10px 12px; border-radius: 9px;

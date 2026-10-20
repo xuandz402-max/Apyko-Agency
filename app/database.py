@@ -203,6 +203,29 @@ CREATE TABLE IF NOT EXISTS notifications (
     is_read INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS pricing_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    category_code TEXT DEFAULT '',
+    category_fee_rate REAL NOT NULL DEFAULT 0,
+    cost_price INTEGER NOT NULL DEFAULT 0,
+    selling_price INTEGER NOT NULL DEFAULT 0,
+    pay_rate REAL NOT NULL DEFAULT 0,
+    voucher_rate REAL NOT NULL DEFAULT 0,
+    voucher_cap INTEGER NOT NULL DEFAULT 0,
+    affiliate_rate REAL NOT NULL DEFAULT 0,
+    pi_ship INTEGER NOT NULL DEFAULT 0,
+    infra_fee INTEGER NOT NULL DEFAULT 0,
+    ads_rate REAL NOT NULL DEFAULT 0,
+    tax_rate REAL NOT NULL DEFAULT 0,
+    created_by TEXT DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS pricing_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL DEFAULT ''
+);
 """
 
 # Migration cộng thêm cho các DB đã tồn tại trước module Daily Checklist:
@@ -419,6 +442,7 @@ def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(_SCHEMA)
         _migrate_users_columns(conn)
+    pricing_seed_settings()
     # Import trễ để tránh vòng lặp module (checklist.py dùng database.py).
     from . import checklist
 
@@ -1165,3 +1189,131 @@ def notif_mark_all_read(user_id: int) -> int:
             (user_id,),
         )
         return cur.rowcount
+
+
+# ------------------------------ định giá sản phẩm ---------------------------
+# Các % trong pricing_items / pricing_settings lưu dạng THẬP PHÂN như file
+# Excel gốc (0.06 = 6%); chuyển đổi % người dùng <-> thập phân nằm trọn ở
+# app/pricing.py (validate_pricing_payload / settings_to_user_view).
+
+PRICING_ITEM_COLUMNS = [
+    "id",
+    "name",
+    "category_code",
+    "category_fee_rate",
+    "cost_price",
+    "selling_price",
+    "pay_rate",
+    "voucher_rate",
+    "voucher_cap",
+    "affiliate_rate",
+    "pi_ship",
+    "infra_fee",
+    "ads_rate",
+    "tax_rate",
+    "created_by",
+    "created_at",
+    "updated_at",
+]
+
+# Tham số mặc định từ sheet "Tham số mặc định" của file "Dự tính giá bán":
+# phí thanh toán 6%, Voucher Xtra 0% (trần 50.000đ), Affiliate 0%,
+# Pi Ship 2.700đ/đơn, hạ tầng 3.000đ/đơn, thuế khấu trừ 1,5%.
+PRICING_SETTING_DEFAULTS = {
+    "pay_rate": "0.06",
+    "voucher_rate": "0.0",
+    "voucher_cap": "50000",
+    "affiliate_rate": "0.0",
+    "pi_ship": "2700",
+    "infra_fee": "3000",
+    "tax_rate": "0.015",
+}
+
+
+def pricing_seed_settings() -> None:
+    """Gieo 7 tham số mặc định nếu bảng pricing_settings còn thiếu (idempotent)."""
+    with get_conn() as conn:
+        for key, value in PRICING_SETTING_DEFAULTS.items():
+            conn.execute(
+                "INSERT OR IGNORE INTO pricing_settings (key, value) VALUES (?, ?)",
+                (key, value),
+            )
+
+
+def pricing_setting_get_all() -> dict:
+    with get_conn() as conn:
+        # Alias bắt buộc như cl_setting_get_all: libsql/Turso trả tên cột
+        # "key" thành "KEY" nên đọc r["key"] sẽ KeyError trên Turso.
+        rows = conn.execute(
+            "SELECT key AS setting_key, value AS setting_value FROM pricing_settings"
+        ).fetchall()
+    return {r["setting_key"]: r["setting_value"] for r in rows}
+
+
+def pricing_setting_set(key: str, value: str) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO pricing_settings (key, value) VALUES (?, ?)"
+            " ON CONFLICT(key) DO UPDATE SET value = ?",
+            (key, value, value),
+        )
+
+
+def _clean_pricing_item(d: dict, for_insert: bool = False) -> dict:
+    data = {k: v for k, v in d.items() if k in PRICING_ITEM_COLUMNS and k != "id"}
+    if not for_insert:
+        # Người tạo + thời điểm tạo không đổi khi sửa.
+        data.pop("created_by", None)
+        data.pop("created_at", None)
+    data["updated_at"] = _utcnow()
+    return data
+
+
+def pricing_item_create(d: dict, created_by: str = "") -> int:
+    data = _clean_pricing_item(d, for_insert=True)
+    data["created_by"] = created_by
+    data["created_at"] = _utcnow()
+    cols = list(data.keys())
+    placeholders = ", ".join("?" for _ in cols)
+    with get_conn() as conn:
+        cur = conn.execute(
+            f"INSERT INTO pricing_items ({', '.join(cols)}) VALUES ({placeholders})",
+            [data[c] for c in cols],
+        )
+        return cur.lastrowid
+
+
+def pricing_item_get(item_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM pricing_items WHERE id = ?", (item_id,)
+        ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def pricing_item_list() -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM pricing_items ORDER BY updated_at DESC, id DESC"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def pricing_item_update(item_id: int, d: dict) -> dict | None:
+    data = _clean_pricing_item(d)
+    if not data:
+        return pricing_item_get(item_id)
+    with get_conn() as conn:
+        cur = conn.execute(
+            f"UPDATE pricing_items SET {', '.join(f'{k} = ?' for k in data)} WHERE id = ?",
+            [*data.values(), item_id],
+        )
+        if cur.rowcount == 0:
+            return None
+    return pricing_item_get(item_id)
+
+
+def pricing_item_delete(item_id: int) -> bool:
+    with get_conn() as conn:
+        cur = conn.execute("DELETE FROM pricing_items WHERE id = ?", (item_id,))
+        return cur.rowcount > 0

@@ -1,0 +1,508 @@
+{% extends "base.html" %}
+{% set nav_active = "pricing" %}
+{% block main_class %}main-wide{% endblock %}
+{% block title %}Định giá sản phẩm · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>🏷️ Định giá sản phẩm</h1>
+  <p class="muted">Bảng tính giá bán Shopee theo file "Dự tính giá bán": chọn ngành hàng (2.904 ngành)
+    để tự điền % phí ngành, nhập giá vốn + giá bán — app tính từng khoản phí, tổng chi phí,
+    lãi/lỗ và % biên lãi. Tổng chi phí = Giá vốn + Phí ngành + Phí thanh toán + Phí Voucher Xtra
+    (có trần) + Phí Affiliate + Phí cố định/đơn (Pi Ship + Hạ tầng) + Tiền quảng cáo + Thuế khấu trừ.</p>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2 id="formTitle">Thêm sản phẩm &amp; tính giá</h2>
+    <a class="btn btn-secondary btn-sm" href="/api/pricing/export">⬇ Xuất CSV</a>
+  </div>
+  <form id="itemForm" class="form form-inline card-flat" autocomplete="off">
+    <input type="hidden" id="fEditId" value="">
+    <input type="hidden" id="fCatCode" value="">
+    <label class="grow">Tên sản phẩm
+      <input type="text" id="fName" class="input" placeholder="VD: Dầu gội bồ kết" required>
+    </label>
+    <label class="grow">Ngành hàng (gõ để tìm)
+      <span class="cat-picker">
+        <input type="text" id="fCatSearch" class="input" placeholder="VD: dầu gội, laptop, thời trang…">
+        <span id="fCatSuggest" class="cat-suggest hidden"></span>
+      </span>
+    </label>
+    <label>% Phí ngành
+      <input type="text" id="fCatRateLabel" class="input" value="—" readonly tabindex="-1">
+    </label>
+    <label>Giá vốn (đ)
+      <input type="text" inputmode="numeric" id="fCost" class="input money" value="0">
+    </label>
+    <label>Giá bán (đ)
+      <input type="text" inputmode="numeric" id="fPrice" class="input money" value="0">
+    </label>
+    <label>% Phí thanh toán
+      <input type="number" id="fPayRate" class="input" min="0" max="100" step="0.01" value="6">
+    </label>
+    <label>% Voucher Xtra
+      <input type="number" id="fVoucherRate" class="input" min="0" max="100" step="0.01" value="0">
+    </label>
+    <label>Trần Voucher (đ)
+      <input type="text" inputmode="numeric" id="fVoucherCap" class="input money" value="50,000">
+    </label>
+    <label>% Affiliate
+      <input type="number" id="fAffiliateRate" class="input" min="0" max="100" step="0.01" value="0">
+    </label>
+    <label>% Quảng cáo
+      <input type="number" id="fAdsRate" class="input" min="0" max="100" step="0.01" value="0">
+    </label>
+    <label>% Thuế khấu trừ
+      <input type="number" id="fTaxRate" class="input" min="0" max="100" step="0.01" value="1.5">
+    </label>
+    <label>Pi Ship (đ/đơn)
+      <input type="text" inputmode="numeric" id="fPiShip" class="input money" value="2,700">
+    </label>
+    <label>Hạ tầng (đ/đơn)
+      <input type="text" inputmode="numeric" id="fInfra" class="input money" value="3,000">
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitItem">＋ Thêm &amp; tính</button>
+      <button type="button" class="btn btn-ghost btn-sm hidden" id="btnCancelEdit">Hủy sửa</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btnDefaults">Đổ tham số mặc định</button>
+    </div>
+    <div id="formError" class="alert alert-error hidden"></div>
+  </form>
+
+  <div class="table-wrap"><table class="table table-compact" id="itemsTable">
+    <thead><tr>
+      <th>Tên sản phẩm</th><th>Ngành hàng</th><th>% phí ngành</th><th>Giá vốn</th><th>Giá bán</th>
+      <th>Phí ngành</th><th>Phí thanh toán</th><th>Voucher Xtra</th><th>Affiliate</th>
+      <th>Quảng cáo</th><th>Thuế</th><th>Phí cố định</th><th>Tổng chi phí</th>
+      <th>Lãi/Lỗ</th><th>% biên lãi</th>{% if can_edit or can_delete %}<th></th>{% endif %}
+    </tr></thead>
+    <tbody id="itemsBody">
+      <tr><td colspan="16" class="muted">Đang tải dữ liệu…</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sync-note">Phí Voucher Xtra = MIN(giá bán x %, trần). Lãi/Lỗ = Giá bán − Tổng chi phí. Giá bán = 0 thì % biên lãi hiển thị "—".</p>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>↩ Tính giá bán theo % lãi mong muốn</h2></div>
+  <form id="revForm" class="form form-inline card-flat" autocomplete="off">
+    <input type="hidden" id="revCatCode" value="">
+    <label>Giá vốn (đ)
+      <input type="text" inputmode="numeric" id="revCost" class="input money" value="0">
+    </label>
+    <label class="grow">Ngành hàng (gõ để tìm)
+      <span class="cat-picker">
+        <input type="text" id="revCatSearch" class="input" placeholder="VD: dầu gội, laptop…">
+        <span id="revCatSuggest" class="cat-suggest hidden"></span>
+      </span>
+    </label>
+    <label>% lãi mong muốn
+      <input type="number" id="revMargin" class="input" min="-99" max="99.99" step="0.1" value="30">
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Tính giá bán</button>
+    </div>
+    <div id="revError" class="alert alert-error hidden"></div>
+  </form>
+  <div id="revResult" class="hidden">
+    <p>Giá bán cần đặt: <strong id="revPrice" class="code-big"></strong>
+      <span class="muted">(biên lãi thực tại giá này: <span id="revMarginReal"></span> · lãi <span id="revProfit"></span>)</span></p>
+    <div class="table-wrap"><table class="table table-compact">
+      <thead><tr><th>Phí ngành</th><th>Phí thanh toán</th><th>Voucher Xtra</th><th>Affiliate</th>
+        <th>Quảng cáo</th><th>Thuế</th><th>Phí cố định</th><th>Tổng chi phí</th></tr></thead>
+      <tbody><tr id="revBreakdown"></tr></tbody>
+    </table></div>
+    <p class="sync-note">Bộ phí dùng theo tham số đang điền ở form thêm sản phẩm phía trên (mặc định từ mục Tham số mặc định).</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>⚙ Tham số mặc định</h2></div>
+  <form id="settingsForm" class="form form-inline card-flat" autocomplete="off">
+    <label>% Phí thanh toán
+      <input type="number" id="sPayRate" class="input" min="0" max="100" step="0.01">
+    </label>
+    <label>% Voucher Xtra
+      <input type="number" id="sVoucherRate" class="input" min="0" max="100" step="0.01">
+    </label>
+    <label>Trần Voucher (đ)
+      <input type="text" inputmode="numeric" id="sVoucherCap" class="input money">
+    </label>
+    <label>% Affiliate
+      <input type="number" id="sAffiliateRate" class="input" min="0" max="100" step="0.01">
+    </label>
+    <label>Pi Ship (đ/đơn)
+      <input type="text" inputmode="numeric" id="sPiShip" class="input money">
+    </label>
+    <label>Hạ tầng (đ/đơn)
+      <input type="text" inputmode="numeric" id="sInfra" class="input money">
+    </label>
+    <label>% Thuế khấu trừ
+      <input type="number" id="sTaxRate" class="input" min="0" max="100" step="0.01">
+    </label>
+    {% if can_settings %}
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Lưu tham số</button>
+    </div>
+    {% else %}
+    <p class="muted">Chỉ chủ sở hữu / Quản trị checklist mới sửa được tham số mặc định.</p>
+    {% endif %}
+    <div id="settingsMsg" class="alert hidden"></div>
+  </form>
+</div>
+
+<script>
+(function () {
+  var CAN_EDIT = {{ "true" if can_edit else "false" }};
+  var CAN_DELETE = {{ "true" if can_delete else "false" }};
+  var CAN_SETTINGS = {{ "true" if can_settings else "false" }};
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function money(v) {
+    if (v == null) return "—";
+    return Number(v).toLocaleString("vi-VN") + "₫";
+  }
+  function pctText(rate) { return (Math.round(Number(rate) * 10000) / 100) + "%"; }
+  function showErr(el, data) {
+    if (data && data.errors) {
+      el.textContent = Object.values(data.errors).join(" ");
+    } else if (data && data.detail) {
+      el.textContent = data.detail;
+    } else {
+      el.textContent = "Có lỗi xảy ra, thử lại sau.";
+    }
+    el.classList.remove("hidden");
+  }
+
+  // ---------- định dạng dấu phẩy hàng nghìn (giống Báo cáo ngày) ----------
+  function fmtThousand(s) {
+    var d = String(s == null ? "" : s).replace(/\D/g, "");
+    if (!d) return "";
+    return d.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  function unformatMoney(s) {
+    var d = String(s == null ? "" : s).replace(/\D/g, "");
+    return d === "" ? "0" : String(parseInt(d, 10));
+  }
+  function bindMoneyInputs(root) {
+    (root || document).querySelectorAll("input.money").forEach(function (el) {
+      el.addEventListener("input", function () { el.value = fmtThousand(el.value); });
+      el.addEventListener("blur", function () { if (el.value === "") el.value = "0"; });
+      el.addEventListener("focus", function () { el.select(); });
+    });
+  }
+  bindMoneyInputs(document);
+
+  // ---------- gợi ý ngành hàng ----------
+  function bindCategoryPicker(searchId, suggestId, onPick) {
+    var input = $(searchId), box = $(suggestId), timer = null;
+    input.addEventListener("input", function () {
+      clearTimeout(timer);
+      var q = input.value.trim();
+      if (!q) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+      timer = setTimeout(function () {
+        fetch("/api/pricing/categories?q=" + encodeURIComponent(q))
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            var cats = data.categories || [];
+            if (!cats.length) {
+              box.innerHTML = "<div class=\"cat-empty muted\">Không tìm thấy ngành phù hợp.</div>";
+            } else {
+              box.innerHTML = cats.map(function (c, i) {
+                return "<button type=\"button\" class=\"cat-opt\" data-i=\"" + i + "\">" +
+                  esc(c.code) + " <span class=\"muted\">(" + pctText(c.fee_rate) + ")</span></button>";
+              }).join("");
+              box.querySelectorAll(".cat-opt").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                  onPick(cats[Number(btn.getAttribute("data-i"))]);
+                  box.classList.add("hidden");
+                });
+              });
+            }
+            box.classList.remove("hidden");
+          });
+      }, 250);
+    });
+    input.addEventListener("blur", function () {
+      setTimeout(function () { box.classList.add("hidden"); }, 200);
+    });
+  }
+
+  bindCategoryPicker("fCatSearch", "fCatSuggest", function (c) {
+    $("fCatCode").value = c.code;
+    $("fCatSearch").value = c.code;
+    $("fCatRateLabel").value = pctText(c.fee_rate);
+  });
+  $("fCatSearch").addEventListener("input", function () {
+    if (!$("fCatSearch").value.trim()) {
+      $("fCatCode").value = "";
+      $("fCatRateLabel").value = "—";
+    }
+  });
+  bindCategoryPicker("revCatSearch", "revCatSuggest", function (c) {
+    $("revCatCode").value = c.code;
+    $("revCatSearch").value = c.code;
+  });
+  $("revCatSearch").addEventListener("input", function () {
+    if (!$("revCatSearch").value.trim()) $("revCatCode").value = "";
+  });
+
+  // ---------- form thêm / sửa ----------
+  var DEFAULTS = null;
+  function applyDefaultsToForm() {
+    if (!DEFAULTS) return;
+    $("fPayRate").value = DEFAULTS.pay_rate_pct;
+    $("fVoucherRate").value = DEFAULTS.voucher_rate_pct;
+    $("fVoucherCap").value = fmtThousand(DEFAULTS.voucher_cap);
+    $("fAffiliateRate").value = DEFAULTS.affiliate_rate_pct;
+    $("fTaxRate").value = DEFAULTS.tax_rate_pct;
+    $("fPiShip").value = fmtThousand(DEFAULTS.pi_ship);
+    $("fInfra").value = fmtThousand(DEFAULTS.infra_fee);
+  }
+
+  function formPayload() {
+    return {
+      name: $("fName").value.trim(),
+      category_code: $("fCatCode").value,
+      cost_price: unformatMoney($("fCost").value),
+      selling_price: unformatMoney($("fPrice").value),
+      pay_rate_pct: $("fPayRate").value,
+      voucher_rate_pct: $("fVoucherRate").value,
+      voucher_cap: unformatMoney($("fVoucherCap").value),
+      affiliate_rate_pct: $("fAffiliateRate").value,
+      ads_rate_pct: $("fAdsRate").value,
+      tax_rate_pct: $("fTaxRate").value,
+      pi_ship: unformatMoney($("fPiShip").value),
+      infra_fee: unformatMoney($("fInfra").value)
+    };
+  }
+
+  function resetForm() {
+    $("fEditId").value = "";
+    $("fName").value = "";
+    $("fCatCode").value = "";
+    $("fCatSearch").value = "";
+    $("fCatRateLabel").value = "—";
+    $("fCost").value = "0";
+    $("fPrice").value = "0";
+    $("fAdsRate").value = "0";
+    $("formTitle").textContent = "Thêm sản phẩm & tính giá";
+    $("btnSubmitItem").textContent = "＋ Thêm & tính";
+    $("btnCancelEdit").classList.add("hidden");
+    $("formError").classList.add("hidden");
+    applyDefaultsToForm();
+  }
+
+  function fillForm(it) {
+    $("fEditId").value = it.id;
+    $("fName").value = it.name || "";
+    $("fCatCode").value = it.category_code || "";
+    $("fCatSearch").value = it.category_code || "";
+    $("fCatRateLabel").value = it.category_code ? pctText(it.category_fee_rate) : "—";
+    $("fCost").value = fmtThousand(it.cost_price);
+    $("fPrice").value = fmtThousand(it.selling_price);
+    $("fPayRate").value = Math.round(it.pay_rate * 10000) / 100;
+    $("fVoucherRate").value = Math.round(it.voucher_rate * 10000) / 100;
+    $("fVoucherCap").value = fmtThousand(it.voucher_cap);
+    $("fAffiliateRate").value = Math.round(it.affiliate_rate * 10000) / 100;
+    $("fAdsRate").value = Math.round(it.ads_rate * 10000) / 100;
+    $("fTaxRate").value = Math.round(it.tax_rate * 10000) / 100;
+    $("fPiShip").value = fmtThousand(it.pi_ship);
+    $("fInfra").value = fmtThousand(it.infra_fee);
+    $("formTitle").textContent = "Sửa sản phẩm #" + it.id;
+    $("btnSubmitItem").textContent = "Lưu thay đổi";
+    $("btnCancelEdit").classList.remove("hidden");
+    window.scrollTo({top: 0, behavior: "smooth"});
+  }
+
+  var ITEMS = {};
+  function rowHtml(it) {
+    var c = it.calc || {};
+    var profitCls = c.profit > 0 ? "text-green" : (c.profit < 0 ? "text-red" : "");
+    var html = "<td>" + esc(it.name) + "</td>" +
+      "<td title=\"" + esc(it.category_code) + "\">" + esc(it.category_small || it.category_code || "—") + "</td>" +
+      "<td class=\"num\">" + (it.category_code ? pctText(it.category_fee_rate) : "—") + "</td>" +
+      "<td class=\"num\">" + money(it.cost_price) + "</td>" +
+      "<td class=\"num\">" + money(it.selling_price) + "</td>" +
+      "<td class=\"num\">" + money(c.cat_fee) + "</td>" +
+      "<td class=\"num\">" + money(c.pay_fee) + "</td>" +
+      "<td class=\"num\">" + money(c.voucher_fee) + "</td>" +
+      "<td class=\"num\">" + money(c.affiliate_fee) + "</td>" +
+      "<td class=\"num\">" + money(c.ads_cost) + "</td>" +
+      "<td class=\"num\">" + money(c.tax_fee) + "</td>" +
+      "<td class=\"num\">" + money(c.fixed_fee) + "</td>" +
+      "<td class=\"num\"><strong>" + money(c.total_cost) + "</strong></td>" +
+      "<td class=\"num " + profitCls + "\"><strong>" + money(c.profit) + "</strong></td>" +
+      "<td class=\"num " + profitCls + "\">" + (c.margin_pct == null ? "—" : c.margin_pct + "%") + "</td>";
+    if (CAN_EDIT || CAN_DELETE) {
+      html += "<td class=\"nowrap\">";
+      if (CAN_EDIT) html += "<button type=\"button\" class=\"btn btn-secondary btn-sm\" data-edit=\"" + it.id + "\">Sửa</button> ";
+      if (CAN_DELETE) html += "<button type=\"button\" class=\"btn btn-danger btn-sm\" data-del=\"" + it.id + "\">Xóa</button>";
+      html += "</td>";
+    }
+    return html;
+  }
+
+  function loadItems() {
+    fetch("/api/pricing/items")
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var items = data.items || [];
+        ITEMS = {};
+        items.forEach(function (it) { ITEMS[it.id] = it; });
+        var body = $("itemsBody");
+        if (!items.length) {
+          body.innerHTML = "<tr><td colspan=\"16\" class=\"muted\">Chưa có sản phẩm nào. Thêm ở form phía trên.</td></tr>";
+          return;
+        }
+        body.innerHTML = items.map(function (it) { return "<tr>" + rowHtml(it) + "</tr>"; }).join("");
+        body.querySelectorAll("[data-edit]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var it = ITEMS[Number(btn.getAttribute("data-edit"))];
+            if (it) fillForm(it);
+          });
+        });
+        body.querySelectorAll("[data-del]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var id = btn.getAttribute("data-del");
+            if (!window.confirm("Xóa sản phẩm này khỏi bảng định giá?")) return;
+            fetch("/api/pricing/items/" + id, {method: "DELETE"}).then(function (r) {
+              if (r.status === 204) { loadItems(); if ($("fEditId").value === id) resetForm(); }
+              else r.json().then(function (d) { window.alert(d.detail || "Không xóa được."); });
+            });
+          });
+        });
+      });
+  }
+
+  $("itemForm").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var editId = $("fEditId").value;
+    var url = editId ? "/api/pricing/items/" + editId : "/api/pricing/items";
+    fetch(url, {
+      method: editId ? "PUT" : "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(formPayload())
+    }).then(function (r) {
+      return r.json().then(function (d) { return {status: r.status, data: d}; });
+    }).then(function (res) {
+      if (res.status === 200 || res.status === 201) {
+        $("formError").classList.add("hidden");
+        loadItems();
+        resetForm();
+      } else {
+        showErr($("formError"), res.data);
+      }
+    });
+  });
+  $("btnCancelEdit").addEventListener("click", resetForm);
+  $("btnDefaults").addEventListener("click", function () {
+    if (DEFAULTS) { applyDefaultsToForm(); }
+  });
+
+  // ---------- tính ngược ----------
+  $("revForm").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var p = formPayload();
+    var payload = {
+      cost_price: unformatMoney($("revCost").value),
+      category_code: $("revCatCode").value,
+      pay_rate_pct: p.pay_rate_pct,
+      voucher_rate_pct: p.voucher_rate_pct,
+      voucher_cap: p.voucher_cap,
+      affiliate_rate_pct: p.affiliate_rate_pct,
+      ads_rate_pct: p.ads_rate_pct,
+      tax_rate_pct: p.tax_rate_pct,
+      pi_ship: p.pi_ship,
+      infra_fee: p.infra_fee,
+      target_margin_pct: $("revMargin").value
+    };
+    fetch("/api/pricing/reverse", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    }).then(function (r) {
+      return r.json().then(function (d) { return {status: r.status, data: d}; });
+    }).then(function (res) {
+      if (res.status !== 200) { showErr($("revError"), res.data); $("revResult").classList.add("hidden"); return; }
+      $("revError").classList.add("hidden");
+      var c = res.data.calc;
+      $("revPrice").textContent = money(res.data.selling_price);
+      $("revMarginReal").textContent = (c.margin_pct == null ? "—" : c.margin_pct + "%");
+      $("revProfit").textContent = money(c.profit);
+      $("revBreakdown").innerHTML =
+        "<td class=\"num\">" + money(c.cat_fee) + "</td>" +
+        "<td class=\"num\">" + money(c.pay_fee) + "</td>" +
+        "<td class=\"num\">" + money(c.voucher_fee) + "</td>" +
+        "<td class=\"num\">" + money(c.affiliate_fee) + "</td>" +
+        "<td class=\"num\">" + money(c.ads_cost) + "</td>" +
+        "<td class=\"num\">" + money(c.tax_fee) + "</td>" +
+        "<td class=\"num\">" + money(c.fixed_fee) + "</td>" +
+        "<td class=\"num\"><strong>" + money(c.total_cost) + "</strong></td>";
+      $("revResult").classList.remove("hidden");
+    });
+  });
+
+  // ---------- tham số mặc định ----------
+  function loadSettings() {
+    fetch("/api/pricing/settings")
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var s = data.settings || {};
+        DEFAULTS = s;
+        $("sPayRate").value = s.pay_rate_pct;
+        $("sVoucherRate").value = s.voucher_rate_pct;
+        $("sVoucherCap").value = fmtThousand(s.voucher_cap);
+        $("sAffiliateRate").value = s.affiliate_rate_pct;
+        $("sPiShip").value = fmtThousand(s.pi_ship);
+        $("sInfra").value = fmtThousand(s.infra_fee);
+        $("sTaxRate").value = s.tax_rate_pct;
+        if (!CAN_SETTINGS) {
+          ["sPayRate", "sVoucherRate", "sVoucherCap", "sAffiliateRate", "sPiShip", "sInfra", "sTaxRate"]
+            .forEach(function (id) { $(id).disabled = true; });
+        }
+        applyDefaultsToForm();
+      });
+  }
+  if (CAN_SETTINGS) {
+    $("settingsForm").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var payload = {
+        pay_rate_pct: $("sPayRate").value,
+        voucher_rate_pct: $("sVoucherRate").value,
+        voucher_cap: unformatMoney($("sVoucherCap").value),
+        affiliate_rate_pct: $("sAffiliateRate").value,
+        pi_ship: unformatMoney($("sPiShip").value),
+        infra_fee: unformatMoney($("sInfra").value),
+        tax_rate_pct: $("sTaxRate").value
+      };
+      fetch("/api/pricing/settings", {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+      }).then(function (r) {
+        return r.json().then(function (d) { return {status: r.status, data: d}; });
+      }).then(function (res) {
+        var msg = $("settingsMsg");
+        if (res.status === 200) {
+          DEFAULTS = res.data.settings;
+          msg.textContent = "Đã lưu tham số mặc định.";
+          msg.className = "alert alert-ok";
+        } else {
+          showErr(msg, res.data);
+          msg.className = "alert alert-error";
+        }
+      });
+    });
+  }
+
+  loadSettings();
+  loadItems();
+})();
+</script>
+{% endblock %}

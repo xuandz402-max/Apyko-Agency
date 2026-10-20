@@ -102,6 +102,37 @@ sửa dữ liệu ở các module khác (Báo cáo ngày, GMV Max, checklist...)
 mất tối đa ~1 phút mới hiện lên trang CEO. Các trang còn lại không dùng
 cache này.
 
+## 🏷️ Định giá sản phẩm
+
+Trang `/dinh-gia` — bảng tính giá bán Shopee bám đúng file Excel **"Dự tính giá
+bán"** của chủ shop (sheet "Tính hàng loạt" + "Tham số mặc định"; đã đối chiếu
+từng khoản phí với 3 dòng mẫu trong file, sai số ≤ 1đ).
+
+- **Ngành hàng**: 2.904 ngành (1.452 [Thường] + 1.452 [MALL]) đóng gói sẵn tại
+  `app/data/pricing_categories.json` (sinh từ sheet "Ngành hàng" bằng
+  `hidden_files/gen_pricing_categories.py`). Gõ tìm ngành → chọn → app tự điền
+  % phí ngành; không cần mạng ngoài.
+- **Công thức** (P = giá bán, E = giá vốn): Phí ngành = P × %ngành ·
+  Phí thanh toán = P × %thanh toán · Phí Voucher Xtra = MIN(P × %voucher, trần) ·
+  Phí Affiliate = P × %affiliate · Quảng cáo = P × %% quảng cáo ·
+  Thuế = P × %thuế · Phí cố định/đơn = Pi Ship + Hạ tầng.
+  **Tổng chi phí = E + tất cả các khoản trên; Lãi/Lỗ = P − Tổng chi phí;
+  % biên lãi = Lãi/Lỗ ÷ P** (P = 0 → hiển thị "—").
+- **Tham số mặc định** (bảng `pricing_settings`, seed từ sheet "Tham số mặc
+  định"): Phí thanh toán 6%, Voucher Xtra 0% (shop tự điền 5,5% nếu có đăng ký),
+  trần Voucher 50.000đ/sp, Affiliate 0%, Pi Ship 2.700đ/đơn, Hạ tầng 3.000đ/đơn,
+  Thuế khấu trừ 1,5% (1% VAT + 0,5% TNCN). Sửa tại khu "Tham số mặc định" cuối
+  trang — **chỉ chủ sở hữu / Quản trị checklist** (kiểm tra ở backend); sản phẩm
+  tạo mới sẽ dùng mặc định mới, từng dòng vẫn sửa riêng được.
+- **Tính ngược**: nhập giá vốn + ngành + % lãi mong muốn → app tìm giá bán
+  nguyên đồng nhỏ nhất đạt biên lãi đó (tìm kiếm nhị phân vì phí Voucher có
+  trần MIN) và hiện bảng phân bổ phí tại giá đó. Không lưu.
+- **Phân quyền**: đã đăng nhập là xem + tính ngược được; thêm/sửa cần quyền
+  **Thêm & sửa dữ liệu**, xóa cần quyền **Xóa dữ liệu** (giống module Sản phẩm).
+  Có nút **Xuất CSV** kèm đầy đủ các cột đã tính.
+- Quy ước %: API/giao diện dùng số % kiểu người dùng (6 = 6%); DB lưu thập phân
+  (0.06) như file gốc; chuyển đổi nằm ở một chỗ duy nhất trong `app/pricing.py`.
+
 ## Tối ưu tốc độ (gói free)
 
 - **Nén GZip** mọi response ≥ 1KB (`GZipMiddleware` trong `app/main.py`).

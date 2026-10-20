@@ -30,6 +30,11 @@
       <a href="/products/new" class="nav-item{% if nav_active == 'product_new' %} active{% endif %}">➕ Thêm sản phẩm</a>
       {% endif %}
       <a href="/analysis" class="nav-item{% if nav_active == 'analysis' %} active{% endif %}">📈 Phân tích</a>
+      {% endif %}
+      {% if user %}
+      <a href="/dinh-gia" class="nav-item{% if nav_active == 'pricing' %} active{% endif %}">🏷️ Định giá sản phẩm</a>
+      {% endif %}
+      {% if user and user.can_view_products %}
       <a href="/gmv" class="nav-item{% if nav_active == 'gmv' %} active{% endif %}">📣 GMV Max Shopee</a>
       <a href="/bao-cao" class="nav-item{% if nav_active == 'daily' %} active{% endif %}">📊 Báo cáo ngày</a>
       {% endif %}

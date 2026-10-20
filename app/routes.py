@@ -21,7 +21,7 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 
-from . import auth, ceo, checklist, config, lessons
+from . import auth, ceo, checklist, config, lessons, pricing
 from . import database as db
 from .auth import (
     ApiCanDeleteProducts,
@@ -1640,3 +1640,223 @@ def api_notification_read(notif_id: int, user: dict = ApiUser):
         return JSONResponse({"detail": "Không phải thông báo của bạn."}, status_code=403)
     db.notif_mark_read(notif_id)
     return {"ok": True}
+
+
+# ------------------------------ định giá sản phẩm ---------------------------
+# Nguồn công thức + danh mục ngành + tham số mặc định: file Excel
+# "Dự tính giá bán" của user (xem app/pricing.py). Mọi % qua API ở dạng
+# người dùng (6 = 6%); DB lưu thập phân (0.06) — chuyển đổi ở pricing.py.
+
+
+def _pricing_actor(user: dict) -> str:
+    return (user.get("display_name") or user.get("username") or "").strip()
+
+
+def _pricing_enrich(item: dict) -> dict:
+    enriched = dict(item)
+    enriched["calc"] = pricing.calc_pricing(enriched)
+    cat = pricing.find_category(enriched.get("category_code"))
+    enriched["category_small"] = cat["small"] if cat else ""
+    return enriched
+
+
+def _pricing_defaults() -> dict:
+    """Tham số mặc định dạng DB (thập phân) dùng đổ vào validate."""
+    return pricing.settings_to_defaults(db.pricing_setting_get_all())
+
+
+@router.get("/dinh-gia", response_class=HTMLResponse)
+def page_pricing(request: Request):
+    # Xem: chỉ cần đăng nhập (không kèm quyền riêng) như checklist/thông báo.
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    return templates.TemplateResponse(
+        "pricing.html",
+        _ctx(
+            request,
+            user,
+            can_edit=bool(user.get("can_add_edit_products")),
+            can_delete=bool(user.get("can_delete_products")),
+            can_settings=bool(user.get("is_owner") or user.get("can_checklist_admin")),
+        ),
+    )
+
+
+@router.get("/api/pricing/categories")
+def api_pricing_categories(q: str = "", user: dict = ApiUser):
+    results = pricing.search_categories(q, limit=20)
+    return {
+        "categories": [
+            {
+                "code": c["code"],
+                "fee_rate": c["fee_rate"],
+                "fee_pct": round(c["fee_rate"] * 100, 4),
+                "big": c["big"],
+                "small": c["small"],
+                "shop_type": c["shop_type"],
+            }
+            for c in results
+        ]
+    }
+
+
+@router.get("/api/pricing/items")
+def api_pricing_list_items(user: dict = ApiUser):
+    items = [_pricing_enrich(it) for it in db.pricing_item_list()]
+    return {"items": items, "total": len(items)}
+
+
+@router.post("/api/pricing/items", status_code=201)
+async def api_pricing_create_item(request: Request, user: dict = ApiCanEditProducts):
+    body, err = await _gmv_json_body(request)
+    if err:
+        return err
+    clean, errors = pricing.validate_pricing_payload(body, _pricing_defaults())
+    if errors:
+        return JSONResponse({"errors": errors}, status_code=422)
+    item_id = db.pricing_item_create(clean, _pricing_actor(user))
+    return JSONResponse(_pricing_enrich(db.pricing_item_get(item_id)), status_code=201)
+
+
+@router.put("/api/pricing/items/{item_id}")
+async def api_pricing_update_item(
+    item_id: int, request: Request, user: dict = ApiCanEditProducts
+):
+    if db.pricing_item_get(item_id) is None:
+        return JSONResponse({"detail": "Không tìm thấy sản phẩm."}, status_code=404)
+    body, err = await _gmv_json_body(request)
+    if err:
+        return err
+    clean, errors = pricing.validate_pricing_payload(body, _pricing_defaults())
+    if errors:
+        return JSONResponse({"errors": errors}, status_code=422)
+    updated = db.pricing_item_update(item_id, clean)
+    return _pricing_enrich(updated)
+
+
+@router.delete("/api/pricing/items/{item_id}", status_code=204)
+def api_pricing_delete_item(item_id: int, user: dict = ApiCanDeleteProducts):
+    if not db.pricing_item_delete(item_id):
+        return JSONResponse({"detail": "Không tìm thấy sản phẩm."}, status_code=404)
+    return Response(status_code=204)
+
+
+@router.post("/api/pricing/reverse")
+async def api_pricing_reverse(request: Request, user: dict = ApiUser):
+    """Tính NGƯỢC: giá vốn + % biên lãi mong muốn -> giá bán cần đặt."""
+    body, err = await _gmv_json_body(request)
+    if err:
+        return err
+    raw_target = body.get("target_margin_pct")
+    try:
+        target = float(raw_target)
+    except (TypeError, ValueError):
+        return JSONResponse(
+            {"errors": {"target_margin_pct": "% biên lãi mong muốn phải là số."}},
+            status_code=422,
+        )
+    if target >= 100:
+        return JSONResponse(
+            {"errors": {"target_margin_pct": "Biên lãi từ 100% trở lên không thể đạt được."}},
+            status_code=422,
+        )
+    clean, errors = pricing.validate_pricing_payload(
+        body, _pricing_defaults(), require_name=False
+    )
+    if errors:
+        return JSONResponse({"errors": errors}, status_code=422)
+    price = pricing.price_for_margin(clean, target)
+    if price is None:
+        return JSONResponse(
+            {
+                "errors": {
+                    "target_margin_pct": (
+                        "Không khả thi với bộ phí hiện tại"
+                        " (tổng các % phí quá cao so với biên lãi mong muốn)."
+                    )
+                }
+            },
+            status_code=422,
+        )
+    calc_in = dict(clean)
+    calc_in["selling_price"] = price
+    return {
+        "selling_price": price,
+        "target_margin_pct": target,
+        "calc": pricing.calc_pricing(calc_in),
+    }
+
+
+@router.get("/api/pricing/settings")
+def api_pricing_get_settings(user: dict = ApiUser):
+    return {"settings": pricing.settings_to_user_view(db.pricing_setting_get_all())}
+
+
+@router.put("/api/pricing/settings")
+async def api_pricing_update_settings(request: Request, user: dict = ApiUser):
+    # Chủ sở hữu hoặc Quản trị checklist mới sửa được tham số mặc định.
+    if not _cl_is_admin(user):
+        return JSONResponse(
+            {"detail": "Chỉ chủ sở hữu / Quản trị checklist được sửa tham số mặc định."},
+            status_code=403,
+        )
+    body, err = await _gmv_json_body(request)
+    if err:
+        return err
+    clean, errors = pricing.validate_settings_payload(body)
+    if errors:
+        return JSONResponse({"errors": errors}, status_code=422)
+    for key, value in clean.items():
+        db.pricing_setting_set(key, value)
+    return {"settings": pricing.settings_to_user_view(db.pricing_setting_get_all())}
+
+
+_PRICING_EXPORT_FIELDS = [
+    "name",
+    "category_code",
+    "category_fee_rate",
+    "cost_price",
+    "selling_price",
+    "pay_rate",
+    "voucher_rate",
+    "voucher_cap",
+    "affiliate_rate",
+    "pi_ship",
+    "infra_fee",
+    "ads_rate",
+    "tax_rate",
+    "cat_fee",
+    "pay_fee",
+    "voucher_fee",
+    "affiliate_fee",
+    "ads_cost",
+    "tax_fee",
+    "fixed_fee",
+    "total_cost",
+    "profit",
+    "margin_pct",
+    "created_by",
+    "updated_at",
+]
+
+
+@router.get("/api/pricing/export")
+def api_pricing_export(user: dict = ApiUser):
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=_PRICING_EXPORT_FIELDS)
+    writer.writeheader()
+    for item in db.pricing_item_list():
+        enriched = _pricing_enrich(item)
+        row = {f: enriched.get(f, "") for f in _PRICING_EXPORT_FIELDS}
+        row.update(enriched["calc"])
+        writer.writerow(
+            {f: ("" if row.get(f) is None else row.get(f)) for f in _PRICING_EXPORT_FIELDS}
+        )
+    payload = buf.getvalue().encode("utf-8-sig")
+    filename = "dinh_gia_export_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".csv"
+    return StreamingResponse(
+        io.BytesIO(payload),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

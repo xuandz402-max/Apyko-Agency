@@ -257,3 +257,13 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
 .cl-notif { border-left: 4px solid var(--brand); }
 .cl-notif-read { opacity: 0.65; }
+
+/* ---------- định giá: ô tìm ngành hàng có gợi ý ---------- */
+.cat-picker { position: relative; display: block; }
+.cat-suggest { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: var(--shadow); max-height: 280px; overflow-y: auto; padding: 4px; }
+.cat-opt { display: block; width: 100%; text-align: left; background: none; border: 0;
+  padding: 8px 10px; border-radius: 7px; font-size: 13px; cursor: pointer; color: var(--ink); }
+.cat-opt:hover { background: var(--brand-soft); }
+.cat-empty { padding: 8px 10px; font-size: 13px; }

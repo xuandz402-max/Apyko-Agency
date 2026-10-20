@@ -73,6 +73,51 @@ Nhân sự nhập doanh thu + chi phí mỗi ngày, xuất ảnh PNG gửi Zalo 
   đủ 5 nguồn doanh thu, khối hiệu quả quảng cáo, footer giờ xuất.
 - Phân quyền như các trang khác: xem → nhập/sửa → xóa, kiểm tra ở máy chủ.
 
+## ⬆️ Nạp dữ liệu từ Excel/CSV
+
+Thay vì nhập tay từng dòng, nạp cả file cho **GMV Max** và **Báo cáo ngày**.
+Card "⬆️ Nạp từ Excel/CSV" nằm ngay trên 2 trang đó (chỉ hiện với tài khoản
+có quyền thêm/sửa; máy chủ cũng chặn 403 nếu thiếu quyền).
+
+**Cách lấy file từ Shopee (thao tác chung):**
+
+- GMV Max: vào trang quản lý quảng cáo Shopee Ads, mở báo cáo hiệu quả
+  GMV Max theo ngày, chọn khoảng ngày cần lấy rồi dùng nút xuất/tải báo cáo
+  (định dạng Excel hoặc CSV) của Shopee.
+- Báo cáo ngày: xuất báo cáo doanh thu theo ngày từ Kênh Người Bán, hoặc tự
+  lập file theo **file mẫu CSV** (nút "⬇️ Tải file mẫu CSV" ngay trong card —
+  file mẫu có 1 dòng ví dụ, nhớ xóa dòng đó trước khi nạp file thật).
+
+**Kỷ luật xem trước → xác nhận (bắt buộc):**
+
+1. Tải file lên -> app đọc và hiện **trang xem trước**: từng dòng OK/Lỗi kèm
+   lý do, dòng trùng trong file, sản phẩm sẽ tạo mới, cột không nhận diện
+   được. **Chưa có gì được ghi vào dữ liệu ở bước này.**
+2. Bấm **Xác nhận ghi dữ liệu** mới ghi thật qua cơ chế upsert như nhập tay:
+   trùng (sản phẩm + ngày) hoặc trùng ngày báo cáo thì **cập nhật**, không
+   nhân đôi. Phiên xem trước hết hạn sau 15 phút và chỉ dùng được 1 lần.
+
+**Cột nhận diện được** (không phân biệt hoa thường/dấu, tên cột tiếng Việt
+hoặc tiếng Anh):
+
+- GMV: Ngày, Tên sản phẩm/Sản phẩm/Product Name, Lượt xem/Hiển thị,
+  Lượt click/nhấp, Đơn hàng/Chuyển đổi, GMV/Doanh thu, Chi phí (quảng cáo).
+  Bắt buộc có: Ngày + Sản phẩm + GMV + Chi phí.
+- Báo cáo ngày: Ngày, Doanh thu sản phẩm, Live, Video, Aff link, Affiliate,
+  GMV quảng cáo, Chi phí ads, AOV, Tỷ lệ chuyển đổi, Ghi chú. Chỉ bắt buộc
+  cột Ngày; cột thiếu được tính 0 như form nhập tay.
+
+**Tiền VNĐ/RM — đọc kỹ:** bảng GMV lưu doanh thu/chi phí theo **RM** (app
+quy đổi VNĐ = RM x 5.300) còn file Shopee Việt Nam ghi **VNĐ**. Form nạp có
+ô chọn "Tiền trong file": để **VNĐ** (mặc định) thì app tự chia 5.300 khi
+ghi; chỉ chọn **RM** khi file của bạn thật sự ghi RM. Báo cáo ngày mọi số
+đã là VNĐ, không quy đổi.
+
+Định dạng nhận: `.xlsx` hoặc `.csv` (UTF-8), tối đa 5MB / 5.000 dòng. File
+.xlsx được đọc bằng parser tích hợp sẵn (không cần cài thêm thư viện);
+ngày dạng serial Excel hoặc dd/mm/yyyy đều đọc được. Số tiền chịu các kiểu
+ghi `1.234.567`, `1,234,567`, `500.000₫`, `RM 12.5`.
+
 ## Daily Checklist
 
 Checklist vận hành Shopee đầu ngày (20 việc mẫu, 6 nhóm: Tình trạng shop ·

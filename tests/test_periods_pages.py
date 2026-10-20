@@ -85,22 +85,22 @@ def test_resolve_day(client):
 
 def test_resolve_week(client):
     p = _periods()
-    # Thứ Ba 20/10/2026: kỳ này 19/10-20/10, kỳ trước 12/10-13/10
+    # Thứ Ba 20/10/2026: TRỌN tuần 19/10-25/10, kỳ trước trọn tuần 12/10-18/10
     info = p.resolve_period({"period": "week"}, "2026-10-20")
-    assert (info["cur_start"], info["cur_end"]) == ("2026-10-19", "2026-10-20")
-    assert (info["prev_start"], info["prev_end"]) == ("2026-10-12", "2026-10-13")
-    assert info["label_cur"] == f"19/10 {EN} 20/10"
-    assert info["label_prev"] == f"12/10 {EN} 13/10"
+    assert (info["cur_start"], info["cur_end"]) == ("2026-10-19", "2026-10-25")
+    assert (info["prev_start"], info["prev_end"]) == ("2026-10-12", "2026-10-18")
+    assert info["label_cur"] == f"19/10 {EN} 25/10"
+    assert info["label_prev"] == f"12/10 {EN} 18/10"
     assert _span(info, "cur_start", "cur_end") == _span(info, "prev_start", "prev_end")
 
 
 def test_resolve_month_and_edge(client):
     p = _periods()
+    # TRỌN tháng lịch: 01/10-31/10 so với trọn tháng 9 (01/09-30/09)
     info = p.resolve_period({"period": "month"}, "2026-10-20")
-    assert (info["cur_start"], info["cur_end"]) == ("2026-10-01", "2026-10-20")
-    assert (info["prev_start"], info["prev_end"]) == ("2026-09-01", "2026-09-20")
-    assert _span(info, "cur_start", "cur_end") == _span(info, "prev_start", "prev_end")
-    # Tháng trước ngắn hơn (tháng 2/2026 có 28 ngày) -> dừng ở cuối tháng 2
+    assert (info["cur_start"], info["cur_end"]) == ("2026-10-01", "2026-10-31")
+    assert (info["prev_start"], info["prev_end"]) == ("2026-09-01", "2026-09-30")
+    # Tháng trước ngắn hơn (tháng 2/2026 có 28 ngày) -> trọn tháng 2
     info = p.resolve_period({"period": "month"}, "2026-03-31")
     assert (info["prev_start"], info["prev_end"]) == ("2026-02-01", "2026-02-28")
 

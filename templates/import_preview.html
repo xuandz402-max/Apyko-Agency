@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Xem trước nạp dữ liệu · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>⬆️ Xem trước dữ liệu sắp nạp</h1>
+  <p class="muted">Đây mới là <strong>bản xem trước — chưa có gì được ghi</strong> vào hệ thống.
+    Kiểm tra kỹ rồi mới bấm <strong>Xác nhận ghi dữ liệu</strong>.</p>
+</div>
+
+{% if fatal_error %}
+<div class="card">
+  <div class="alert alert-error">❌ {{ fatal_error }}</div>
+  <a href="{{ back_url }}" class="btn btn-ghost btn-sm">← Quay lại</a>
+</div>
+{% else %}
+<div class="card">
+  <div class="card-head">
+    <h2>{{ "🚀 GMV Max" if kind == "gmv" else "📊 Báo cáo ngày" }} — file: {{ filename }}</h2>
+  </div>
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Tổng số dòng trong file</div>
+      <div class="stat-value">{{ summary.total }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dòng hợp lệ (sẽ ghi)</div>
+      <div class="stat-value">{{ summary.ok }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dòng lỗi (bỏ qua)</div>
+      <div class="stat-value">{{ summary.error }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dòng trùng trong file (bỏ qua)</div>
+      <div class="stat-value">{{ summary.dup }}</div>
+      <div class="muted">Trùng khóa thì dòng cuối trong file được giữ</div>
+    </div>
+  </div>
+
+  {% if kind == "gmv" %}
+  <p class="muted">Đơn vị tiền trong file: <strong>{{ "VNĐ — đã tự chia 5.300 sang RM" if currency == "vnd" else "RM — giữ nguyên như nhập tay" }}</strong>.
+    Số tiền ở bảng dưới đã là RM (đơn vị lưu trong hệ thống).</p>
+  {% endif %}
+
+  {% if new_products %}
+  <div class="alert">🆕 Các sản phẩm <strong>chưa có trong hệ thống</strong> sẽ được tạo mới:
+    <strong>{{ new_products|join(", ") }}</strong></div>
+  {% endif %}
+
+  {% if unknown_columns %}
+  <div class="alert">ℹ️ Các cột trong file mà hệ thống <strong>không nhận diện được</strong> (sẽ bỏ qua):
+    {{ unknown_columns|join(", ") }}</div>
+  {% endif %}
+
+  <div class="table-wrap"><table class="table table-compact">
+    {% if kind == "gmv" %}
+    <thead><tr>
+      <th>Dòng</th><th>Ngày</th><th>Sản phẩm</th><th>Lượt xem</th><th>Click</th>
+      <th>Chuyển đổi</th><th>Doanh thu (RM)</th><th>Chi phí QC (RM)</th><th>Trạng thái</th>
+    </tr></thead>
+    <tbody>
+      {% for it in rows %}
+      <tr>
+        <td>{{ it.row }}</td>
+        <td class="nowrap">{{ it.date or "—" }}</td>
+        <td>{{ it.product_name or "—" }}
+          {% if it.match == "new" %}<span class="badge badge-label">sẽ tạo mới</span>{% endif %}
+        </td>
+        {% if it.data %}
+        <td class="num">{{ it.data.views }}</td>
+        <td class="num">{{ it.data.clicks }}</td>
+        <td class="num">{{ it.data.conversions }}</td>
+        <td class="num">{{ "%.2f"|format(it.data.revenue_rm) }}</td>
+        <td class="num">{{ "%.2f"|format(it.data.ad_cost) }}</td>
+        {% else %}
+        <td colspan="5" class="muted">—</td>
+        {% endif %}
+        <td>
+          {% if it.status == "ok" %}<span class="badge badge-done">✅ OK</span>
+          {% elif it.status == "dup" %}<span class="badge badge-label">Trùng — bỏ qua</span>
+          {% else %}<span class="badge badge-need">❌ Lỗi</span>{% endif %}
+          {% for e in it.errors %}<div class="small">{{ e }}</div>{% endfor %}
+          {% for w in it.warnings %}<div class="small muted">⚠️ {{ w }}</div>{% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    {% else %}
+    <thead><tr>
+      <th>Dòng</th><th>Ngày</th><th>Tổng doanh thu</th><th>GMV quảng cáo</th>
+      <th>Chi phí ads</th><th>AOV</th><th>CR %</th><th>Ghi chú</th><th>Trạng thái</th>
+    </tr></thead>
+    <tbody>
+      {% for it in rows %}
+      <tr>
+        <td>{{ it.row }}</td>
+        <td class="nowrap">{{ it.date or "—" }}</td>
+        {% if it.data %}
+        <td class="num"><strong>{{ "{:,.0f}".format(it.total_rev).replace(",", ".") }}đ</strong></td>
+        <td class="num">{{ "{:,.0f}".format(it.data.ad_gmv).replace(",", ".") }}đ</td>
+        <td class="num">{{ "{:,.0f}".format(it.data.ad_cost).replace(",", ".") }}đ</td>
+        <td class="num">{{ "{:,.0f}".format(it.data.aov).replace(",", ".") }}đ</td>
+        <td class="num">{{ it.data.conv_rate }}</td>
+        <td>{{ it.data.note }}</td>
+        {% else %}
+        <td colspan="6" class="muted">—</td>
+        {% endif %}
+        <td>
+          {% if it.status == "ok" %}<span class="badge badge-done">✅ OK</span>
+          {% elif it.status == "dup" %}<span class="badge badge-label">Trùng — bỏ qua</span>
+          {% else %}<span class="badge badge-need">❌ Lỗi</span>{% endif %}
+          {% for e in it.errors %}<div class="small">{{ e }}</div>{% endfor %}
+          {% for w in it.warnings %}<div class="small muted">⚠️ {{ w }}</div>{% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    {% endif %}
+  </table></div>
+
+  <div class="form-actions">
+    <form method="post" action="{{ confirm_url }}" class="inline">
+      <input type="hidden" name="token" value="{{ token }}">
+      <button type="submit" class="btn btn-primary">✅ Xác nhận ghi {{ summary.ok }} dòng hợp lệ</button>
+    </form>
+    <form method="post" action="{{ cancel_url }}" class="inline">
+      <input type="hidden" name="token" value="{{ token }}">
+      <button type="submit" class="btn btn-ghost">Hủy, không ghi gì</button>
+    </form>
+  </div>
+  <p class="muted">Phiên xem trước hết hạn sau 15 phút. Ghi trùng ngày/sản phẩm sẽ <strong>cập nhật</strong> dòng cũ (giống nhập tay), không tạo trùng.</p>
+</div>
+{% endif %}
+{% endblock %}

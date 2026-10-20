@@ -5,13 +5,14 @@ import io
 import logging
 import os
 import re
+import secrets
 import sqlite3
 import threading
 import time
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import (
     HTMLResponse,
     JSONResponse,
@@ -21,7 +22,7 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 
-from . import auth, ceo, checklist, config, gmv_charts, lessons, periods, pricing
+from . import auth, ceo, checklist, config, gmv_charts, importer, lessons, periods, pricing
 from . import database as db
 from .auth import (
     ApiCanDeleteProducts,
@@ -1297,6 +1298,363 @@ def api_daily_delete(report_date: str, user: dict = ApiCanDeleteProducts):
     if not db.daily_delete(report_date):
         return JSONResponse({"detail": "Không tìm thấy báo cáo ngày này"}, status_code=404)
     return Response(status_code=204)
+
+
+# --------------------- nạp dữ liệu từ Excel/CSV ---------------------------
+# Kỷ luật: tải lên -> XEM TRƯỚC (chưa ghi gì) -> user bấm xác nhận mới ghi.
+# Kết quả xem trước giữ trong RAM (stash) theo token ngẫu nhiên + user id,
+# hết hạn 15 phút, dùng 1 lần — cùng pattern cache in-process của app/ceo.py.
+
+_IMPORT_STASH_TTL = 15 * 60
+_import_stash: dict = {}
+_import_stash_lock = threading.Lock()
+
+
+def _stash_put(user_id: int, payload: dict) -> str:
+    token = secrets.token_urlsafe(24)
+    now = time.monotonic()
+    with _import_stash_lock:
+        for key in [k for k, v in _import_stash.items() if v["expires"] <= now]:
+            del _import_stash[key]
+        _import_stash[token] = {
+            **payload,
+            "user_id": user_id,
+            "expires": now + _IMPORT_STASH_TTL,
+        }
+    return token
+
+
+def _stash_get(token: str, user_id: int, kind: str) -> dict | None:
+    now = time.monotonic()
+    with _import_stash_lock:
+        item = _import_stash.get(token or "")
+        if (
+            item is None
+            or item["expires"] <= now
+            or item["user_id"] != user_id
+            or item["kind"] != kind
+        ):
+            return None
+        return item
+
+
+def _stash_pop(token: str) -> None:
+    with _import_stash_lock:
+        _import_stash.pop(token or "", None)
+
+
+def _norm_product_name(name: str) -> str:
+    return " ".join((name or "").split()).lower()
+
+
+def _import_error_page(request, user, message: str, back_url: str, status: int = 422):
+    return templates.TemplateResponse(
+        "import_preview.html",
+        _ctx(request, user, kind="", fatal_error=message, back_url=back_url),
+        status_code=status,
+    )
+
+
+def _import_summary(mapped: list) -> dict:
+    return {
+        "total": len(mapped),
+        "ok": sum(1 for m in mapped if m["status"] == "ok"),
+        "error": sum(1 for m in mapped if m["status"] == "error"),
+        "dup": sum(1 for m in mapped if m["status"] == "dup"),
+    }
+
+
+@router.post("/gmv/import", response_class=HTMLResponse)
+async def page_gmv_import(
+    request: Request,
+    file: Annotated[UploadFile | None, File()] = None,
+    currency: Annotated[str, Form()] = "vnd",
+    create_products: Annotated[str | None, Form()] = None,
+):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    if file is None or not file.filename:
+        return _import_error_page(request, user, "Chưa chọn file để nạp.", "/gmv")
+    raw = await file.read()
+    try:
+        headers, rows = importer.read_table(raw, file.filename)
+        mapped = importer.map_gmv_rows(headers, rows, currency)
+    except ValueError as e:
+        return _import_error_page(request, user, str(e), "/gmv")
+    want_create = create_products is not None
+    existing = {_norm_product_name(p["name"]) for p in db.gmv_list_products()}
+    new_products: list[str] = []
+    for item in mapped:
+        if item["status"] != "ok":
+            continue
+        key = _norm_product_name(item["product_name"])
+        if key in existing:
+            item["match"] = "existing"
+        elif want_create:
+            item["match"] = "new"
+            if item["product_name"] not in new_products:
+                new_products.append(item["product_name"])
+        else:
+            item["match"] = "missing"
+            item["warnings"].append(
+                "Sản phẩm chưa có trong hệ thống và chưa bật tạo mới — dòng này sẽ bị bỏ qua."
+            )
+    token = _stash_put(
+        user["id"],
+        {
+            "kind": "gmv",
+            "filename": file.filename,
+            "currency": "rm" if currency == "rm" else "vnd",
+            "create_products": want_create,
+            "rows": mapped,
+        },
+    )
+    return templates.TemplateResponse(
+        "import_preview.html",
+        _ctx(
+            request,
+            user,
+            kind="gmv",
+            filename=file.filename,
+            currency="rm" if currency == "rm" else "vnd",
+            rows=mapped,
+            summary=_import_summary(mapped),
+            new_products=new_products,
+            unknown_columns=importer.unmatched_headers(headers, "gmv"),
+            token=token,
+            back_url="/gmv",
+            confirm_url="/gmv/import/confirm",
+            cancel_url="/gmv/import/cancel",
+        ),
+    )
+
+
+@router.post("/gmv/import/confirm", response_class=HTMLResponse)
+async def page_gmv_import_confirm(
+    request: Request, token: Annotated[str, Form()] = ""
+):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    stash = _stash_get(token, user["id"], "gmv")
+    if stash is None:
+        return _import_error_page(
+            request,
+            user,
+            "Phiên xem trước đã hết hạn hoặc không hợp lệ — chưa ghi gì cả. Hãy nạp lại file.",
+            "/gmv",
+            status=400,
+        )
+    _stash_pop(token)
+    products = {_norm_product_name(p["name"]): p for p in db.gmv_list_products()}
+    actor = _gmv_actor(user)
+    created_products: list[str] = []
+    n_created = n_updated = n_skipped = 0
+    for item in stash["rows"]:
+        if item["status"] != "ok":
+            n_skipped += 1
+            continue
+        key = _norm_product_name(item["product_name"])
+        product = products.get(key)
+        if product is None:
+            if not stash["create_products"]:
+                n_skipped += 1
+                continue
+            try:
+                pid = db.gmv_create_product(item["product_name"])
+                product = db.gmv_get_product(pid)
+                created_products.append(product["name"])
+            except sqlite3.IntegrityError:
+                product = next(
+                    (
+                        p
+                        for p in db.gmv_list_products()
+                        if _norm_product_name(p["name"]) == key
+                    ),
+                    None,
+                )
+                if product is None:
+                    n_skipped += 1
+                    continue
+            products[key] = product
+        _entry, created = db.gmv_upsert_entry(product["id"], item["data"], actor)
+        if created:
+            n_created += 1
+        else:
+            n_updated += 1
+    return templates.TemplateResponse(
+        "import_result.html",
+        _ctx(
+            request,
+            user,
+            kind="gmv",
+            filename=stash["filename"],
+            n_created=n_created,
+            n_updated=n_updated,
+            n_skipped=n_skipped,
+            created_products=created_products,
+            back_url="/gmv",
+            back_label="🚀 Về GMV Max",
+        ),
+    )
+
+
+@router.post("/gmv/import/cancel")
+async def page_gmv_import_cancel(
+    request: Request, token: Annotated[str, Form()] = ""
+):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    _stash_pop(token)
+    return RedirectResponse(url="/gmv", status_code=303)
+
+
+@router.post("/bao-cao/import", response_class=HTMLResponse)
+async def page_daily_import(
+    request: Request, file: Annotated[UploadFile | None, File()] = None
+):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    if file is None or not file.filename:
+        return _import_error_page(request, user, "Chưa chọn file để nạp.", "/bao-cao")
+    raw = await file.read()
+    try:
+        headers, rows = importer.read_table(raw, file.filename)
+        mapped = importer.map_daily_rows(headers, rows)
+    except ValueError as e:
+        return _import_error_page(request, user, str(e), "/bao-cao")
+    for item in mapped:
+        if item["status"] in ("ok", "dup"):
+            item["total_rev"] = calc_daily(item["data"])["total_rev"]
+    token = _stash_put(
+        user["id"],
+        {"kind": "daily", "filename": file.filename, "rows": mapped},
+    )
+    return templates.TemplateResponse(
+        "import_preview.html",
+        _ctx(
+            request,
+            user,
+            kind="daily",
+            filename=file.filename,
+            rows=mapped,
+            summary=_import_summary(mapped),
+            new_products=[],
+            unknown_columns=importer.unmatched_headers(headers, "daily"),
+            token=token,
+            back_url="/bao-cao",
+            confirm_url="/bao-cao/import/confirm",
+            cancel_url="/bao-cao/import/cancel",
+        ),
+    )
+
+
+@router.post("/bao-cao/import/confirm", response_class=HTMLResponse)
+async def page_daily_import_confirm(
+    request: Request, token: Annotated[str, Form()] = ""
+):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    stash = _stash_get(token, user["id"], "daily")
+    if stash is None:
+        return _import_error_page(
+            request,
+            user,
+            "Phiên xem trước đã hết hạn hoặc không hợp lệ — chưa ghi gì cả. Hãy nạp lại file.",
+            "/bao-cao",
+            status=400,
+        )
+    _stash_pop(token)
+    actor = _daily_actor(user)
+    n_created = n_updated = n_skipped = 0
+    for item in stash["rows"]:
+        if item["status"] != "ok":
+            n_skipped += 1
+            continue
+        _entry, created = db.daily_upsert(item["data"], actor)
+        if created:
+            n_created += 1
+        else:
+            n_updated += 1
+    return templates.TemplateResponse(
+        "import_result.html",
+        _ctx(
+            request,
+            user,
+            kind="daily",
+            filename=stash["filename"],
+            n_created=n_created,
+            n_updated=n_updated,
+            n_skipped=n_skipped,
+            created_products=[],
+            back_url="/bao-cao",
+            back_label="📊 Về Báo cáo ngày",
+        ),
+    )
+
+
+@router.post("/bao-cao/import/cancel")
+async def page_daily_import_cancel(
+    request: Request, token: Annotated[str, Form()] = ""
+):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    _stash_pop(token)
+    return RedirectResponse(url="/bao-cao", status_code=303)
+
+
+_DAILY_SAMPLE_HEADERS = [
+    "Ngày",
+    "Doanh thu sản phẩm",
+    "Live",
+    "Video",
+    "Aff link",
+    "Affiliate",
+    "GMV quảng cáo",
+    "Chi phí ads",
+    "AOV",
+    "Tỷ lệ chuyển đổi",
+    "Ghi chú",
+]
+
+
+@router.get("/bao-cao/file-mau.csv")
+def page_daily_sample_csv(request: Request):
+    """File mẫu CSV cho nạp Báo cáo ngày (header + 1 dòng ví dụ)."""
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(_DAILY_SAMPLE_HEADERS)
+    writer.writerow(
+        [
+            "2026-10-19",
+            5000000,
+            1200000,
+            800000,
+            0,
+            300000,
+            2000000,
+            500000,
+            150000,
+            "2.5",
+            "DÒNG VÍ DỤ — xóa dòng này trước khi nạp file thật",
+        ]
+    )
+    content = "\ufeff" + buf.getvalue()
+    return Response(
+        content,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename="apyko-bao-cao-mau.csv"'
+        },
+    )
 
 
 # ------------------------------ daily checklist ---------------------------

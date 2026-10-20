@@ -111,6 +111,33 @@
   {% endif %}
 </div>
 
+{% if can_edit %}
+<div class="card">
+  <div class="card-head">
+    <h2>⬆️ Nạp từ Excel/CSV</h2>
+  </div>
+  <p class="muted">Xuất báo cáo từ Shopee Ads (GMV Max) rồi nạp file vào đây thay vì nhập tay từng dòng.
+    Hệ thống chỉ <strong>xem trước</strong> — bạn kiểm tra rồi bấm xác nhận mới ghi dữ liệu.</p>
+  <form method="post" action="/gmv/import" enctype="multipart/form-data" class="form form-inline">
+    <label>File (.xlsx / .csv)
+      <input type="file" name="file" accept=".xlsx,.csv" class="input" required>
+    </label>
+    <label>Tiền trong file
+      <select name="currency" class="input">
+        <option value="vnd" selected>VNĐ (file Shopee Việt Nam)</option>
+        <option value="rm">RM (giữ nguyên như nhập tay)</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" name="create_products" value="1" checked> Tạo sản phẩm mới nếu chưa có</label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">⬆️ Tải lên &amp; xem trước</button>
+    </div>
+  </form>
+  <p class="muted">Cột nhận diện được: Ngày, Tên sản phẩm, Lượt xem, Lượt click/nhấp, Đơn hàng/Chuyển đổi,
+    GMV/Doanh thu, Chi phí quảng cáo. File VNĐ sẽ tự chia 5.300 sang RM theo quy ước của bảng.</p>
+</div>
+{% endif %}
+
 <div class="card">
   <div class="tabs">
     {% for p in products %}

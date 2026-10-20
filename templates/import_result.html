@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Đã nạp dữ liệu · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>✅ Đã ghi dữ liệu từ file {{ filename }}</h1>
+</div>
+
+<div class="card">
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Dòng tạo mới</div>
+      <div class="stat-value">{{ n_created }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dòng cập nhật (đã có từ trước)</div>
+      <div class="stat-value">{{ n_updated }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dòng bỏ qua (lỗi/trùng/chưa có sản phẩm)</div>
+      <div class="stat-value">{{ n_skipped }}</div>
+    </div>
+  </div>
+  {% if created_products %}
+  <p>🆕 Đã tạo sản phẩm mới: <strong>{{ created_products|join(", ") }}</strong></p>
+  {% endif %}
+  <a href="{{ back_url }}" class="btn btn-primary btn-sm">{{ back_label }}</a>
+</div>
+{% endblock %}

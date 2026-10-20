@@ -258,14 +258,13 @@ def _to_date(date_str: str):
 
 
 def period_ranges(today: str, period: str) -> tuple[tuple[str, str], tuple[str, str]]:
-    """Khoảng ((kỳ này), (kỳ trước)) dài bằng nhau cho day/week/month.
+    """Khoảng ((kỳ này), (kỳ trước)) cho day/week/month.
 
     - day:   hôm nay vs hôm qua.
-    - week:  thứ Hai tuần này -> hôm nay vs thứ Hai tuần trước -> cùng thứ
-             trong tuần trước (VD hôm nay thứ Ba: 19/10-20/10 vs 12/10-13/10).
-    - month: ngày 1 tháng này -> hôm nay vs ngày 1 tháng trước -> cùng số
-             ngày đầu tháng trước (tháng trước ngắn hơn — VD tháng 2 — thì
-             dừng ở ngày cuối của tháng trước).
+    - week:  TRỌN tuần lịch thứ Hai -> Chủ Nhật của tuần chứa hôm nay vs
+             trọn tuần liền trước (ngày chưa tới trong tuần này chưa có số
+             thì tổng chỉ gồm các ngày đã nhập — đúng ý user chốt 20/10).
+    - month: TRỌN tháng lịch ngày 1 -> cuối tháng vs trọn tháng liền trước.
     period không hợp lệ -> day.
     """
     if period not in PERIODS:
@@ -273,19 +272,20 @@ def period_ranges(today: str, period: str) -> tuple[tuple[str, str], tuple[str, 
     d = _to_date(today)
     if period == "week":
         monday = d - timedelta(days=d.weekday())
+        sunday = monday + timedelta(days=6)
         prev_monday = monday - timedelta(days=7)
-        prev_end = prev_monday + timedelta(days=d.weekday())
-        cur = (monday.isoformat(), d.isoformat())
-        prev = (prev_monday.isoformat(), prev_end.isoformat())
+        prev_sunday = prev_monday + timedelta(days=6)
+        cur = (monday.isoformat(), sunday.isoformat())
+        prev = (prev_monday.isoformat(), prev_sunday.isoformat())
         return cur, prev
     if period == "month":
         first = d.replace(day=1)
-        prev_last = first - timedelta(days=1)  # ngày cuối tháng trước
+        next_first = (first + timedelta(days=32)).replace(day=1)
+        last = next_first - timedelta(days=1)
+        prev_last = first - timedelta(days=1)
         prev_first = prev_last.replace(day=1)
-        n = min(d.day, prev_last.day)
-        prev_end = prev_first + timedelta(days=n - 1)
-        cur = (first.isoformat(), d.isoformat())
-        prev = (prev_first.isoformat(), prev_end.isoformat())
+        cur = (first.isoformat(), last.isoformat())
+        prev = (prev_first.isoformat(), prev_last.isoformat())
         return cur, prev
     prev_day = d - timedelta(days=1)
     return (d.isoformat(), d.isoformat()), (prev_day.isoformat(), prev_day.isoformat())

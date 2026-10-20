@@ -30,6 +30,22 @@
 
 {% if can_edit %}
 <div class="card">
+  <div class="card-head"><h2>⬆️ Nạp từ Excel/CSV</h2></div>
+  <p class="muted">Có sẵn file doanh thu theo ngày (xuất từ Seller Centre hoặc tự lập theo file mẫu)
+    thì nạp vào đây thay vì gõ từng ngày. Hệ thống chỉ <strong>xem trước</strong> — bạn xác nhận mới ghi;
+    ngày đã có báo cáo sẽ được cập nhật như khi sửa tay.</p>
+  <form method="post" action="/bao-cao/import" enctype="multipart/form-data" class="form form-inline">
+    <label>File (.xlsx / .csv)
+      <input type="file" name="file" accept=".xlsx,.csv" class="input" required>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">⬆️ Tải lên &amp; xem trước</button>
+      <a href="/bao-cao/file-mau.csv" class="btn btn-ghost btn-sm">⬇️ Tải file mẫu CSV</a>
+    </div>
+  </form>
+</div>
+
+<div class="card">
   <div class="card-head"><h2 id="formTitle">Nhập báo cáo ngày</h2></div>
   <form id="dailyForm" class="form" autocomplete="off">
     <input type="hidden" id="fEditDate" value="">

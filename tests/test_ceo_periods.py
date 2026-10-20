@@ -78,43 +78,45 @@ def test_period_ranges_day(client):
 
 def test_period_ranges_week(client):
     ceo = _ceo()
-    # Thứ Ba 20/10/2026: tuần bắt đầu thứ Hai 19/10; kỳ trước 12/10-13/10
+    # Thứ Ba 20/10/2026: TRỌN tuần thứ Hai 19/10 -> Chủ Nhật 25/10
     cur, prev = ceo.period_ranges("2026-10-20", "week")
-    assert cur == ("2026-10-19", "2026-10-20")
-    assert prev == ("2026-10-12", "2026-10-13")
-    # Đúng thứ Hai: kỳ chỉ gồm 1 ngày
+    assert cur == ("2026-10-19", "2026-10-25")
+    assert prev == ("2026-10-12", "2026-10-18")
+    # Đúng thứ Hai: vẫn trọn tuần
     cur, prev = ceo.period_ranges("2026-10-19", "week")
-    assert cur == ("2026-10-19", "2026-10-19")
-    assert prev == ("2026-10-12", "2026-10-12")
-    # Chủ Nhật: đủ 7 ngày
+    assert cur == ("2026-10-19", "2026-10-25")
+    assert prev == ("2026-10-12", "2026-10-18")
+    # Chủ Nhật: cùng tuần đó
     cur, prev = ceo.period_ranges("2026-10-25", "week")
     assert cur == ("2026-10-19", "2026-10-25")
     assert prev == ("2026-10-12", "2026-10-18")
     # Tuần vắt qua 2 tháng (thứ Tư 04/11/2026, thứ Hai là 02/11)
     cur, prev = ceo.period_ranges("2026-11-04", "week")
-    assert cur == ("2026-11-02", "2026-11-04")
-    assert prev == ("2026-10-26", "2026-10-28")
+    assert cur == ("2026-11-02", "2026-11-08")
+    assert prev == ("2026-10-26", "2026-11-01")
 
 
 def test_period_ranges_month(client):
     ceo = _ceo()
+    # TRỌN tháng lịch: 01/10 -> 31/10, kỳ trước trọn tháng 9
     cur, prev = ceo.period_ranges("2026-10-20", "month")
-    assert cur == ("2026-10-01", "2026-10-20")
-    assert prev == ("2026-09-01", "2026-09-20")
-    # Ngày 1 đầu tháng: mỗi kỳ đúng 1 ngày
+    assert cur == ("2026-10-01", "2026-10-31")
+    assert prev == ("2026-09-01", "2026-09-30")
+    # Ngày 1 đầu tháng: vẫn trọn tháng
     cur, prev = ceo.period_ranges("2026-11-01", "month")
-    assert cur == ("2026-11-01", "2026-11-01")
-    assert prev == ("2026-10-01", "2026-10-01")
+    assert cur == ("2026-11-01", "2026-11-30")
+    assert prev == ("2026-10-01", "2026-10-31")
     # Qua ranh giới năm
     cur, prev = ceo.period_ranges("2026-01-15", "month")
-    assert cur == ("2026-01-01", "2026-01-15")
-    assert prev == ("2025-12-01", "2025-12-15")
-    # Tháng trước ngắn hơn (tháng 2/2026 có 28 ngày) → dừng ở cuối tháng 2
+    assert cur == ("2026-01-01", "2026-01-31")
+    assert prev == ("2025-12-01", "2025-12-31")
+    # Tháng trước ngắn hơn (tháng 2/2026 có 28 ngày)
     cur, prev = ceo.period_ranges("2026-03-31", "month")
     assert cur == ("2026-03-01", "2026-03-31")
     assert prev == ("2026-02-01", "2026-02-28")
     # 31/05 so với tháng 4 (30 ngày)
     cur, prev = ceo.period_ranges("2026-05-31", "month")
+    assert cur == ("2026-05-01", "2026-05-31")
     assert prev == ("2026-04-01", "2026-04-30")
 
 
@@ -222,7 +224,7 @@ def test_period_compare_week(client):
         )
     cmp = ceo.period_compare(today, "week")
     assert cmp["cur_start"] == monday.isoformat()
-    assert cmp["cur_end"] == today
+    assert cmp["cur_end"] == (monday + timedelta(days=6)).isoformat()
     m = cmp["metrics"]
     assert m["revenue"]["cur"] == n * 1_000_000
     assert m["revenue"]["prev"] == n * 500_000

@@ -65,6 +65,37 @@ Quảng cáo & báo cáo) với nhắc hạn tự động trong giờ làm việ
   checklist** = mẫu việc/shop/cài đặt; nhân viên thường chỉ thấy và xử lý
   việc được giao cho mình. Hai quyền mới cấp ở trang **Tài khoản**.
 
+## Dashboard CEO
+
+Trang **👑 Dashboard CEO** (sidebar, ngay dưới Dashboard, đường dẫn `/ceo`)
+gom số thật của cả ngày hiện tại (giờ Việt Nam) vào 1 màn hình — không có
+bảng dữ liệu riêng, chỉ đọc tổng hợp từ các module khác:
+
+- **Doanh thu hôm nay** — từ **Báo cáo ngày**: tổng doanh thu (5 nguồn) hôm
+  nay, kèm % tăng/giảm so với hôm qua (hôm qua = 0 hoặc chưa nhập thì không
+  hiện %); chưa nhập báo cáo thì thẻ hiện "Chưa nhập".
+- **Chi phí ads hôm nay + ROAS** — cũng từ Báo cáo ngày của hôm nay.
+- **GMV quảng cáo hôm nay** — tổng các dòng GMV Max có ngày = hôm nay:
+  doanh thu RM quy đổi VNĐ (RM x 5300), chi phí quy đổi và ROAS chung.
+- **Checklist hôm nay** — từ **Daily Checklist**: đã xong / tổng việc, %
+  hoàn thành và số việc quá hạn.
+- **⚠️ Cần chú ý** — cảnh báo gộp: nhân viên còn việc quá hạn (bấm vào xem
+  việc của họ); sản phẩm GMV có ROAS thấp hoặc lâu chưa có dữ liệu; chưa
+  nhập Báo cáo ngày hôm nay.
+- **Bảng Nhân viên hôm nay** — được giao / đã xong / quá hạn / % hoàn thành
+  từng nhân viên; bấm tên để mở checklist của nhân viên đó.
+- **Bảng Doanh thu 7 ngày** — ngày nào chưa nhập báo cáo hiện "—" (không
+  tính là 0).
+
+Ngưỡng cảnh báo mặc định (chỉnh trong `app/ceo.py`): `ROAS_WARN = 2.0`
+(entry GMV mới nhất của sản phẩm có ROAS dưới 2.0 thì cảnh báo) và
+`STALE_DAYS = 3` (sản phẩm không có entry nào trong 3 ngày gần nhất thì
+cảnh báo "chưa có dữ liệu gần đây").
+
+**Ai xem được** (kiểm tra ở máy chủ): chủ sở hữu, hoặc tài khoản có quyền
+**Leader checklist** / **Quản trị checklist**. Nhân viên thường bị chặn
+(HTTP 403) và không thấy mục này trong sidebar.
+
 ## Tài khoản & bảo mật
 
 - **Lần chạy đầu tiên:** mở trang `/setup` để tạo tài khoản **chủ sở hữu**
@@ -174,7 +205,7 @@ Các bước (làm 1 lần, khoảng 5 phút):
 ## Kiểm thử
 
 ```bash
-python -m pytest -q        # 98 test: tính toán, auth, phân quyền, CRUD, bài học, checklist
+python -m pytest -q        # 110 test: tính toán, auth, phân quyền, CRUD, bài học, checklist, dashboard CEO
 ruff check app tests       # lint sạch
 ruff format --check app tests
 ```

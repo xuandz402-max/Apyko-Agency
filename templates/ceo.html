@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% set nav_active = "ceo" %}
+{% block title %}Dashboard CEO · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>👑 Dashboard CEO</h1>
+  <p class="muted">Tổng quan toàn hệ thống ngày {{ today[8:10] }}/{{ today[5:7] }}/{{ today[0:4] }} — số thật từ Báo cáo ngày, GMV Max Shopee và Daily Checklist.</p>
+</div>
+
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-label">Doanh thu hôm nay</div>
+    {% if ov.has_report_today %}
+    <div class="stat-value">{{ "{:,.0f}".format(ov.revenue_today.total_rev) }}₫</div>
+    {% if ov.rev_change_pct is not none %}
+    <div class="{% if ov.rev_change_pct >= 0 %}text-green{% else %}text-red{% endif %}">{{ "%+.1f"|format(ov.rev_change_pct) }}% so với hôm qua</div>
+    {% else %}
+    <div class="muted">Chưa so sánh được với hôm qua</div>
+    {% endif %}
+    {% else %}
+    <div class="stat-value">Chưa nhập</div>
+    <div class="muted"><a href="/bao-cao" class="link">Nhập Báo cáo ngày →</a></div>
+    {% endif %}
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Chi phí ads hôm nay</div>
+    {% if ov.has_report_today %}
+    <div class="stat-value">{{ "{:,.0f}".format(ov.revenue_today.ads_cost) }}₫</div>
+    <div class="muted">ROAS {{ ov.revenue_today.roas if ov.revenue_today.roas is not none else "—" }}</div>
+    {% else %}
+    <div class="stat-value">Chưa nhập</div>
+    <div class="muted">Chưa có Báo cáo ngày hôm nay</div>
+    {% endif %}
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">GMV quảng cáo hôm nay (VNĐ)</div>
+    {% if ov.gmv_today.entry_count %}
+    <div class="stat-value">{{ "{:,.0f}".format(ov.gmv_today.revenue_vnd) }}₫</div>
+    <div class="muted">Chi phí {{ "{:,.0f}".format(ov.gmv_today.ad_cost_vnd) }}₫ · ROAS {{ ov.gmv_today.roas if ov.gmv_today.roas is not none else "—" }}</div>
+    {% else %}
+    <div class="stat-value">—</div>
+    <div class="muted">Chưa có dữ liệu GMV hôm nay</div>
+    {% endif %}
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Checklist hôm nay</div>
+    <div class="stat-value">{{ ov.checklist_today.done }}/{{ ov.checklist_today.tasks }} xong</div>
+    <div class="muted">{{ ov.checklist_today.pct }}% hoàn thành{% if ov.checklist_today.overdue %} · <span class="text-red"><strong>{{ ov.checklist_today.overdue }} quá hạn</strong></span>{% endif %}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>⚠️ Cần chú ý</h2></div>
+  {% if ov.alerts %}
+  <div class="table-wrap"><table class="table">
+    <tbody>
+    {% for a in ov.alerts %}
+      <tr>
+        <td style="width:110px">{% if a.level == 'red' %}<span class="cl-badge cl-overdue">Cần xử lý</span>{% else %}<span class="badge badge-need">Lưu ý</span>{% endif %}</td>
+        <td><strong>{{ a.title }}</strong><br><span class="muted">{{ a.detail }}</span></td>
+        <td style="width:120px"><a href="{{ a.link }}" class="link">Mở →</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="muted">Không có cảnh báo. Mọi thứ ổn.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Nhân viên hôm nay</h2><a href="/checklist/board" class="link">Bảng Leader →</a></div>
+  {% if ov.checklist_today.per_user %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Tên</th><th>Được giao</th><th>Đã xong</th><th>Quá hạn</th><th>% hoàn thành</th></tr></thead>
+    <tbody>
+    {% for u in ov.checklist_today.per_user %}
+      <tr>
+        <td><a href="/checklist?date={{ today }}&assignee={{ u.user_id }}" class="link"><strong>{{ u.name }}</strong></a></td>
+        <td>{{ u.total }}</td>
+        <td>{{ u.done }}</td>
+        <td>{% if u.overdue %}<span class="cl-badge cl-overdue">{{ u.overdue }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td>
+          <div class="progress" style="width:120px"><div class="progress-bar" style="width: {{ u.pct }}%"></div></div>
+          <span class="muted">{{ u.pct }}%</span>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="muted">Chưa có việc nào được giao cho nhân viên hôm nay.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Doanh thu 7 ngày gần nhất</h2><a href="/bao-cao" class="link">Báo cáo ngày →</a></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Ngày</th><th>Tổng doanh thu</th><th>Chi phí ads</th><th>ROAS</th></tr></thead>
+    <tbody>
+    {% for r in ov.revenue_7d %}
+      <tr>
+        <td>{{ r.date[8:10] }}/{{ r.date[5:7] }}/{{ r.date[0:4] }}</td>
+        <td>{% if r.total_rev is not none %}{{ "{:,.0f}".format(r.total_rev) }}₫{% else %}—{% endif %}</td>
+        <td>{% if r.ads_cost is not none %}{{ "{:,.0f}".format(r.ads_cost) }}₫{% else %}—{% endif %}</td>
+        <td>{{ r.roas if r.roas is not none else "—" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

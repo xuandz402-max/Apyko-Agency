@@ -19,7 +19,7 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 
-from . import auth, checklist, config, lessons
+from . import auth, ceo, checklist, config, lessons
 from . import database as db
 from .auth import (
     ApiCanDeleteProducts,
@@ -322,6 +322,33 @@ def page_dashboard(request: Request):
     data = _dashboard_data()
     data["uni_total"] = len(lessons.list_lessons())
     return templates.TemplateResponse("dashboard.html", _ctx(request, user, **data))
+
+
+# ------------------------------ dashboard CEO -------------------------------
+
+
+def _ceo_can_view(user: dict) -> bool:
+    """Dashboard CEO: chủ sở hữu hoặc Leader/Quản trị checklist."""
+    return bool(
+        user.get("is_owner")
+        or user.get("can_checklist_leader")
+        or user.get("can_checklist_admin")
+    )
+
+
+@router.get("/ceo", response_class=HTMLResponse)
+def page_ceo(request: Request):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    if not _ceo_can_view(user):
+        raise HTTPException(
+            status_code=403, detail="Chỉ chủ sở hữu / Leader / Quản trị được xem."
+        )
+    today = checklist.today_str()
+    return templates.TemplateResponse(
+        "ceo.html", _ctx(request, user, ov=ceo.ceo_overview(today), today=today)
+    )
 
 
 # ------------------------------ products ----------------------------------

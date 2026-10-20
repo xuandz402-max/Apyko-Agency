@@ -338,3 +338,9 @@ button { border-radius: 999px; }
 .delta-down { color: #DC2626; font-weight: 700; }
 .ceo-bar { fill: #7C3AED; }
 .ceo-bar:hover { fill: #6D28D9; }
+
+/* ---------- Chọn khoảng thời gian dùng chung (Báo cáo ngày / GMV / Bảng Leader) ---------- */
+.per-bar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end;
+  justify-content: space-between; }
+.per-custom { align-items: flex-end; }
+.per-note { margin: 6px 0 12px; }

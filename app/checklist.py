@@ -382,6 +382,79 @@ def board_stats(
     }
 
 
+def board_range_stats(
+    start: str,
+    end: str,
+    assignee_id: int | None = None,
+    shop_id: int | None = None,
+    now: datetime | None = None,
+    users: list | None = None,
+) -> dict:
+    """Cộng dồn board_stats cho cả khoảng [start, end] (Leader xem theo kỳ).
+
+    Cộng tổng/done/cancelled/overdue theo từng ngày; per_user được gộp
+    theo nhân viên qua các ngày trong khoảng và tính lại pct trên tổng
+    (không lấy trung bình pct ngày). "pct" chung = done / (total -
+    cancelled) — cùng công thức Dashboard CEO. Khóa "date" trong kết quả
+    là ngày CUỐI khoảng (đích cho các link xem chi tiết theo ngày).
+    """
+    now = now or now_vn()
+    users = users if users is not None else db.list_users()
+    total = done = cancelled = overdue = 0
+    per_user: dict[int, dict] = {}
+    day = datetime.strptime(start, "%Y-%m-%d").date()
+    last = datetime.strptime(end, "%Y-%m-%d").date()
+    n_days = 0
+    while day <= last:
+        stats = board_stats(
+            day.isoformat(),
+            assignee_id=assignee_id,
+            shop_id=shop_id,
+            now=now,
+            users=users,
+        )
+        n_days += 1
+        total += stats["total"]
+        done += stats["done"]
+        cancelled += stats["cancelled"]
+        overdue += stats["overdue"]
+        for bucket in stats["per_user"]:
+            acc = per_user.setdefault(
+                bucket["user_id"],
+                {
+                    "user_id": bucket["user_id"],
+                    "name": bucket["name"],
+                    "total": 0,
+                    "done": 0,
+                    "overdue": 0,
+                },
+            )
+            acc["total"] += bucket["total"]
+            acc["done"] += bucket["done"]
+            acc["overdue"] += bucket["overdue"]
+        day += timedelta(days=1)
+    per_user_list = []
+    for acc in per_user.values():
+        acc["pct"] = round(acc["done"] * 100 / acc["total"], 1) if acc["total"] else 0.0
+        per_user_list.append(acc)
+    per_user_list.sort(key=lambda b: (b["pct"], b["name"]))
+    tasks = total - cancelled
+    return {
+        "date": end,
+        "start": start,
+        "end": end,
+        "days": n_days,
+        "total": total,
+        "done": done,
+        "cancelled": cancelled,
+        "unfinished": total - done - cancelled,
+        "overdue": overdue,
+        "pct": round(done * 100 / tasks, 1) if tasks else 0.0,
+        "per_user": per_user_list,
+        "overdue_users": [b for b in per_user_list if b["overdue"] > 0],
+    }
+
+
 # ---------------------------- validation ----------------------------------
 
 

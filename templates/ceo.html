@@ -31,9 +31,9 @@
     {% if ov.has_report_today %}
     <div class="stat-value">{{ "{:,.0f}".format(ov.revenue_today.total_rev) }}₫</div>
     {% if ov.rev_change_pct is not none %}
-    <div class="{% if ov.rev_change_pct >= 0 %}text-green{% else %}text-red{% endif %}">{{ "%+.1f"|format(ov.rev_change_pct) }}% so với hôm qua</div>
+    <div class="{% if ov.rev_change_pct >= 0 %}text-green{% else %}text-red{% endif %}">{{ "%+.1f"|format(ov.rev_change_pct) }}% {% if ov.rev_prev_fallback %}so với ngày có số gần nhất ({{ ov.rev_prev_date[8:10] }}/{{ ov.rev_prev_date[5:7] }}){% else %}so với hôm qua{% endif %}</div>
     {% else %}
-    <div class="muted">Chưa so sánh được với hôm qua</div>
+    <div class="muted">Chưa có ngày nào trước đó để so sánh</div>
     {% endif %}
     {% else %}
     <div class="stat-value">Chưa nhập</div>

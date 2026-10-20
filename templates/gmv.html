@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% set nav_active = "gmv" %}
+{% from "_period_bar.html" import period_bar, per_metric_card %}
 {% block main_class %}main-wide{% endblock %}
 {% block title %}GMV Max Shopee · {{ app_name }}{% endblock %}
 {% block content %}
@@ -67,6 +68,28 @@
     </div>
     {% endfor %}
   </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2>📈 So sánh theo kỳ</h2>
+  </div>
+  {{ period_bar("/gmv", per_info, per_extra, per_hidden) }}
+  <div class="stats">
+    {{ per_metric_card("GMV (VNĐ)", gmv_cmp.gmv_vnd, "money") }}
+    {{ per_metric_card("Chi phí QC (VNĐ)", gmv_cmp.cost_vnd, "money") }}
+    {{ per_metric_card("ROAS", gmv_cmp.roas, "roas") }}
+    <div class="stat-card">
+      <div class="stat-label">Số dòng số liệu trong kỳ</div>
+      <div class="stat-value">{{ gmv_cmp.entries }}</div>
+      <div class="muted">Mọi sản phẩm, tính theo ngày của dòng số liệu</div>
+    </div>
+  </div>
+  {% if gmv_cmp.has_data %}
+  <p class="muted">Tổng hợp từ số liệu GMV Max trong kỳ (quy đổi RM × 5.300) — dải này độc lập với khoảng ngày của biểu đồ ở trên.</p>
+  {% else %}
+  <p class="muted">Chưa có dòng số liệu GMV nào trong kỳ này nên các chỉ số hiện "—" — nhập số liệu ở bảng bên dưới hoặc chọn kỳ khác.</p>
   {% endif %}
 </div>
 

@@ -158,6 +158,54 @@ cache này. Khu so sánh theo kỳ và biểu đồ 30 ngày cũng cache 60 giâ
 tương tự (`cached_period_compare` khoá theo ngày + kỳ, và
 `cached_revenue_series`).
 
+## 🗓️ Chọn khoảng thời gian + so sánh kỳ (dùng chung)
+
+Các trang **có dữ liệu theo thời gian** dùng chung một thanh chọn kỳ
+(**Ngày / Tuần / Tháng / Tự chọn** từ ngày – đến ngày) và cùng một cách so
+sánh với **kỳ liền trước dài bằng nhau** — logic ở `app/periods.py`
+(`resolve_period`, `delta_pct`), giao diện ở `templates/_period_bar.html`
+(macro `period_bar` + `per_metric_card`), CSS tiền tố `per-`:
+
+- **Ngày** = hôm nay vs hôm qua. **Tuần** = thứ Hai -> hôm nay vs cùng số
+  ngày đầu tuần trước. **Tháng** = ngày 1 -> hôm nay vs cùng số ngày đầu
+  tháng trước (tháng trước ngắn hơn thì dừng ở cuối tháng trước) — đúng
+  công thức của Dashboard CEO (`ceo.period_ranges`). **Tự chọn** =
+  khoảng [from, to] người dùng nhập; kỳ trước là khoảng dài bằng nó nằm
+  ngay trước ngày bắt đầu. Param sai (period lạ, ngày sai định dạng,
+  to < from) tự quay về **Ngày**, không văng lỗi.
+- **Delta**: % thay đổi = (kỳ này − kỳ trước) / kỳ trước × 100, làm tròn
+  0,1. Kỳ trước = 0 hoặc thiếu dữ liệu -> hiện **"—"**, không bịa %. Tăng
+  hiện **xanh lá #15803D kèm ▲**, giảm hiện **đỏ #DC2626 kèm ▼** (class
+  `.delta-up` / `.delta-down`) — ngoại lệ màu cho số tăng/giảm như
+  Dashboard CEO.
+- **Trang Báo cáo ngày** (`/bao-cao?period=&from=&to=`): danh sách báo
+  cáo lọc theo kỳ hiện tại + thẻ **Tổng theo kỳ** (tổng doanh thu qua
+  `calc_daily`, tổng chi phí ads, ROAS kỳ = tổng GMV ads / tổng chi phí
+  ads của cả kỳ, số ngày có báo cáo). Ngày trong kỳ chưa nhập báo cáo thì
+  bỏ qua, không tính là 0; cả kỳ chưa có báo cáo thì hiện thông báo nhẹ.
+  Mặc định là kỳ Ngày (chỉ hôm nay).
+- **Trang GMV Max** (`/gmv`): thêm dải **📈 So sánh theo kỳ** riêng —
+  GMV (VNĐ), Chi phí (VNĐ), ROAS của kỳ + delta — dùng `?period=&from=&to=`
+  **độc lập** với `?product=&days=` của biểu đồ (chuyển kỳ vẫn giữ nguyên
+  sản phẩm/khoảng ngày đang chọn ở biểu đồ). Số liệu là tổng mọi sản phẩm
+  theo ngày của dòng dữ liệu, VNĐ = RM × 5.300; kỳ không có entry nào thì
+  các chỉ số hiện "—".
+- **Bảng Leader checklist** (`/checklist/board`): kỳ tính quanh **ngày
+  neo** (ô Ngày ở bộ lọc như cũ). Khi kỳ dài hơn 1 ngày, bốn thẻ số, %
+  hoàn thành và cả bảng theo nhân viên đều là **tổng gộp của cả kỳ**
+  (`checklist.board_range_stats` cộng dồn `board_stats` từng ngày,
+  per-user gộp theo nhân viên và tính lại % trên tổng — không lấy trung
+  bình % ngày). % hoàn thành kèm **delta theo ĐIỂM %** (hiệu 2 tỷ lệ)
+  so với kỳ trước. Khoảng bị **chặn tối đa 31 ngày** (`periods.cap_period`
+  giữ 31 ngày gần nhất và ghi chú trên trang) vì phải cộng dồn từng ngày.
+  Link "xem chi tiết" của nhân viên mở ngày cuối kỳ.
+
+Các trang **không** có thanh kỳ vì dữ liệu không gắn với thời gian vận
+hành: Định giá (bảng tính giá tại thời điểm nhập), Sản phẩm/Phân tích
+(danh mục SKU), Apyko Uni (bài học), Dashboard chủ (tổng quan sản phẩm).
+Dashboard CEO có thanh Ngày/Tuần/Tháng riêng từ trước (cùng công thức,
+chưa có Tự chọn).
+
 ## 🏷️ Định giá sản phẩm
 
 Trang `/dinh-gia` — bảng tính giá bán Shopee bám đúng file Excel **"Dự tính giá

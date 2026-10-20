@@ -1,11 +1,31 @@
 {% extends "base.html" %}
 {% set nav_active = "daily" %}
+{% from "_period_bar.html" import period_bar, per_metric_card %}
 {% block title %}Báo cáo ngày · {{ app_name }}{% endblock %}
 {% block content %}
 <div class="page-head">
   <h1>📊 Báo cáo ngày</h1>
   <p class="muted">Nhân sự nhập doanh thu + chi phí mỗi ngày. Mỗi dòng có nút
     <strong>Xuất ảnh</strong> để tải thẻ báo cáo PNG gửi Zalo cho khách.</p>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>🗓️ Tổng theo kỳ</h2></div>
+  {{ period_bar("/bao-cao", per_info) }}
+  {% if daily_cmp.has_data %}
+  <div class="stats">
+    {{ per_metric_card("Tổng doanh thu", daily_cmp.revenue, "money") }}
+    {{ per_metric_card("Tổng chi phí ads", daily_cmp.ads_cost, "money") }}
+    {{ per_metric_card("ROAS kỳ", daily_cmp.roas, "roas") }}
+    <div class="stat-card">
+      <div class="stat-label">Số ngày có báo cáo trong kỳ</div>
+      <div class="stat-value">{{ daily_cmp.count }}</div>
+      <div class="muted">Ngày chưa nhập được bỏ qua, không tính là 0</div>
+    </div>
+  </div>
+  {% else %}
+  <p class="muted">Chưa có báo cáo nào trong kỳ này{% if can_edit %} — nhập báo cáo ở form bên dưới{% endif %} hoặc chọn kỳ khác.</p>
+  {% endif %}
 </div>
 
 {% if can_edit %}
@@ -58,7 +78,7 @@
 {% endif %}
 
 <div class="card">
-  <div class="card-head"><h2>Các ngày đã nhập</h2></div>
+  <div class="card-head"><h2>Các ngày đã nhập trong kỳ</h2></div>
   <div class="table-wrap"><table class="table" id="dailyTable">
     <thead><tr>
       <th>Ngày</th><th>Tổng doanh thu</th><th>Chi phí ads</th><th>ROAS</th>
@@ -80,7 +100,7 @@
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="7" class="muted">Chưa có báo cáo nào{% if can_edit %} — nhập báo cáo đầu tiên ở form trên{% endif %}.</td></tr>
+      <tr><td colspan="7" class="muted">Chưa có báo cáo nào trong kỳ này{% if can_edit %} — nhập báo cáo ở form trên{% endif %}.</td></tr>
       {% endfor %}
     </tbody>
   </table></div>

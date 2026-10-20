@@ -1,13 +1,19 @@
 {% extends "base.html" %}
 {% set nav_active = "checklist_board" %}
+{% from "_period_bar.html" import period_bar %}
 {% block title %}Bảng Leader · Daily Checklist · {{ app_name }}{% endblock %}
 {% block content %}
 <div class="page-head">
   <h1>📋 Bảng Leader</h1>
-  <p class="muted">Tổng quan hoàn thành checklist trong ngày — nhấn tên nhân viên để xem việc chưa xong của họ.</p>
+  <p class="muted">Tổng quan hoàn thành checklist theo ngày hoặc theo kỳ đã chọn — nhấn tên nhân viên để xem việc chưa xong của họ.</p>
 </div>
 
 <form method="get" action="/checklist/board" class="form-inline">
+  <input type="hidden" name="period" value="{{ per_info.period }}">
+  {% if per_info.period == 'custom' %}
+  <input type="hidden" name="from" value="{{ per_info.from }}">
+  <input type="hidden" name="to" value="{{ per_info.to }}">
+  {% endif %}
   <label>Ngày
     <input type="date" name="date" value="{{ date }}" class="input">
   </label>
@@ -31,6 +37,22 @@
     <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
   </div>
 </form>
+
+<div class="card">
+  <div class="card-head"><h2>🗓️ Tổng quan theo kỳ</h2></div>
+  {{ period_bar("/checklist/board", per_info, per_extra, per_hidden) }}
+  {% if per_info.capped %}
+  <p class="muted">⚠ Khoảng tự chọn dài hơn 31 ngày — chỉ tổng hợp 31 ngày gần nhất ({{ per_info.label_cur }}).</p>
+  {% endif %}
+  <p>% hoàn thành kỳ này: <strong>{{ stats.pct }}%</strong>
+    {% if pct_delta is not none %}
+    <span class="{% if pct_delta >= 0 %}delta-up{% else %}delta-down{% endif %}">{% if pct_delta >= 0 %}▲{% else %}▼{% endif %} {{ "%+.1f"|format(pct_delta) }} điểm % so với kỳ trước ({{ prev_pct }}%)</span>
+    {% else %}
+    <span class="muted">— (chưa so sánh được với kỳ trước)</span>
+    {% endif %}
+  </p>
+  <p class="muted">Bốn thẻ số và bảng nhân viên bên dưới đều là tổng của cả kỳ đã chọn (ngày neo = ô Ngày ở bộ lọc trên). Link xem chi tiết của nhân viên mở ngày cuối kỳ: {{ stats.date[8:10] }}/{{ stats.date[5:7] }}/{{ stats.date[0:4] }}.</p>
+</div>
 
 <div class="stats">
   <div class="stat-card">
@@ -70,7 +92,7 @@
 {% endif %}
 
 <div class="card">
-  <div class="card-head"><h2>Tỷ lệ hoàn thành theo nhân viên</h2></div>
+  <div class="card-head"><h2>Tỷ lệ hoàn thành theo nhân viên (cả kỳ)</h2></div>
   {% if stats.per_user %}
   <div class="table-wrap"><table class="table">
     <thead><tr><th>Nhân viên</th><th>Hoàn thành</th><th>Tổng</th><th>Tỷ lệ</th><th>Quá hạn</th><th></th></tr></thead>
@@ -91,7 +113,7 @@
     </tbody>
   </table></div>
   {% else %}
-  <p class="muted">Chưa có việc nào được giao cho nhân viên trong ngày này.</p>
+  <p class="muted">Chưa có việc nào được giao cho nhân viên trong kỳ này.</p>
   {% endif %}
 </div>
 {% endblock %}

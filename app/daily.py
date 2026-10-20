@@ -41,6 +41,28 @@ def calc_daily(entry: dict) -> dict:
     }
 
 
+def period_totals(reports: list, start: str, end: str) -> dict:
+    """Tổng Báo cáo ngày trong 1 khoảng [start, end] (chuỗi ISO gồm 2 đầu).
+
+    Nhận list báo cáo thô (như db.daily_list). Ngày trong khoảng chưa nhập
+    báo cáo thì bỏ qua (không tính là 0). Cả khoảng không có báo cáo nào
+    -> count = 0 và mọi chỉ số None. ROAS kỳ = tổng ad_gmv / tổng ad_cost
+    của cả khoảng (không lấy trung bình ROAS ngày).
+    """
+    scoped = [r for r in reports if start <= r["date"] <= end]
+    if not scoped:
+        return {"count": 0, "revenue": None, "ads_cost": None, "roas": None}
+    revenue = sum(calc_daily(r)["total_rev"] for r in scoped)
+    ad_gmv = sum(_num(r.get("ad_gmv")) for r in scoped)
+    ad_cost = sum(_num(r.get("ad_cost")) for r in scoped)
+    return {
+        "count": len(scoped),
+        "revenue": revenue,
+        "ads_cost": round(ad_cost),
+        "roas": round(ad_gmv / ad_cost, 2) if ad_cost != 0 else None,
+    }
+
+
 def validate_daily_report(data: dict) -> tuple:
     """Kiểm tra báo cáo ngày. Trả về (clean, errors); clean chỉ có field hợp lệ."""
     if not isinstance(data, dict):

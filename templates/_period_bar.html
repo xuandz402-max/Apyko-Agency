@@ -1,0 +1,62 @@
+{# Thanh chọn khoảng thời gian + thẻ chỉ số so kỳ — DÙNG CHUNG cho các
+   trang dữ liệu (Báo cáo ngày / GMV Max / Bảng Leader checklist).
+
+   Cách dùng:
+     {% from "_period_bar.html" import period_bar, per_metric_card %}
+     {{ period_bar("/bao-cao", per_info) }}
+     {{ per_metric_card("Doanh thu", cmp.revenue, "money") }}
+
+   - per_base: đường dẫn trang (VD "/gmv").
+   - per_info: dict từ app.periods.resolve_period (period, label_cur,
+     label_prev, cur_name, prev_name, from, to...).
+   - per_extra: chuỗi query phụ phải GIỮ khi chuyển kỳ, đã có dấu & ở đầu
+     (VD "&product=3&days=14"); trang không có param phụ thì bỏ trống.
+   - per_hidden: list cặp (name, value) đưa vào form Tự chọn dạng input ẩn
+     để giữ các param phụ đó (khớp với per_extra).
+
+   Kỳ trước = 0 hoặc thiếu dữ liệu -> delta hiện "—", không bịa %.
+   Tăng = .delta-up (xanh lá ▲), giảm = .delta-down (đỏ ▼) như Dashboard CEO. #}
+
+{% macro period_bar(per_base, per_info, per_extra="", per_hidden=[]) %}
+<div class="per-bar">
+  <div class="row-actions">
+    <a href="{{ per_base }}?period=day{{ per_extra }}" class="btn btn-sm {% if per_info.period == 'day' %}btn-primary{% else %}btn-ghost{% endif %}">Ngày</a>
+    <a href="{{ per_base }}?period=week{{ per_extra }}" class="btn btn-sm {% if per_info.period == 'week' %}btn-primary{% else %}btn-ghost{% endif %}">Tuần</a>
+    <a href="{{ per_base }}?period=month{{ per_extra }}" class="btn btn-sm {% if per_info.period == 'month' %}btn-primary{% else %}btn-ghost{% endif %}">Tháng</a>
+    <a href="{{ per_base }}?period=custom&from={{ per_info.from }}&to={{ per_info.to }}{{ per_extra }}" class="btn btn-sm {% if per_info.period == 'custom' %}btn-primary{% else %}btn-ghost{% endif %}">Tự chọn</a>
+  </div>
+  <form method="get" action="{{ per_base }}" class="form-inline per-custom">
+    <input type="hidden" name="period" value="custom">
+    {% for name, value in per_hidden %}
+    <input type="hidden" name="{{ name }}" value="{{ value }}">
+    {% endfor %}
+    <label>Từ ngày
+      <input type="date" name="from" value="{{ per_info.from }}" class="input">
+    </label>
+    <label>Đến ngày
+      <input type="date" name="to" value="{{ per_info.to }}" class="input">
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Áp dụng</button>
+    </div>
+  </form>
+</div>
+<p class="muted per-note">Đang xem: <strong>{{ per_info.cur_name }} ({{ per_info.label_cur }})</strong> · so với <strong>{{ per_info.prev_name }} ({{ per_info.label_prev }})</strong> — kỳ trước liền kề, dài bằng kỳ này.</p>
+{% endmacro %}
+
+{% macro per_metric_card(label, metric, kind="money") %}
+<div class="stat-card">
+  <div class="stat-label">{{ label }}</div>
+  {% if metric.cur is not none %}
+  <div class="stat-value">{% if kind == "money" %}{{ "{:,.0f}".format(metric.cur).replace(",", ".") }}đ{% else %}{{ metric.cur }}{% endif %}</div>
+  {% if metric.delta_pct is not none %}
+  <div class="{% if metric.delta_pct >= 0 %}delta-up{% else %}delta-down{% endif %}">{% if metric.delta_pct >= 0 %}▲{% else %}▼{% endif %} {{ "%+.1f"|format(metric.delta_pct) }}% so với kỳ trước</div>
+  {% else %}
+  <div class="muted">— (chưa so sánh được)</div>
+  {% endif %}
+  {% else %}
+  <div class="stat-value">—</div>
+  <div class="muted">Chưa có dữ liệu kỳ này</div>
+  {% endif %}
+</div>
+{% endmacro %}

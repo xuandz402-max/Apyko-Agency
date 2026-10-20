@@ -353,3 +353,35 @@ def test_ceo_route_period_ok_for_leader(client):
     r = client.get("/ceo?period=week")
     assert r.status_code == 200
     assert "Tuần này" in r.text
+
+
+def test_period_compare_day_fallback_to_latest_data_day(client):
+    db, ceo = _db(), _ceo()
+    _report(db, "2026-09-20", 5400, 1000, 200)
+    _report(db, "2026-10-20", 5574, 1200, 500)
+    cmp = ceo.period_compare("2026-10-20", "day")
+    assert cmp["prev_fallback"] is True
+    assert cmp["prev_start"] == "2026-09-20"
+    assert cmp["prev_end"] == "2026-09-20"
+    assert cmp["metrics"]["revenue"]["prev"] == 5400
+    assert cmp["metrics"]["revenue"]["delta_pct"] == 3.2
+
+
+def test_period_compare_day_no_fallback_when_yesterday_has_data(client):
+    db, ceo = _db(), _ceo()
+    _report(db, "2026-10-19", 5000, 1000, 200)
+    _report(db, "2026-10-20", 6000, 1200, 240)
+    cmp = ceo.period_compare("2026-10-20", "day")
+    assert cmp["prev_fallback"] is False
+    assert cmp["prev_start"] == "2026-10-19"
+    assert cmp["metrics"]["revenue"]["delta_pct"] == 20.0
+
+
+def test_overview_revenue_fallback(client):
+    db, ceo = _db(), _ceo()
+    _report(db, "2026-09-20", 5400, 1000, 200)
+    _report(db, "2026-10-20", 5574, 1200, 500)
+    ov = ceo.ceo_overview("2026-10-20")
+    assert ov["rev_prev_fallback"] is True
+    assert ov["rev_prev_date"] == "2026-09-20"
+    assert ov["rev_change_pct"] == 3.2

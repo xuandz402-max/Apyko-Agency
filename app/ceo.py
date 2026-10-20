@@ -65,6 +65,16 @@ def ceo_overview(today: str) -> dict:
     rev_today = _summary_from(reports.get(today), today)
     yesterday = _shift(today, -1)
     rev_yesterday = _summary_from(reports.get(yesterday), yesterday)
+    rev_prev_date = yesterday
+    rev_prev_fallback = False
+    if rev_yesterday is None and rev_today is not None:
+        # Hôm qua chưa nhập -> lùi về ngày có báo cáo gần nhất trước hôm nay
+        # để vẫn so sánh được (giao diện ghi rõ là ngày có số gần nhất).
+        earlier = [d for d in reports if d < today]
+        if earlier:
+            rev_prev_date = max(earlier)
+            rev_yesterday = _summary_from(reports.get(rev_prev_date), rev_prev_date)
+            rev_prev_fallback = True
     rev_change_pct = None
     if rev_today is not None and rev_yesterday is not None and rev_yesterday["total_rev"] != 0:
         rev_change_pct = round(
@@ -198,6 +208,8 @@ def ceo_overview(today: str) -> dict:
             rev_yesterday["total_rev"] if rev_yesterday is not None else None
         ),
         "rev_change_pct": rev_change_pct,
+        "rev_prev_date": rev_prev_date,
+        "rev_prev_fallback": rev_prev_fallback,
         "revenue_7d": revenue_7d,
         "gmv_today": gmv_today,
         "product_alerts": product_alerts,
@@ -339,7 +351,20 @@ def period_compare(today: str, period: str) -> dict:
     entries = db.gmv_all_entries()
     cur = _aggregate(reports, entries, *cur_range)
     prev = _aggregate(reports, entries, *prev_range)
+    prev_fallback = False
+    if period == "day" and prev["revenue"] is None and prev["gmv_vnd"] is None:
+        # Hôm qua không có bất kỳ số nào -> lùi về ngày có số gần nhất trước
+        # kỳ này (báo cáo ngày hoặc entry GMV) để vẫn có mốc so sánh.
+        data_dates = {d for d in reports if d < cur_range[0]}
+        data_dates |= {e["date"] for e in entries if e["date"] < cur_range[0]}
+        if data_dates:
+            fb_day = max(data_dates)
+            prev_range = (fb_day, fb_day)
+            prev = _aggregate(reports, entries, *prev_range)
+            prev_fallback = True
     cur_name, prev_name = _PERIOD_NAMES[period]
+    if prev_fallback:
+        prev_name = "(ngày có số gần nhất)"
     return {
         "period": period,
         "cur_start": cur_range[0],
@@ -350,6 +375,7 @@ def period_compare(today: str, period: str) -> dict:
         "prev_name": prev_name,
         "cur_label": _range_label(*cur_range),
         "prev_label": _range_label(*prev_range),
+        "prev_fallback": prev_fallback,
         "metrics": {
             key: _with_delta(cur[key], prev[key])
             for key in ("revenue", "ads_cost", "roas", "gmv_vnd")

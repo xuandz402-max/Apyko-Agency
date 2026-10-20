@@ -142,6 +142,31 @@ def product_totals(days: int, today) -> list:
     return totals
 
 
+def range_totals(start: str, end: str) -> dict:
+    """Tổng GMV/chi phí/ROAS của MỌI sản phẩm trong khoảng [start, end].
+
+    Dùng cho dải "So sánh theo kỳ" ở trang /gmv (độc lập với biểu đồ theo
+    số ngày gần nhất). Không entry nào trong khoảng -> các chỉ số None.
+    ROAS kỳ = tổng GMV / tổng chi phí của cả khoảng; VNĐ = RM x 5300.
+    """
+    rev_rm = 0.0
+    cost_rm = 0.0
+    count = 0
+    for entry in db.gmv_all_entries():
+        if start <= entry["date"] <= end:
+            count += 1
+            rev_rm += float(entry.get("revenue_rm") or 0)
+            cost_rm += float(entry.get("ad_cost") or 0)
+    if count == 0:
+        return {"entries": 0, "gmv_vnd": None, "cost_vnd": None, "roas": None}
+    return {
+        "entries": count,
+        "gmv_vnd": round(rev_rm * RM_VND_RATE),
+        "cost_vnd": round(cost_rm * RM_VND_RATE),
+        "roas": round(rev_rm / cost_rm, 2) if cost_rm != 0 else None,
+    }
+
+
 # ------------------------------ cảnh báo -----------------------------------
 
 

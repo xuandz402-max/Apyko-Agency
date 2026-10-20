@@ -11,7 +11,7 @@ import time
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import (
     HTMLResponse,
     JSONResponse,
@@ -21,7 +21,7 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 
-from . import auth, ceo, checklist, config, gmv_charts, lessons, pricing
+from . import auth, ceo, checklist, config, gmv_charts, lessons, periods, pricing
 from . import database as db
 from .auth import (
     ApiCanDeleteProducts,
@@ -32,7 +32,7 @@ from .auth import (
     ApiUser,
 )
 from .calc import analyze_product
-from .daily import calc_daily, validate_daily_report
+from .daily import calc_daily, period_totals, validate_daily_report
 from .gmv import calc_gmv, validate_gmv_entry
 from .validation import payload_from_input, validate_product
 
@@ -987,6 +987,9 @@ def page_gmv(
     product_id: int | None = None,
     product: str | None = None,
     days: int | None = None,
+    period: str | None = None,
+    date_from: str | None = Query(default=None, alias="from"),
+    date_to: str | None = Query(default=None, alias="to"),
 ):
     user, redir = auth.page_guard(request, "can_view_products")
     if redir:
@@ -1039,6 +1042,28 @@ def page_gmv(
         }
         for t in totals
     ]
+
+    # --- dải so sánh theo kỳ (độc lập với ?days/?product của biểu đồ) ---
+    per_info = periods.resolve_period(
+        {"period": period, "from": date_from, "to": date_to}, today
+    )
+    gmv_cur = gmv_charts.range_totals(per_info["cur_start"], per_info["cur_end"])
+    gmv_prev = gmv_charts.range_totals(per_info["prev_start"], per_info["prev_end"])
+    gmv_cmp = {
+        "gmv_vnd": _per_metric(gmv_cur["gmv_vnd"], gmv_prev["gmv_vnd"]),
+        "cost_vnd": _per_metric(gmv_cur["cost_vnd"], gmv_prev["cost_vnd"]),
+        "roas": _per_metric(gmv_cur["roas"], gmv_prev["roas"]),
+        "entries": gmv_cur["entries"],
+        "has_data": gmv_cur["entries"] > 0,
+    }
+    # Param phụ của biểu đồ phải giữ nguyên khi người dùng chuyển kỳ.
+    chart_scope = product if chart_product_id is not None else "all"
+    per_extra = f"&product={chart_scope}&days={chart_days}"
+    per_hidden = [("product", chart_scope), ("days", str(chart_days))]
+    if active is not None:
+        per_extra += f"&product_id={active['id']}"
+        per_hidden.append(("product_id", str(active["id"])))
+
     return templates.TemplateResponse(
         "gmv.html",
         _ctx(
@@ -1056,6 +1081,10 @@ def page_gmv(
             chart_totals=totals_view,
             gmv_alerts=gmv_charts.gmv_alerts(today),
             roas_warn=gmv_charts.ROAS_WARN,
+            per_info=per_info,
+            per_extra=per_extra,
+            per_hidden=per_hidden,
+            gmv_cmp=gmv_cmp,
         ),
     )
 
@@ -1159,6 +1188,11 @@ def api_gmv_delete_entry(entry_id: int, user: dict = ApiCanDeleteProducts):
 # ------------------------------ báo cáo ngày ------------------------------
 
 
+def _per_metric(cur, prev) -> dict:
+    """Chỉ số kèm delta % so với kỳ trước (delta qua app.periods)."""
+    return {"cur": cur, "prev": prev, "delta_pct": periods.delta_pct(cur, prev)}
+
+
 def _daily_actor(user: dict) -> str:
     return (user.get("display_name") or user.get("username") or "").strip()
 
@@ -1170,18 +1204,44 @@ def _daily_enrich(entry: dict) -> dict:
 
 
 @router.get("/bao-cao", response_class=HTMLResponse)
-def page_daily(request: Request):
+def page_daily(
+    request: Request,
+    period: str | None = None,
+    date_from: str | None = Query(default=None, alias="from"),
+    date_to: str | None = Query(default=None, alias="to"),
+):
     user, redir = auth.page_guard(request, "can_view_products")
     if redir:
         return redir
+    per_info = periods.resolve_period(
+        {"period": period, "from": date_from, "to": date_to},
+        checklist.today_str(),
+    )
+    all_reports = db.daily_list()
+    scoped = [
+        r
+        for r in all_reports
+        if per_info["cur_start"] <= r["date"] <= per_info["cur_end"]
+    ]
+    cur_tot = period_totals(all_reports, per_info["cur_start"], per_info["cur_end"])
+    prev_tot = period_totals(all_reports, per_info["prev_start"], per_info["prev_end"])
+    daily_cmp = {
+        "revenue": _per_metric(cur_tot["revenue"], prev_tot["revenue"]),
+        "ads_cost": _per_metric(cur_tot["ads_cost"], prev_tot["ads_cost"]),
+        "roas": _per_metric(cur_tot["roas"], prev_tot["roas"]),
+        "count": cur_tot["count"],
+        "has_data": cur_tot["count"] > 0,
+    }
     return templates.TemplateResponse(
         "daily.html",
         _ctx(
             request,
             user,
-            reports=[_daily_enrich(r) for r in db.daily_list()],
+            reports=[_daily_enrich(r) for r in scoped],
             can_edit=bool(user.get("can_add_edit_products")),
             can_delete=bool(user.get("can_delete_products")),
+            per_info=per_info,
+            daily_cmp=daily_cmp,
         ),
     )
 
@@ -1385,6 +1445,9 @@ def page_checklist_board(
     date: str | None = None,
     assignee: int | None = None,
     shop: int | None = None,
+    period: str | None = None,
+    date_from: str | None = Query(default=None, alias="from"),
+    date_to: str | None = Query(default=None, alias="to"),
 ):
     user, redir = auth.page_guard(request)
     if redir:
@@ -1393,10 +1456,47 @@ def page_checklist_board(
         raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
     date_str = _cl_valid_date(date) or checklist.today_str()
     _cl_safety_net(date_str)
-    users_list = db.list_users()  # 1 lần: board_stats dùng lại + dropdown lọc
-    stats = checklist.board_stats(
-        date_str, assignee_id=assignee, shop_id=shop, users=users_list
+    # Kỳ tính quanh "ngày neo" (param date như cũ); mặc định day = đúng
+    # ngày đang chọn như trước. Kỳ dài bị chặn 31 ngày (periods.cap_period)
+    # vì tổng hợp phải cộng dồn board_stats từng ngày.
+    per_info = periods.resolve_period(
+        {"period": period, "from": date_from, "to": date_to}, date_str
     )
+    per_info = periods.cap_period(per_info, max_days=31)
+    users_list = db.list_users()  # 1 lần: board stats dùng lại + dropdown lọc
+    now = checklist.now_vn()
+    stats = checklist.board_range_stats(
+        per_info["cur_start"],
+        per_info["cur_end"],
+        assignee_id=assignee,
+        shop_id=shop,
+        now=now,
+        users=users_list,
+    )
+    prev_stats = checklist.board_range_stats(
+        per_info["prev_start"],
+        per_info["prev_end"],
+        assignee_id=assignee,
+        shop_id=shop,
+        now=now,
+        users=users_list,
+    )
+    # Delta % hoàn thành tính bằng ĐIỂM % (hiệu 2 tỷ lệ), chỉ khi cả 2 kỳ
+    # đều có việc thực tế (total - cancelled > 0).
+    pct_delta = None
+    cur_tasks = stats["total"] - stats["cancelled"]
+    prev_tasks = prev_stats["total"] - prev_stats["cancelled"]
+    if cur_tasks > 0 and prev_tasks > 0:
+        pct_delta = round(stats["pct"] - prev_stats["pct"], 1)
+    # Giữ bộ lọc ngày neo / nhân viên / shop khi chuyển kỳ.
+    per_extra = f"&date={date_str}"
+    per_hidden = [("date", date_str)]
+    if assignee is not None:
+        per_extra += f"&assignee={assignee}"
+        per_hidden.append(("assignee", str(assignee)))
+    if shop is not None:
+        per_extra += f"&shop={shop}"
+        per_hidden.append(("shop", str(shop)))
     return templates.TemplateResponse(
         "checklist_board.html",
         _ctx(
@@ -1408,6 +1508,11 @@ def page_checklist_board(
             shops=db.shop_list(),
             f_assignee=assignee,
             f_shop=shop,
+            per_info=per_info,
+            per_extra=per_extra,
+            per_hidden=per_hidden,
+            pct_delta=pct_delta,
+            prev_pct=prev_stats["pct"],
         ),
     )
 

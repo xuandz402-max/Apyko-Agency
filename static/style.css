@@ -53,7 +53,7 @@ a:hover { text-decoration: underline; }
 .sidebar-foot { padding: 14px 16px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .me-name { font-weight: 700; font-size: 14px; }
 .me-role { font-size: 12px; color: var(--muted); }
-.main { flex: 1; padding: 26px 30px; max-width: 1100px; }
+.main { flex: 1; padding: 26px 30px; max-width: none; min-width: 0; }
 .foot { margin-top: 40px; color: var(--muted); font-size: 12px; text-align: center; }
 
 .hamburger { display: none; position: fixed; top: 12px; left: 12px; z-index: 60;

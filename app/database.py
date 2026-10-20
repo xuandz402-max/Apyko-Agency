@@ -10,6 +10,7 @@ Mọi truy vấn đi qua get_conn(); code nghiệp vụ không đổi.
 import logging
 import os
 import sqlite3
+import threading
 from datetime import datetime, timezone
 
 from . import config
@@ -280,17 +281,51 @@ def _turso_enabled() -> bool:
     return bool(config.TURSO_DATABASE_URL and config.TURSO_AUTH_TOKEN)
 
 
+# Cache raw libsql connection theo thread. Mỗi lần libsql.connect() là một
+# handshake TLS + Hrana về Tokyo (~0.5-1s), trong khi một request gọi
+# get_conn() nhiều lần -> trang chậm vài giây. FastAPI chạy sync routes trên
+# threadpool nên 1 raw connection / thread là an toàn (libsql thread-safe);
+# _TursoConnection.__exit__ chỉ commit/rollback, không close, nên dùng chung
+# raw connection không đổi ngữ nghĩa. SQLite local mở file rất rẻ -> không cache.
+_turso_tls = threading.local()
+
+
+def _new_turso_raw():
+    """Tạo raw libsql connection mới + PRAGMA foreign_keys (chỉ lúc tạo mới)."""
+    import libsql
+
+    raw = libsql.connect(config.TURSO_DATABASE_URL, auth_token=config.TURSO_AUTH_TOKEN)
+    try:
+        raw.execute("PRAGMA foreign_keys = ON")
+    except Exception as e:  # remote có thể không hỗ trợ PRAGMA này
+        log.warning("Turso: bỏ qua PRAGMA foreign_keys (%s)", e)
+    return raw
+
+
+def _turso_raw():
+    """Raw connection dùng chung của thread hiện tại; chết thì kết nối lại.
+
+    Kiểm tra sức khỏe bằng SELECT 1 mỗi lần lấy: rẻ hơn handshake mới rất
+    nhiều, và bắt được trường hợp server đóng connection idle lâu.
+    """
+    raw = getattr(_turso_tls, "raw", None)
+    if raw is not None:
+        try:
+            raw.execute("SELECT 1")
+        except Exception as e:
+            log.warning("Turso: connection cũ lỗi (%s), kết nối lại", e)
+            _turso_tls.raw = None
+        else:
+            return raw
+    raw = _new_turso_raw()
+    _turso_tls.raw = raw
+    return raw
+
+
 def get_conn() -> "sqlite3.Connection | _TursoConnection":
     """Kết nối DB: Turso (libsql) nếu đủ 2 biến môi trường, ngược lại SQLite local."""
     if _turso_enabled():
-        import libsql
-
-        raw = libsql.connect(config.TURSO_DATABASE_URL, auth_token=config.TURSO_AUTH_TOKEN)
-        try:
-            raw.execute("PRAGMA foreign_keys = ON")
-        except Exception as e:  # remote có thể không hỗ trợ PRAGMA này
-            log.warning("Turso: bỏ qua PRAGMA foreign_keys (%s)", e)
-        return _TursoConnection(raw)
+        return _TursoConnection(_turso_raw())
     parent = os.path.dirname(config.DATABASE_PATH)
     if parent:
         os.makedirs(parent, exist_ok=True)

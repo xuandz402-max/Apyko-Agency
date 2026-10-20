@@ -99,6 +99,16 @@ def _checklist_tick() -> None:
             log.info("GMV nền: đã đẩy %d thông báo cảnh báo.", pushed)
     except Exception:
         log.exception("Lỗi vòng lặp nền cảnh báo GMV")
+    # Sao lưu tự động 1 lần/ngày cho bản chạy máy tính (DB local); Turso tự
+    # lo sao lưu nên maybe_daily_backup tự trả None. Lỗi không làm hỏng tick.
+    try:
+        from . import backup
+
+        made_backup = backup.maybe_daily_backup()
+        if made_backup:
+            log.info("Sao lưu nền: đã tạo bản %s", made_backup)
+    except Exception:
+        log.exception("Lỗi vòng lặp nền sao lưu tự động")
 
 
 def _checklist_loop() -> None:

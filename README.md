@@ -148,6 +148,56 @@ Quảng cáo & báo cáo) với nhắc hạn tự động trong giờ làm việ
   checklist** = mẫu việc/shop/cài đặt; nhân viên thường chỉ thấy và xử lý
   việc được giao cho mình. Hai quyền mới cấp ở trang **Tài khoản**.
 
+## 💾 Sao lưu & Khôi phục
+
+Trang **💾 Sao lưu & Khôi phục** (sidebar, `/sao-luu`) — **chỉ chủ sở hữu**
+xem được (nhân viên bị 403 và không thấy mục này trong menu):
+
+- **Chỉ áp dụng bản chạy trên máy tính với database SQLite local.** App tự
+  sao lưu **1 lần mỗi ngày** (vòng nền 60 giây kiểm tra: hôm nay chưa có
+  bản nào thì tạo, reason `auto`), đồng thời có nút **Sao lưu ngay**. Bản
+  sao tạo bằng sqlite3 backup API nên nhất quán ngay cả khi app đang
+  chạy, lưu ở thư mục `backups/` cạnh thư mục `data/`, đặt tên
+  `apyko-YYYYMMDD-HHMMSS-<reason>.db`, **giữ 30 bản mới nhất**.
+- Mỗi bản có nút **Tải về** và **Khôi phục** (có hộp xác nhận). Khôi phục:
+  app kiểm tra file (đúng thư mục, đúng SQLite, đủ bảng cốt lõi) -> **tự
+  sao lưu trạng thái hiện tại** (reason `pre-restore`) -> chép đè file DB.
+  Sau khi khôi phục **phải tắt app và mở lại** mới dùng dữ liệu mới.
+- Nếu app đang dùng database online (**Turso**) thì trang chỉ hiện thông
+  báo — sao lưu do phía cloud đảm nhiệm, không tạo bản tại máy.
+
+## 🏆 KPI nhân viên
+
+Trang **🏆 KPI nhân viên** (sidebar sau Bảng Leader, `/kpi`) — quyền như
+Bảng Leader (chủ sở hữu / Leader / Quản trị checklist):
+
+- Dùng chung thanh chọn kỳ **Ngày / Tuần / Tháng / Tự chọn** với các trang
+  dữ liệu khác (kỳ bị chặn tối đa 31 ngày như Bảng Leader). Số liệu lấy
+  từ Daily Checklist của kỳ này và kỳ liền trước.
+- Bảng xếp hạng theo nhân viên: tổng việc, đã xong, **% hoàn thành**, quá
+  hạn, và **delta điểm %** so với kỳ trước (tăng xanh ▲, giảm đỏ ▼; chỉ
+  tính khi cả 2 kỳ nhân viên đều có việc). Xếp hạng: % hoàn thành giảm
+  dần, hòa thì ít quá hạn hơn đứng trên; cuối bảng là hàng **TOÀN TEAM**.
+- Nút **Xuất CSV** tải KPI của đúng kỳ đang xem (mã hóa utf-8-sig, mở
+  bằng Excel không lỗi tiếng Việt).
+
+## 💬 Mẫu trả lời CSKH
+
+Trang **💬 Mẫu trả lời CSKH** (sidebar sau Báo cáo ngày, `/cskh`) — **mọi
+tài khoản đã đăng nhập đều xem được**:
+
+- Thư viện câu trả lời mẫu để sao chép nhanh khi chat với khách: nút
+  **Sao chép** ở mỗi mẫu (dùng clipboard của trình duyệt, có đường dự
+  phòng khi clipboard bị chặn), tìm kiếm theo từ khóa, nhóm theo danh mục.
+- Thêm/sửa mẫu cần quyền **Thêm/sửa sản phẩm**; xóa mẫu cần quyền **Xóa
+  sản phẩm** (kiểm tra ở máy chủ).
+- Lần đầu chạy, app gieo sẵn **6 mẫu khởi đầu trung tính** (chào khách;
+  xin mã đơn; hẹn giao lại; hướng dẫn đổi/trả; cảm ơn sau mua; xin đánh
+  giá 5 sao) — đây chỉ là mẫu khởi đầu, hãy sửa nội dung cho hợp shop.
+  Trong nội dung có các biến giữ chỗ `{ten_khach}`, `{ma_don}`,
+  `{san_pham}`: nhân viên tự thay bằng thông tin thật trước khi gửi,
+  app không tự điền.
+
 ## Dashboard CEO
 
 Trang **👑 Dashboard CEO** (sidebar, ngay dưới Dashboard, đường dẫn `/ceo`)

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% set nav_active = "cskh" %}
+{% block title %}Mẫu trả lời CSKH · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>💬 Mẫu trả lời CSKH</h1>
+  <p class="muted">Thư viện câu trả lời mẫu để nhân viên sao chép nhanh khi chat với khách.
+  Các biến như <code>{ten_khach}</code>, <code>{ma_don}</code>, <code>{san_pham}</code> cần tự thay bằng thông tin thật trước khi gửi khách.</p>
+</div>
+
+{% if err %}<div class="alert alert-error">{{ err }}</div>{% endif %}
+{% if msg %}<div class="alert alert-ok">{{ msg }}</div>{% endif %}
+
+<div class="card">
+  <form method="get" action="/cskh" class="form-inline">
+    <label>Tìm mẫu
+      <input type="text" name="q" value="{{ q }}" class="input" placeholder="Gõ từ khóa: giao hàng, đổi trả, đánh giá...">
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">🔎 Tìm</button>
+      {% if q %}<a href="/cskh" class="btn btn-ghost">Xóa lọc</a>{% endif %}
+    </div>
+  </form>
+</div>
+
+{% if can_edit %}
+<div class="card">
+  <div class="card-head"><h2>{% if edit_item %}✏️ Sửa mẫu{% else %}➕ Thêm mẫu mới{% endif %}</h2></div>
+  <form method="post" action="{% if edit_item %}/cskh/{{ edit_item.id }}/edit{% else %}/cskh{% endif %}" class="form">
+    <label>Tiêu đề
+      <input type="text" name="title" required value="{{ edit_item.title if edit_item else '' }}" placeholder="VD: Xin mã đơn để kiểm tra">
+    </label>
+    <label>Danh mục
+      <input type="text" name="category" value="{{ edit_item.category if edit_item else '' }}" placeholder="VD: Vận chuyển">
+    </label>
+    <label>Nội dung mẫu
+      <textarea name="content" rows="4" required placeholder="Nội dung câu trả lời...">{{ edit_item.content if edit_item else '' }}</textarea>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">{{ 'Lưu thay đổi' if edit_item else 'Thêm mẫu' }}</button>
+      {% if edit_item %}<a href="/cskh" class="btn btn-ghost">Hủy sửa</a>{% endif %}
+    </div>
+  </form>
+</div>
+{% endif %}
+
+{% if groups %}
+{% for group in groups %}
+<h2 class="cl-group">{{ group.name }}</h2>
+{% for item in group["items"] %}
+<div class="card">
+  <div class="card-head">
+    <h2>{{ item.title }}</h2>
+    <span class="badge">{{ item.category or "Khác" }}</span>
+  </div>
+  <textarea class="cskh-src" rows="3" readonly>{{ item.content }}</textarea>
+  <div class="row-actions" style="margin-top:10px">
+    <button type="button" class="btn btn-primary btn-sm cskh-copy">📋 Sao chép</button>
+    {% if can_edit %}
+    <a href="/cskh?edit={{ item.id }}{% if q %}&q={{ q }}{% endif %}" class="btn btn-ghost btn-sm">✏️ Sửa</a>
+    {% endif %}
+    {% if can_delete %}
+    <form method="post" action="/cskh/{{ item.id }}/delete" class="inline"
+          onsubmit="return confirm('Xóa mẫu {{ item.title }}?');">
+      <button type="submit" class="btn btn-danger btn-sm">🗑️ Xóa</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if item.updated_by %}<p class="muted small">Cập nhật bởi {{ item.updated_by }}</p>{% endif %}
+</div>
+{% endfor %}
+{% endfor %}
+{% else %}
+<div class="card"><p class="muted">Không tìm thấy mẫu nào{% if q %} khớp với "{{ q }}"{% endif %}.</p></div>
+{% endif %}
+
+<script>
+(function () {
+  function fallbackCopy(textarea) {
+    textarea.removeAttribute('readonly');
+    textarea.select();
+    try { document.execCommand('copy'); } catch (e) { /* bỏ qua */ }
+    textarea.setAttribute('readonly', '');
+    if (window.getSelection) window.getSelection().removeAllRanges();
+  }
+  document.querySelectorAll('.cskh-copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var card = btn.closest('.card');
+      var src = card ? card.querySelector('.cskh-src') : null;
+      if (!src) return;
+      var done = function () {
+        var old = btn.textContent;
+        btn.textContent = '✅ Đã chép';
+        setTimeout(function () { btn.textContent = old; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(src.value).then(done, function () {
+          fallbackCopy(src); done();
+        });
+      } else {
+        fallbackCopy(src); done();
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

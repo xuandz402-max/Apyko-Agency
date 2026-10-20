@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% set nav_active = "backup" %}
+{% block title %}Sao lưu & Khôi phục · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>💾 Sao lưu & Khôi phục</h1>
+  <p class="muted">Sao lưu dữ liệu để phòng máy tính hỏng hoặc khôi phục nhầm. Chỉ chủ sở hữu xem được trang này.</p>
+</div>
+
+{% if err %}<div class="alert alert-error">{{ err }}</div>{% endif %}
+{% if msg %}<div class="alert alert-ok">{{ msg }}</div>{% endif %}
+{% if restored %}
+<div class="alert alert-ok"><strong>Đã khôi phục xong.</strong> Hãy <strong>tắt app và mở lại</strong> để app dùng dữ liệu vừa khôi phục.</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-head"><h2>Trạng thái dữ liệu</h2></div>
+  {% if is_local %}
+  <p>App đang dùng <strong>database trên máy tính này (SQLite local)</strong> — sao lưu khả dụng.
+  App tự sao lưu <strong>1 lần mỗi ngày</strong> và giữ tối đa <strong>30 bản mới nhất</strong>.
+  Trước mỗi lần khôi phục, app cũng tự sao lưu trạng thái hiện tại (bản <em>pre-restore</em>) để quay lại được nếu nhầm.</p>
+  <form method="post" action="/sao-luu/tao">
+    <button type="submit" class="btn btn-primary">💾 Sao lưu ngay</button>
+  </form>
+  {% else %}
+  <p>App đang dùng <strong>database online (Turso)</strong> — dữ liệu được nhà cung cấp cloud sao lưu,
+  trang này chỉ áp dụng cho bản chạy trên máy tính với database local.</p>
+  {% endif %}
+</div>
+
+{% if is_local %}
+<div class="card">
+  <div class="card-head"><h2>Các bản sao lưu ({{ backups|length }})</h2></div>
+  {% if backups %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Tên file</th><th>Thời gian tạo</th><th>Dung lượng</th><th>Thao tác</th></tr>
+      </thead>
+      <tbody>
+        {% for b in backups %}
+        <tr>
+          <td>{{ b.name }}</td>
+          <td>{{ b.mtime_text }}</td>
+          <td>{{ b.size_kb }} KB</td>
+          <td>
+            <div class="row-actions">
+              <a href="/sao-luu/tai/{{ b.name }}" class="btn btn-ghost btn-sm">⬇️ Tải về</a>
+              <form method="post" action="/sao-luu/khoi-phuc/{{ b.name }}" class="inline"
+                    onsubmit="return confirm('Khôi phục dữ liệu từ bản {{ b.name }}? Dữ liệu hiện tại sẽ được sao lưu lại trước (bản pre-restore) rồi bị thay bằng dữ liệu trong bản này.');">
+                <button type="submit" class="btn btn-danger btn-sm">↩️ Khôi phục</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">Chưa có bản sao lưu nào. Nhấn <strong>Sao lưu ngay</strong> để tạo bản đầu tiên.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

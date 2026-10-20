@@ -230,6 +230,14 @@ CREATE TABLE IF NOT EXISTS pricing_settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL DEFAULT ''
 );
+CREATE TABLE IF NOT EXISTS cskh_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT '',
+    content TEXT NOT NULL DEFAULT '',
+    updated_by TEXT DEFAULT '',
+    updated_at TEXT NOT NULL
+);
 """
 
 # Migration cộng thêm cho các DB đã tồn tại trước module Daily Checklist:
@@ -447,6 +455,7 @@ def init_db() -> None:
         conn.executescript(_SCHEMA)
         _migrate_users_columns(conn)
     pricing_seed_settings()
+    cskh_seed_defaults()
     # Import trễ để tránh vòng lặp module (checklist.py dùng database.py).
     from . import checklist
 
@@ -1320,4 +1329,138 @@ def pricing_item_update(item_id: int, d: dict) -> dict | None:
 def pricing_item_delete(item_id: int) -> bool:
     with get_conn() as conn:
         cur = conn.execute("DELETE FROM pricing_items WHERE id = ?", (item_id,))
+        return cur.rowcount > 0
+
+
+# ------------------------------ mẫu trả lời CSKH ------------------------------
+# Thư viện mẫu chăm sóc khách hàng: nhân viên sao chép nhanh khi chat với
+# khách. Biến giữ chỗ trong nội dung: {ten_khach}, {ma_don}, {san_pham}
+# (người dùng tự thay khi dán sang kênh chat — app không tự điền).
+
+CSKH_COLUMNS = ["id", "title", "category", "content", "updated_by", "updated_at"]
+
+# 6 mẫu khởi đầu TRUNG TÍNH — chỉ gieo khi bảng trống, chủ shop sửa/xóa tùy ý.
+CSKH_SEED_TEMPLATES = [
+    {
+        "title": "Chào khách, hỏi nhu cầu",
+        "category": "Chào hỏi",
+        "content": (
+            "Chào {ten_khach}, shop cảm ơn bạn đã quan tâm đến {san_pham}. "
+            "Bạn cần shop tư vấn thêm điều gì ạ?"
+        ),
+    },
+    {
+        "title": "Xin mã đơn để kiểm tra",
+        "category": "Tra cứu đơn",
+        "content": (
+            "Dạ {ten_khach} cho shop xin mã đơn hàng để shop kiểm tra "
+            "tình trạng đơn cho bạn nhé."
+        ),
+    },
+    {
+        "title": "Hẹn giao lại",
+        "category": "Vận chuyển",
+        "content": (
+            "Dạ đơn {ma_don} của {ten_khach} chưa giao thành công, shop đã "
+            "hẹn đơn vị vận chuyển giao lại cho bạn. Bạn để ý điện thoại "
+            "giúp shop nhé."
+        ),
+    },
+    {
+        "title": "Hướng dẫn đổi / trả hàng",
+        "category": "Đổi trả / bảo hành",
+        "content": (
+            "Dạ shop hỗ trợ đổi/trả cho đơn {ma_don} ạ. {ten_khach} gửi giúp "
+            "shop hình ảnh hoặc video sản phẩm lúc nhận hàng để shop xử lý "
+            "nhanh nhất cho bạn nhé."
+        ),
+    },
+    {
+        "title": "Cảm ơn sau khi mua",
+        "category": "Sau mua",
+        "content": (
+            "Shop cảm ơn {ten_khach} đã ủng hộ {san_pham}. Chúc bạn dùng "
+            "sản phẩm thật hài lòng ạ!"
+        ),
+    },
+    {
+        "title": "Xin đánh giá 5 sao",
+        "category": "Đánh giá",
+        "content": (
+            "Dạ nếu {ten_khach} hài lòng với {san_pham}, bạn cho shop xin "
+            "đánh giá 5 sao để shop có thêm động lực nhé. Shop cảm ơn bạn "
+            "nhiều ạ!"
+        ),
+    },
+]
+
+
+def cskh_seed_defaults() -> int:
+    """Gieo 6 mẫu CSKH khởi đầu CHỈ khi bảng đang trống. Trả số mẫu đã gieo."""
+    with get_conn() as conn:
+        row = conn.execute("SELECT COUNT(*) AS c FROM cskh_templates").fetchone()
+        if row["c"]:
+            return 0
+        now = _utcnow()
+        for tpl in CSKH_SEED_TEMPLATES:
+            conn.execute(
+                "INSERT INTO cskh_templates (title, category, content, updated_by,"
+                " updated_at) VALUES (?, ?, ?, '', ?)",
+                (tpl["title"], tpl["category"], tpl["content"], now),
+            )
+        return len(CSKH_SEED_TEMPLATES)
+
+
+def cskh_list(q: str | None = None) -> list:
+    """Danh sách mẫu CSKH; `q` lọc theo tiêu đề/danh mục/nội dung (LIKE)."""
+    sql = "SELECT * FROM cskh_templates"
+    params: list = []
+    if q and q.strip():
+        like = "%" + q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+        sql += (
+            " WHERE (title LIKE ? ESCAPE '\\' OR category LIKE ? ESCAPE '\\'"
+            " OR content LIKE ? ESCAPE '\\')"
+        )
+        params.extend([like, like, like])
+    sql += " ORDER BY category ASC, title ASC, id ASC"
+    with get_conn() as conn:
+        rows = conn.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+def cskh_get(template_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM cskh_templates WHERE id = ?", (template_id,)
+        ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def cskh_upsert(d: dict, updated_by: str = "") -> int:
+    """Thêm mới hoặc cập nhật mẫu CSKH (theo "id" nếu có). Trả về id của mẫu."""
+    data = {k: v for k, v in d.items() if k in CSKH_COLUMNS and k != "id"}
+    data["updated_by"] = updated_by
+    data["updated_at"] = _utcnow()
+    template_id = d.get("id")
+    with get_conn() as conn:
+        if template_id:
+            cur = conn.execute(
+                f"UPDATE cskh_templates SET {', '.join(f'{k} = ?' for k in data)}"
+                " WHERE id = ?",
+                [*data.values(), template_id],
+            )
+            if cur.rowcount:
+                return int(template_id)
+        cols = list(data.keys())
+        placeholders = ", ".join("?" for _ in cols)
+        cur = conn.execute(
+            f"INSERT INTO cskh_templates ({', '.join(cols)}) VALUES ({placeholders})",
+            [data[c] for c in cols],
+        )
+        return cur.lastrowid
+
+
+def cskh_delete(template_id: int) -> bool:
+    with get_conn() as conn:
+        cur = conn.execute("DELETE FROM cskh_templates WHERE id = ?", (template_id,))
         return cur.rowcount > 0

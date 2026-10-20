@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% set nav_active = "kpi" %}
+{% from "_period_bar.html" import period_bar %}
+{% block title %}KPI nhân viên · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>🏆 KPI nhân viên</h1>
+  <p class="muted">Xếp hạng hoàn thành Daily Checklist theo kỳ — % hoàn thành so với kỳ liền trước (tính bằng <strong>điểm %</strong>).</p>
+  <div class="page-actions">
+    <a href="/kpi/export?period={{ per_info.period }}&from={{ per_info.from }}&to={{ per_info.to }}{{ per_extra }}" class="btn btn-ghost">⬇️ Xuất CSV</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>🗓️ Chọn kỳ</h2></div>
+  {{ period_bar("/kpi", per_info, per_extra, per_hidden) }}
+  {% if per_info.capped %}
+  <p class="muted">Kỳ quá dài đã được chặn ở 31 ngày gần nhất để trang chạy nhanh.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>Bảng xếp hạng — {{ per_info.cur_name }} ({{ per_info.label_cur }})</h2></div>
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th><th>Nhân viên</th><th>Tổng việc</th><th>Đã xong</th>
+          <th>% hoàn thành</th><th>Quá hạn</th><th>So kỳ trước</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td><strong>{{ row.name }}</strong></td>
+          <td>{{ row.total }}</td>
+          <td>{{ row.done }}</td>
+          <td><strong>{{ "%.1f"|format(row.pct) }}%</strong></td>
+          <td>{{ row.overdue }}</td>
+          <td>
+            {% if row.delta is not none %}
+            <span class="{% if row.delta >= 0 %}delta-up{% else %}delta-down{% endif %}">{% if row.delta >= 0 %}▲{% else %}▼{% endif %} {{ "%+.1f"|format(row.delta) }} điểm %</span>
+            <span class="muted">(kỳ trước {{ "%.1f"|format(row.prev_pct) }}%)</span>
+            {% else %}
+            <span class="muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        <tr class="total">
+          <td></td>
+          <td><strong>TOÀN TEAM</strong></td>
+          <td><strong>{{ team.total }}</strong></td>
+          <td><strong>{{ team.done }}</strong></td>
+          <td><strong>{{ "%.1f"|format(team.pct) }}%</strong></td>
+          <td><strong>{{ team.overdue }}</strong></td>
+          <td>
+            {% if team.delta is not none %}
+            <span class="{% if team.delta >= 0 %}delta-up{% else %}delta-down{% endif %}">{% if team.delta >= 0 %}▲{% else %}▼{% endif %} {{ "%+.1f"|format(team.delta) }} điểm %</span>
+            {% else %}
+            <span class="muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">Chưa có nhân viên nào được giao việc trong kỳ này.</p>
+  {% endif %}
+</div>
+{% endblock %}

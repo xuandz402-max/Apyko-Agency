@@ -344,3 +344,6 @@ button { border-radius: 999px; }
   justify-content: space-between; }
 .per-custom { align-items: flex-end; }
 .per-note { margin: 6px 0 12px; }
+
+/* Mẫu trả lời CSKH */
+.cskh-src { width: 100%; }

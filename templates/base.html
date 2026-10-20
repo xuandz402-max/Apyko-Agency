@@ -39,9 +39,13 @@
       <a href="/bao-cao" class="nav-item{% if nav_active == 'daily' %} active{% endif %}">📊 Báo cáo ngày</a>
       {% endif %}
       {% if user %}
+      <a href="/cskh" class="nav-item{% if nav_active == 'cskh' %} active{% endif %}">💬 Mẫu CSKH</a>
+      {% endif %}
+      {% if user %}
       <a href="/checklist" class="nav-item{% if nav_active == 'checklist' %} active{% endif %}">✅ Daily Checklist</a>
       {% if user.is_owner or user.can_checklist_leader or user.can_checklist_admin %}
       <a href="/checklist/board" class="nav-item{% if nav_active == 'checklist_board' %} active{% endif %}">📋 Bảng Leader</a>
+      <a href="/kpi" class="nav-item{% if nav_active == 'kpi' %} active{% endif %}">🏆 KPI nhân viên</a>
       {% endif %}
       {% if user.is_owner or user.can_checklist_admin %}
       <a href="/checklist/admin" class="nav-item{% if nav_active == 'checklist_admin' %} active{% endif %}">⚙️ Mẫu checklist</a>
@@ -53,6 +57,7 @@
       {% endif %}
       {% if user and user.is_owner %}
       <a href="/accounts" class="nav-item{% if nav_active == 'accounts' %} active{% endif %}">👥 Quản lý tài khoản</a>
+      <a href="/sao-luu" class="nav-item{% if nav_active == 'backup' %} active{% endif %}">💾 Sao lưu & Khôi phục</a>
       {% endif %}
     </nav>
     <div class="sidebar-foot">

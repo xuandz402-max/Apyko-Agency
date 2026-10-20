@@ -11,9 +11,11 @@ import threading
 import time
 from datetime import datetime
 from typing import Annotated
+from urllib.parse import quote
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import (
+    FileResponse,
     HTMLResponse,
     JSONResponse,
     RedirectResponse,
@@ -22,7 +24,7 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 
-from . import auth, ceo, checklist, config, gmv_charts, importer, lessons, periods, pricing
+from . import auth, backup, ceo, checklist, config, gmv_charts, importer, lessons, periods, pricing
 from . import database as db
 from .auth import (
     ApiCanDeleteProducts,
@@ -2543,4 +2545,353 @@ def api_pricing_export(user: dict = ApiUser):
         io.BytesIO(payload),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ------------------------------ sao lưu & khôi phục ---------------------------
+
+
+def _require_owner(user: dict) -> None:
+    if not user.get("is_owner"):
+        raise HTTPException(status_code=403, detail="Chỉ chủ sở hữu được thực hiện.")
+
+
+@router.get("/sao-luu", response_class=HTMLResponse)
+def page_backup(
+    request: Request,
+    restored: int | None = None,
+    msg: str | None = None,
+    err: str | None = None,
+):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    _require_owner(user)
+    items = []
+    if backup.is_local():
+        for b in backup.list_backups():
+            items.append(
+                {
+                    **b,
+                    "mtime_text": b["mtime"].strftime("%d/%m/%Y %H:%M:%S"),
+                    "size_kb": round(b["size"] / 1024, 1),
+                }
+            )
+    return templates.TemplateResponse(
+        "backup.html",
+        _ctx(
+            request,
+            user,
+            is_local=backup.is_local(),
+            backups=items,
+            restored=restored,
+            msg=msg,
+            err=err,
+        ),
+    )
+
+
+@router.post("/sao-luu/tao")
+def page_backup_create(request: Request):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    _require_owner(user)
+    name = backup.create_backup("manual")
+    if name is None:
+        err = quote("Đang dùng database online (Turso) — sao lưu do cloud đảm nhiệm.")
+        return RedirectResponse(url="/sao-luu?err=" + err, status_code=303)
+    return RedirectResponse(
+        url="/sao-luu?msg=" + quote(f"Đã tạo bản sao lưu {name}."),
+        status_code=303,
+    )
+
+
+@router.get("/sao-luu/tai/{name}")
+def page_backup_download(request: Request, name: str):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    _require_owner(user)
+    try:
+        path = backup.backup_path(name)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    return FileResponse(path, filename=name, media_type="application/octet-stream")
+
+
+@router.post("/sao-luu/khoi-phuc/{name}")
+def page_backup_restore(request: Request, name: str):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    _require_owner(user)
+    try:
+        message = backup.restore_backup(name)
+    except ValueError as e:
+        return RedirectResponse(
+            url="/sao-luu?err=" + quote(str(e)), status_code=303
+        )
+    return RedirectResponse(
+        url="/sao-luu?restored=1&msg=" + quote(message), status_code=303
+    )
+
+
+# ------------------------------ KPI nhân viên ---------------------------------
+
+
+def _kpi_compute(date, period, date_from, date_to):
+    """Số liệu KPI cho kỳ đang chọn + kỳ liền trước (dùng chung trang + CSV).
+
+    Trả (per_info, rows, team, per_extra, per_hidden). rows đã xếp hạng:
+    % hoàn thành giảm dần, hòa thì ít quá hạn hơn đứng trên. Delta là
+    ĐIỂM % (hiệu 2 tỷ lệ) như Bảng Leader; chỉ tính khi cả 2 kỳ đều có
+    việc thực tế của nhân viên đó.
+    """
+    anchor = _cl_valid_date(date) or checklist.today_str()
+    per_info = periods.resolve_period(
+        {"period": period, "from": date_from, "to": date_to}, anchor
+    )
+    per_info = periods.cap_period(per_info, max_days=31)
+    users_list = db.list_users()
+    now = checklist.now_vn()
+    cur = checklist.board_range_stats(
+        per_info["cur_start"], per_info["cur_end"], now=now, users=users_list
+    )
+    prev = checklist.board_range_stats(
+        per_info["prev_start"], per_info["prev_end"], now=now, users=users_list
+    )
+    prev_by_id = {b["user_id"]: b for b in prev["per_user"]}
+    rows = []
+    for b in cur["per_user"]:
+        pb = prev_by_id.get(b["user_id"])
+        delta = None
+        if b["total"] > 0 and pb is not None and pb["total"] > 0:
+            delta = round(b["pct"] - pb["pct"], 1)
+        rows.append(
+            {
+                "user_id": b["user_id"],
+                "name": b["name"],
+                "total": b["total"],
+                "done": b["done"],
+                "overdue": b["overdue"],
+                "pct": b["pct"],
+                "prev_pct": pb["pct"] if pb is not None else None,
+                "delta": delta,
+            }
+        )
+    rows.sort(key=lambda r: (-r["pct"], r["overdue"], r["name"]))
+    cur_tasks = cur["total"] - cur["cancelled"]
+    prev_tasks = prev["total"] - prev["cancelled"]
+    team_delta = None
+    if cur_tasks > 0 and prev_tasks > 0:
+        team_delta = round(cur["pct"] - prev["pct"], 1)
+    team = {
+        "total": cur_tasks,
+        "done": cur["done"],
+        "overdue": cur["overdue"],
+        "pct": cur["pct"],
+        "prev_pct": prev["pct"],
+        "delta": team_delta,
+    }
+    per_extra = f"&date={anchor}"
+    per_hidden = [("date", anchor)]
+    return per_info, rows, team, per_extra, per_hidden
+
+
+@router.get("/kpi", response_class=HTMLResponse)
+def page_kpi(
+    request: Request,
+    date: str | None = None,
+    period: str | None = None,
+    date_from: str | None = Query(default=None, alias="from"),
+    date_to: str | None = Query(default=None, alias="to"),
+):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    if not _cl_is_leader(user):
+        raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
+    per_info, rows, team, per_extra, per_hidden = _kpi_compute(
+        date, period, date_from, date_to
+    )
+    return templates.TemplateResponse(
+        "kpi.html",
+        _ctx(
+            request,
+            user,
+            per_info=per_info,
+            rows=rows,
+            team=team,
+            per_extra=per_extra,
+            per_hidden=per_hidden,
+        ),
+    )
+
+
+@router.get("/kpi/export")
+def page_kpi_export(
+    request: Request,
+    date: str | None = None,
+    period: str | None = None,
+    date_from: str | None = Query(default=None, alias="from"),
+    date_to: str | None = Query(default=None, alias="to"),
+):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    if not _cl_is_leader(user):
+        raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
+    per_info, rows, team, _extra, _hidden = _kpi_compute(
+        date, period, date_from, date_to
+    )
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(
+        [
+            "Nhân viên",
+            "Tổng việc",
+            "Đã xong",
+            "% hoàn thành",
+            "Quá hạn",
+            "Thay đổi điểm % so với kỳ trước",
+        ]
+    )
+    for r in rows:
+        writer.writerow(
+            [
+                r["name"],
+                r["total"],
+                r["done"],
+                r["pct"],
+                r["overdue"],
+                "" if r["delta"] is None else f"{r['delta']:+.1f}",
+            ]
+        )
+    writer.writerow(
+        [
+            "TOÀN TEAM",
+            team["total"],
+            team["done"],
+            team["pct"],
+            team["overdue"],
+            "" if team["delta"] is None else f"{team['delta']:+.1f}",
+        ]
+    )
+    payload = buf.getvalue().encode("utf-8-sig")
+    filename = (
+        f"kpi_{per_info['cur_start']}_{per_info['cur_end']}_"
+        + datetime.now().strftime("%Y%m%d_%H%M%S")
+        + ".csv"
+    )
+    return StreamingResponse(
+        io.BytesIO(payload),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ------------------------------ mẫu trả lời CSKH ------------------------------
+
+
+def _cskh_actor(user: dict) -> str:
+    return (user.get("display_name") or user.get("username") or "").strip()
+
+
+@router.get("/cskh", response_class=HTMLResponse)
+def page_cskh(
+    request: Request,
+    q: str | None = None,
+    edit: int | None = None,
+    err: str | None = None,
+    msg: str | None = None,
+):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    items = db.cskh_list(q)
+    groups: list[dict] = []
+    for it in items:
+        cat = it["category"] or "Khác"
+        if groups and groups[-1]["name"] == cat:
+            groups[-1]["items"].append(it)
+        else:
+            groups.append({"name": cat, "items": [it]})
+    edit_item = db.cskh_get(edit) if edit else None
+    return templates.TemplateResponse(
+        "cskh.html",
+        _ctx(
+            request,
+            user,
+            groups=groups,
+            total=len(items),
+            q=q or "",
+            edit_item=edit_item,
+            can_edit=bool(user.get("can_add_edit_products")),
+            can_delete=bool(user.get("can_delete_products")),
+            err=err,
+            msg=msg,
+        ),
+    )
+
+
+async def _cskh_form_payload(request: Request):
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    category = (form.get("category") or "").strip()
+    content = (form.get("content") or "").strip()
+    return title, category, content
+
+
+@router.post("/cskh")
+async def page_cskh_create(request: Request):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    title, category, content = await _cskh_form_payload(request)
+    if not title or not content:
+        return RedirectResponse(
+            url="/cskh?err=" + quote("Thiếu tiêu đề hoặc nội dung mẫu."),
+            status_code=303,
+        )
+    db.cskh_upsert(
+        {"title": title, "category": category, "content": content},
+        _cskh_actor(user),
+    )
+    return RedirectResponse(
+        url="/cskh?msg=" + quote("Đã thêm mẫu mới."), status_code=303
+    )
+
+
+@router.post("/cskh/{item_id}/edit")
+async def page_cskh_edit(request: Request, item_id: int):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    if db.cskh_get(item_id) is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy mẫu.")
+    title, category, content = await _cskh_form_payload(request)
+    if not title or not content:
+        return RedirectResponse(
+            url=f"/cskh?edit={item_id}&err=" + quote("Thiếu tiêu đề hoặc nội dung mẫu."),
+            status_code=303,
+        )
+    db.cskh_upsert(
+        {"id": item_id, "title": title, "category": category, "content": content},
+        _cskh_actor(user),
+    )
+    return RedirectResponse(
+        url="/cskh?msg=" + quote("Đã lưu thay đổi."), status_code=303
+    )
+
+
+@router.post("/cskh/{item_id}/delete")
+def page_cskh_delete(request: Request, item_id: int):
+    user, redir = auth.page_guard(request, "can_delete_products")
+    if redir:
+        return redir
+    if not db.cskh_delete(item_id):
+        raise HTTPException(status_code=404, detail="Không tìm thấy mẫu.")
+    return RedirectResponse(
+        url="/cskh?msg=" + quote("Đã xóa mẫu."), status_code=303
     )

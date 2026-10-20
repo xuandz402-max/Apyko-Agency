@@ -31,7 +31,7 @@
 
 <div class="card">
   <div class="card-head"><h2>Danh sách mẫu việc ({{ templates|length }})</h2></div>
-  <div class="table-wrap"><table class="table" id="tplTable">
+  <div class="table-wrap"><table class="table cl-admin-table" id="tplTable">
     <thead><tr><th>Thứ tự</th><th>Nhóm</th><th>Tên công việc</th><th>Hạn mặc định</th><th>Phân công mặc định</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
     <tbody>
     {% for t in templates %}
@@ -75,7 +75,7 @@
       <button type="button" class="btn btn-primary btn-sm" id="shopAdd">Thêm shop</button>
     </div>
   </div>
-  <div class="table-wrap"><table class="table">
+  <div class="table-wrap"><table class="table cl-admin-table">
     <thead><tr><th>Shop</th><th>Thao tác</th></tr></thead>
     <tbody id="shopBody">
     {% for s in shops %}

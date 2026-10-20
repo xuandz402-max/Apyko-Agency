@@ -135,6 +135,23 @@ a:hover { text-decoration: underline; }
 .code-big { font-size: 20px; font-weight: 800; letter-spacing: 2px; color: var(--brand-dark); }
 .field-error { display: block; color: var(--red); font-size: 13px; margin-top: 4px; }
 
+/* ---------- nền ô nhập / nút trần (toàn cục) ---------- */
+/* Rule nền cho MỌI ô nhập, kể cả ô trần ngoài .form/.filters (vd: ô trong bảng
+   Mẫu checklist, form-inline...). Dùng :where() để specificity = 0 nên mọi rule
+   theo class (.form input, .filters .input, .cl-note textarea...) luôn thắng —
+   không đúp viền/padding. Không ép width: ô trong bảng co theo cột. */
+input:where(:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])),
+select {
+  border: 1px solid var(--line); background: #fff;
+  padding: 8px 14px; border-radius: 999px; font-size: inherit;
+}
+textarea {
+  border: 1px solid var(--line); background: #fff;
+  padding: 8px 12px; border-radius: 14px; font-size: inherit;
+}
+/* Nút trần cũng bo tròn; .btn/.hamburger/.cat-opt/.tab có rule riêng thắng rule này. */
+button { border-radius: 999px; }
+
 /* ---------- forms / buttons ---------- */
 .form label { display: block; margin-bottom: 12px; font-weight: 600; font-size: 14px; }
 .form input, .form select {
@@ -261,6 +278,15 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--line); border-radius: 14px; font-size: 14px; }
 .cl-notif { border-left: 4px solid var(--brand); }
 .cl-notif-read { opacity: 0.65; }
+
+/* Mẫu checklist (admin): hàng thoáng + nền xen kẽ để chữ không nối nhau */
+.cl-admin-table th, .cl-admin-table td { padding: 13px 10px; vertical-align: middle; }
+.cl-admin-table tbody tr:nth-child(even) { background: #FAFAFA; }
+.cl-admin-table tbody tr:hover { background: #F3F4F6; }
+.cl-admin-table td .t-group, .cl-admin-table td .t-title,
+.cl-admin-table td .shop-name { width: 100%; }
+.cl-admin-table td .t-assignee { display: block; width: 100%; margin-bottom: 6px; }
+.cl-admin-table td .t-shop { display: block; width: 100%; }
 
 /* ---------- định giá: ô tìm ngành hàng có gợi ý ---------- */
 .cat-picker { position: relative; display: block; }

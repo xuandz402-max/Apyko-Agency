@@ -1,12 +1,12 @@
-/* Apyko Agency — theme cam nghệ #F0522B + trắng. Không CDN, CSS thuần. */
+/* Apyko Agency — theme đen trắng. Không CDN, CSS thuần. */
 :root {
-  --brand: #F0522B;
-  --brand-dark: #C7431F;
-  --brand-soft: #FDEEE9;
+  --brand: #111111;
+  --brand-dark: #000000;
+  --brand-soft: #EEEEEE;
   --ink: #1F2937;
   --muted: #6B7280;
-  --line: #EDE3DC;
-  --bg: #FFFDFB;
+  --line: #E5E5E5;
+  --bg: #FFFFFF;
   --card: #FFFFFF;
   --green: #15803D;
   --red: #DC2626;
@@ -104,7 +104,7 @@ a:hover { text-decoration: underline; }
 .table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .table th, .table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); }
 .table thead th { background: var(--brand-soft); font-weight: 700; position: sticky; top: 0; }
-.table tbody tr:hover { background: #FFFBF8; }
+.table tbody tr:hover { background: #F7F7F7; }
 .table.kv td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .table tr.total td { border-top: 2px solid var(--brand); }
 /* ---------- wide content + compact tables (GMV) ---------- */

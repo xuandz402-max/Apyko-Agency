@@ -21,7 +21,7 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 
-from . import auth, ceo, checklist, config, lessons, pricing
+from . import auth, ceo, checklist, config, gmv_charts, lessons, pricing
 from . import database as db
 from .auth import (
     ApiCanDeleteProducts,
@@ -950,15 +950,69 @@ async def _gmv_json_body(request: Request):
     return body, None
 
 
+def _fmt_money_vn(amount) -> str:
+    """1234567 -> '1.234.567' (kiểu Việt Nam), khớp định dạng phía client."""
+    return f"{int(round(amount)):,}".replace(",", ".")
+
+
 @router.get("/gmv", response_class=HTMLResponse)
-def page_gmv(request: Request, product_id: int | None = None):
+def page_gmv(
+    request: Request,
+    product_id: int | None = None,
+    product: str | None = None,
+    days: int | None = None,
+):
     user, redir = auth.page_guard(request, "can_view_products")
     if redir:
         return redir
+    _cl_safety_net(checklist.today_str())
     products = db.gmv_list_products()
     active = None
     if products:
         active = next((p for p in products if p["id"] == product_id), products[0])
+
+    # --- biểu đồ + cảnh báo: validate chặt query, sai -> mặc định an toàn ---
+    chart_days = days if days in (7, 14, 30) else 14
+    chart_product_id = None
+    if product and product != "all":
+        try:
+            candidate = int(product)
+        except (TypeError, ValueError):
+            candidate = None
+        if candidate is not None and any(p["id"] == candidate for p in products):
+            chart_product_id = candidate
+    today = checklist.today_str()
+    series = gmv_charts.build_series(chart_product_id, chart_days, today)
+    chart_rows = [
+        {
+            "date": label,
+            "gmv": series["gmv_vnd"][i],
+            "cost": series["cost_vnd"][i],
+            "roas": series["roas"][i],
+            "gmv_fmt": (
+                _fmt_money_vn(series["gmv_vnd"][i])
+                if series["gmv_vnd"][i] is not None
+                else "—"
+            ),
+            "cost_fmt": (
+                _fmt_money_vn(series["cost_vnd"][i])
+                if series["cost_vnd"][i] is not None
+                else "—"
+            ),
+        }
+        for i, label in enumerate(series["labels"])
+    ]
+    totals = gmv_charts.product_totals(chart_days, today)
+    totals_max = max((t["gmv_vnd"] for t in totals), default=0)
+    totals_view = [
+        {
+            **t,
+            "gmv_fmt": _fmt_money_vn(t["gmv_vnd"]),
+            "cost_fmt": _fmt_money_vn(t["cost_vnd"]),
+            "bar_pct": round(t["gmv_vnd"] * 100 / totals_max, 1) if totals_max else 0,
+        }
+        for t in totals
+    ]
     return templates.TemplateResponse(
         "gmv.html",
         _ctx(
@@ -968,6 +1022,14 @@ def page_gmv(request: Request, product_id: int | None = None):
             active=active,
             can_edit=bool(user.get("can_add_edit_products")),
             can_delete=bool(user.get("can_delete_products")),
+            chart_series=series,
+            chart_rows=chart_rows,
+            chart_has_data=any(v is not None for v in series["gmv_vnd"]),
+            chart_days=chart_days,
+            chart_product=chart_product_id,
+            chart_totals=totals_view,
+            gmv_alerts=gmv_charts.gmv_alerts(today),
+            roas_warn=gmv_charts.ROAS_WARN,
         ),
     )
 
@@ -1204,6 +1266,12 @@ def _cl_safety_net(date_str: str) -> None:
         checklist.process_reminders(checklist.now_vn())
     except Exception:
         log.exception("Lỗi lưới an toàn Daily Checklist")
+    # Cảnh báo GMV luôn tính theo ngày thật hôm nay (không theo ngày đang
+    # xem ở trang checklist); dedupe theo ngày nên mở trang nào cũng an toàn.
+    try:
+        gmv_charts.sync_gmv_alert_notifications(checklist.today_str())
+    except Exception:
+        log.exception("Lỗi lưới an toàn cảnh báo GMV")
 
 
 def _cl_enrich(item: dict, now, settings, users_map: dict, shops_map: dict) -> dict:

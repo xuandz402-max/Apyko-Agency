@@ -89,6 +89,16 @@ def _checklist_tick() -> None:
             log.info("Checklist nền: tạo mới %d việc, gửi %d nhắc.", made, sent)
     except Exception:
         log.exception("Lỗi vòng lặp nền Daily Checklist")
+    # Cảnh báo GMV Max chạy cùng nhịp tick 60 giây (dedupe theo ngày trong
+    # gmv_charts nên không spam); lỗi ở đây không được làm hỏng checklist.
+    try:
+        from . import checklist, gmv_charts
+
+        pushed = gmv_charts.sync_gmv_alert_notifications(checklist.today_str())
+        if pushed:
+            log.info("GMV nền: đã đẩy %d thông báo cảnh báo.", pushed)
+    except Exception:
+        log.exception("Lỗi vòng lặp nền cảnh báo GMV")
 
 
 def _checklist_loop() -> None:

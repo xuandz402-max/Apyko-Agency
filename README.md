@@ -21,6 +21,44 @@ file Google Sheet "THEO DÕI CHỈ SỐ QUẢNG CÁO SẢN PHẨM".
   (ỐC NỞ CAMP MỚI, LIỀM, XÀ BÔNG NGHỆ, ĐEN TÓC, MẶT NẠ ĐỊNH HÌNH), sheet trống để
   nhập liệu. Đổi tên/xóa/thêm sản phẩm tự do trong app.
 
+## 📊 Biểu đồ GMV + cảnh báo tự động
+
+Khu vực mới trên trang **GMV Max Shopee** (phía trên bảng số liệu):
+
+- **Biểu đồ đường GMV + Chi phí QC (VND)** và **biểu đồ ROAS** theo ngày, vẽ
+  bằng SVG + JS thuần trong trang (không thư viện ngoài). Chọn sản phẩm
+  (Tất cả / từng sản phẩm) và khoảng 7 / 14 / 30 ngày (mặc định 14).
+- **Ngày không có số liệu được để TRỐNG** trên biểu đồ và bảng số đi kèm
+  (None), tuyệt đối không điền 0 — tránh hiểu nhầm "chưa nhập số / không
+  chạy quảng cáo" thành "chạy mà không ra GMV". ROAS ngày = tổng GMV /
+  tổng chi phí của ngày đó; chi phí 0 thì ROAS cũng để trống.
+- **Biểu đồ cột tổng GMV theo sản phẩm** trong kỳ (chỉ tính sản phẩm có số
+  liệu trong kỳ), kèm chi phí và ROAS tổng.
+- **Cảnh báo tự động** (hiển thị ngay trên trang + đẩy vào mục Thông báo
+  trong app), dùng chung ngưỡng với Dashboard CEO (`app/ceo.py`):
+  1. `roas_low` — ROAS của ngày có số mới nhất của sản phẩm < **2.0**
+     (`ROAS_WARN`).
+  2. `stale` — sản phẩm không có số liệu trong **3 ngày** gần nhất
+     (`STALE_DAYS`), kể cả chưa từng nhập số.
+  3. `gmv_drop` — tổng GMV 3 ngày-có-số gần nhất giảm > **30%**
+     (`DROP_PCT`) so với tối đa 3 ngày-có-số liền trước.
+  4. `roas_drop` — ROAS (tổng GMV / tổng chi phí) của 2 cửa sổ trên giảm
+     tương đối > **30%**.
+  Quy tắc 3–4 chỉ tính khi sản phẩm có tối thiểu 4 ngày-có-số và cửa sổ
+  trước có doanh thu / chi phí > 0.
+- **Người nhận thông báo**: chủ shop + mọi tài khoản đang hoạt động có
+  quyền xem GMV (module GMV dùng chung quyền `can_view_products` — chính
+  là quyền gác trang `/gmv` và API GMV). Thông báo dùng chung bảng
+  `notifications` với Daily Checklist (tiêu đề "⚠️ Cảnh báo GMV Max: …",
+  link về `/gmv`).
+- **Chống spam**: khóa dedupe `gmv:{product_id}:{rule}:{YYYY-MM-DD}` lưu
+  ở bảng phụ trợ `gmv_alert_log` — mỗi (sản phẩm, quy tắc) tối đa **1
+  thông báo mỗi ngày** cho mỗi người nhận, dù scheduler nền (tick 60 giây)
+  và lưới an toàn khi mở trang `/gmv` chạy lại bao nhiêu lần. Sang ngày
+  mới, cảnh báo còn đúng thì được báo lại.
+- Màu biểu đồ theo theme đen/trắng/xám: đường GMV tím **#7C3AED** (màu
+  logo), chi phí xám, ROAS đen, đường ngưỡng ROAS đỏ đứt nét.
+
 ## Báo cáo ngày
 
 Nhân sự nhập doanh thu + chi phí mỗi ngày, xuất ảnh PNG gửi Zalo cho khách.

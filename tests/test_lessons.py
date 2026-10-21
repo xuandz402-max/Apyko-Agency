@@ -72,3 +72,30 @@ def test_lesson_detail_and_learn_progress(client):
 def test_lesson_404(client):
     create_owner(client)
     assert client.get("/uni/khong-ton-tai").status_code == 404
+
+
+def test_render_markdown_image():
+    html = lessons.render_markdown("![Mô tả ảnh](/static/lesson-images/x.png)")
+    assert '<img src="/static/lesson-images/x.png"' in html
+    assert 'class="lesson-img"' in html
+    # Link thường vẫn render như cũ, không bị lẫn với ảnh
+    html2 = lessons.render_markdown("[Shopee](https://shopee.vn)")
+    assert '<a href="https://shopee.vn"' in html2
+    assert "<img" not in html2
+
+
+def test_lesson_56_cskh_content(client):
+    create_owner(client)
+    lesson = lessons.get_lesson("56-cskh-loi-sai-hay-gap")
+    assert lesson is not None
+    r = client.get("/uni/56-cskh-loi-sai-hay-gap")
+    assert r.status_code == 200
+    html = r.text
+    assert "Quy định khi chat với khách hàng" in html
+    assert "Không giao dịch bên ngoài sàn TMĐT" in html
+    assert "Phạt 100k/lần viết tắt khi chat" in html
+    assert "Khách hỏi có ship ngoài không" in html
+    assert "chụp giúp em màn hình phần thông tin đơn hàng" in html
+    assert '<img src="/static/lesson-images/cskh-thong-tin-don-hang.png"' in html
+    # File ảnh tĩnh phục vụ được
+    assert client.get("/static/lesson-images/cskh-thong-tin-don-hang.png").status_code == 200

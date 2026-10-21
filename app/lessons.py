@@ -68,6 +68,12 @@ def _inline(text: str) -> str:
     text = html.escape(text)
     # `mã`
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
+    # ![chú thích](src) — ảnh minh họa trong bài học (src nội bộ /static/ hoặc http)
+    text = re.sub(
+        r"!\[([^\]]*)\]\((/static/[^)\s]+|https?[^)\s]+)\)",
+        r'<img src="\2" alt="\1" class="lesson-img" loading="lazy">',
+        text,
+    )
     # [chữ](url)
     text = re.sub(
         r"\[([^\]]+)\]\((https?[^)]+)\)",

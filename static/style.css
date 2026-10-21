@@ -364,3 +364,6 @@ input.input-invalid { border-color: #DC2626; box-shadow: 0 0 0 1px #DC2626; }
 
 /* Ảnh minh họa trong bài học Apyko Uni */
 .lesson-img { max-width: 420px; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; margin: 10px 0; }
+
+/* Ảnh slide gốc ở tab nội dung Affiliate (ảnh chụp màn hình cần đọc rõ chữ) */
+.aff-img { max-width: min(720px, 100%); height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; margin: 10px 0; }

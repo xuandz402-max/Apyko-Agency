@@ -21,16 +21,22 @@
   <div class="card-head"><h2>{{ deck.title }}</h2></div>
   {% if deck.subtitle %}<p><strong>{{ deck.subtitle }}</strong></p>{% endif %}
   {% if deck.source %}<p class="muted">{{ deck.source }} — đồng bộ nguyên văn, không cắt bỏ.</p>{% endif %}
+  {% if deck.source_url %}<p>Bài gốc trên Google Drive: <a href="{{ deck.source_url }}" target="_blank" rel="noopener">{{ deck.source_url }}</a></p>{% endif %}
 </div>
 {% for s in deck.slides %}
 <article class="card aff-slide">
-  {% if s.has_text %}
   <div class="card-head"><h2>Slide {{ s.slide }}</h2></div>
+  {% if s.has_text %}
   {% for p in s.paragraphs %}
   <p>{{ p }}</p>
   {% endfor %}
-  {% else %}
-  <p class="muted">Slide {{ s.slide }} — ảnh chụp minh họa trong bản gốc (không có chữ)</p>
+  {% endif %}
+  {% if s.images %}
+  {% for img in s.images %}
+  <img src="{{ img }}" alt="Hình ảnh slide {{ s.slide }}" class="aff-img" loading="lazy">
+  {% endfor %}
+  {% elif not s.has_text %}
+  <p class="muted">Slide {{ s.slide }} — chưa lấy được hình ảnh</p>
   {% endif %}
 </article>
 {% endfor %}

@@ -222,8 +222,11 @@ quyền thì ẩn menu + chặn 403):
   trình Google Slides do chủ shop cung cấp, **đồng bộ nguyên văn 100%,
   không cắt bỏ, không tóm tắt**: đủ **54 slide** theo đúng thứ tự, dữ
   liệu tĩnh ở `app/data/affiliate_deck.json`. 26 slide có chữ được in
-  nguyên văn từng đoạn; 28 slide chỉ gồm ảnh chụp minh họa trong bản
-  gốc (không có chữ) được ghi chú rõ ngay tại vị trí của slide.
+  nguyên văn từng đoạn; **ảnh gốc trong các slide đã tải về app**
+  (`static/lesson-images/aff/`, 54 ảnh ở 44 slide — cả 28 slide chỉ có
+  ảnh nay đều hiển thị ảnh thật đúng vị trí). Đầu mục có link **bài gốc
+  trên Google Drive** (`source_url` trong JSON) để mở bản trình chiếu
+  đầy đủ.
 
 ## Dashboard CEO
 

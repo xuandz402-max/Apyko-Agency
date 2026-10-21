@@ -10,7 +10,9 @@ Hai phần độc lập:
    clicks = 0 -> cả hai đều None (template hiện "—"), cấm chia 0/bịa số.
 2. Nội dung bài: file tĩnh app/data/affiliate_deck.json trích NGUYÊN VĂN
    từ bài thuyết trình Google Slides "Shopee tiếp thị liên kết" của chủ
-   shop (54 slide; 26 slide có chữ, 28 slide chỉ có ảnh chụp minh họa).
+   shop (54 slide; 26 slide có chữ, 28 slide chỉ có ảnh). Ảnh gốc trong
+   các slide đã tải về static/lesson-images/aff/ và trỏ từ khóa "images"
+   của từng slide; "source_url" là link bài gốc trên Google Drive.
    Module chỉ nạp + trả nguyên trạng, tuyệt đối không sửa/tóm tắt chữ.
 """
 

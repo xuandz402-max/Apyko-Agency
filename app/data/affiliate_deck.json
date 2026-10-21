@@ -53,22 +53,34 @@
   {
    "slide": 5,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s05-1.png"
+   ]
   },
   {
    "slide": 6,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s06-1.png"
+   ]
   },
   {
    "slide": 7,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s07-1.png"
+   ]
   },
   {
    "slide": 8,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s08-1.png"
+   ]
   },
   {
    "slide": 9,
@@ -93,7 +105,13 @@
     "Shop quảng bá với",
     "Khách hàng trên FB, IG, Tiktok, Zalo"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s10-1.png",
+    "/static/lesson-images/aff/s10-2.png",
+    "/static/lesson-images/aff/s10-3.png",
+    "/static/lesson-images/aff/s10-4.png"
+   ]
   },
   {
    "slide": 11,
@@ -103,14 +121,20 @@
     "Bất kỳ sản phẩm nào có thể bán trên shopee đều có thể tham gia chương trình",
     "ĐIỀU KIỆN THAM GIA"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s11-1.png"
+   ]
   },
   {
    "slide": 12,
    "paragraphs": [
     "QUYỀN LỢI KHI THAM GIA"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s12-1.png"
+   ]
   },
   {
    "slide": 13,
@@ -125,7 +149,13 @@
     "Bước 4",
     "NBH nhận hoa hồng từ Shopee"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s13-1.png",
+    "/static/lesson-images/aff/s13-2.png",
+    "/static/lesson-images/aff/s13-3.png",
+    "/static/lesson-images/aff/s13-4.png"
+   ]
   },
   {
    "slide": 14,
@@ -138,7 +168,12 @@
     "Khi người mua nhấp vào 2 link và có đơn thành công, hoa hồng sẽ tính cho lượt nhấp cuối mà đơn hàng đã nhấp",
     "NBH sẽ nhận hoa hồng cho đơn hàng từ tất cả các gian hàng mà có đơn thành công"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s14-1.png",
+    "/static/lesson-images/aff/s14-2.png",
+    "/static/lesson-images/aff/s14-3.png"
+   ]
   },
   {
    "slide": 15,
@@ -151,7 +186,10 @@
     "02",
     "03"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s15-1.png"
+   ]
   },
   {
    "slide": 16,
@@ -159,33 +197,49 @@
     "Đăng ký Tiếp Thị liên Kết",
     "https://seller-affiliate.shopee.vn/auth?step=1"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s16-1.png"
+   ]
   },
   {
    "slide": 17,
    "paragraphs": [
     "Điền thông tin tạo TK"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s17-1.png"
+   ]
   },
   {
    "slide": 18,
    "paragraphs": [
     "Điền thông tin tạo TK"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s18-1.png"
+   ]
   },
   {
    "slide": 19,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s19-1.png"
+   ]
   },
   {
    "slide": 20,
    "paragraphs": [
     "TỶ LỆ HOA HỒNG"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s20-1.png",
+    "/static/lesson-images/aff/s20-2.png"
+   ]
   },
   {
    "slide": 21,
@@ -205,14 +259,20 @@
    "paragraphs": [
     "NHẬN HOA HỒNG"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s22-1.png"
+   ]
   },
   {
    "slide": 23,
    "paragraphs": [
     "NHẬN HOA HỒNG"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s23-1.png"
+   ]
   },
   {
    "slide": 24,
@@ -231,32 +291,51 @@
    "paragraphs": [
     "MẸO CHIA SẺ LINK TTLK"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s25-1.png"
+   ]
   },
   {
    "slide": 26,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s26-1.png"
+   ]
   },
   {
    "slide": 27,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s27-1.png"
+   ]
   },
   {
    "slide": 28,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s28-1.png",
+    "/static/lesson-images/aff/s28-2.png"
+   ]
   },
   {
    "slide": 29,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s29-1.png"
+   ]
   },
   {
    "slide": 30,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s30-1.png"
+   ]
   },
   {
    "slide": 31,
@@ -276,22 +355,34 @@
    "paragraphs": [
     "Lấy link sản phẩm"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s32-1.png"
+   ]
   },
   {
    "slide": 33,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s33-1.png"
+   ]
   },
   {
    "slide": 34,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s34-1.png"
+   ]
   },
   {
    "slide": 35,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s35-1.png"
+   ]
   },
   {
    "slide": 36,
@@ -305,31 +396,46 @@
   {
    "slide": 37,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s37-1.png"
+   ]
   },
   {
    "slide": 38,
    "paragraphs": [
     "Tại Báo cáo chuyển đổi: nhập Sub_Id cần theo dõi vào ô tìm kiếm và kết quả các đơn hàng chuyển đổi theo Sub_Id sẽ hiển thị"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s38-1.png"
+   ]
   },
   {
    "slide": 39,
    "paragraphs": [
     "Tại Báo cáo Click: Tương tự như Báo cáo chuyển đổi, Người bán có thể theo dõi số lượt Click từ Sub_Id đã tạo"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/s39-1.png"
+   ]
   },
   {
    "slide": 40,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s40-1.png"
+   ]
   },
   {
    "slide": 41,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s41-1.png"
+   ]
   },
   {
    "slide": 42,
@@ -342,62 +448,99 @@
   {
    "slide": 43,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s43-1.png"
+   ]
   },
   {
    "slide": 44,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s44-1.png"
+   ]
   },
   {
    "slide": 45,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s45-1.png"
+   ]
   },
   {
    "slide": 46,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s46-1.png"
+   ]
   },
   {
    "slide": 47,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s47-1.png"
+   ]
   },
   {
    "slide": 48,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s48-1.png"
+   ]
   },
   {
    "slide": 49,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s49-1.png"
+   ]
   },
   {
    "slide": 50,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s50-1.png"
+   ]
   },
   {
    "slide": 51,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s51-1.png"
+   ]
   },
   {
    "slide": 52,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s52-1.png"
+   ]
   },
   {
    "slide": 53,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s53-1.png"
+   ]
   },
   {
    "slide": 54,
    "paragraphs": [],
-   "has_text": false
+   "has_text": false,
+   "images": [
+    "/static/lesson-images/aff/s54-1.png"
+   ]
   }
- ]
+ ],
+ "source_url": "https://docs.google.com/presentation/d/176Smsph6GDbdB9e6T8hjVgBQ3BDk8AWJU9cC8SJyIy8/edit?usp=sharing"
 }

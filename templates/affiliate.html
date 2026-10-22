@@ -23,6 +23,7 @@
   {% if deck.source %}<p class="muted">{{ deck.source }} — đồng bộ nguyên văn, không cắt bỏ.</p>{% endif %}
   {% if deck.source_url %}<p>Bài gốc trên Google Drive: <a href="{{ deck.source_url }}" target="_blank" rel="noopener">{{ deck.source_url }}</a></p>{% endif %}
 </div>
+<div class="aff-slides">
 {% for s in deck.slides %}
 <article class="card aff-slide">
   <div class="card-head"><h2>Slide {{ s.slide }}</h2></div>
@@ -40,6 +41,7 @@
   {% endif %}
 </article>
 {% endfor %}
+</div>
 
 {% else %}
 <div class="stats">

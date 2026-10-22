@@ -9,7 +9,10 @@
     "TIẾP THỊ LIÊN KẾT",
     "Traffic ngoại sàn và cách kéo Aff hiệu quả"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/full/slide-01.jpg"
+   ]
   },
   {
    "slide": 2,
@@ -30,7 +33,10 @@
     "Q & A",
     "06"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/full/slide-02.jpg"
+   ]
   },
   {
    "slide": 3,
@@ -39,7 +45,10 @@
     "Là ctrình giúp seller tăng doanh thu bằng cách chia sẻ link sản phẩm.",
     "Cụ thể là shop đóng vai trò trung gian giới thiệu sản phẩm và nhận dc hoa hồng từ shopee"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/full/slide-03.jpg"
+   ]
   },
   {
    "slide": 4,
@@ -48,14 +57,17 @@
     "doanh số trên  1 tỷ/ ngày ”",
     "—SHOP_BO_BONG—"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/full/slide-04.jpg"
+   ]
   },
   {
    "slide": 5,
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s05-1.png"
+    "/static/lesson-images/aff/full/slide-05.jpg"
    ]
   },
   {
@@ -63,7 +75,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s06-1.png"
+    "/static/lesson-images/aff/full/slide-06.jpg"
    ]
   },
   {
@@ -71,7 +83,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s07-1.png"
+    "/static/lesson-images/aff/full/slide-07.jpg"
    ]
   },
   {
@@ -79,7 +91,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s08-1.png"
+    "/static/lesson-images/aff/full/slide-08.jpg"
    ]
   },
   {
@@ -93,7 +105,10 @@
     "Lấy số với BD ngành hàng",
     "Tăng được thành viên cho fanpage hoặc kênh tiktok"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/full/slide-09.jpg"
+   ]
   },
   {
    "slide": 10,
@@ -107,10 +122,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s10-1.png",
-    "/static/lesson-images/aff/s10-2.png",
-    "/static/lesson-images/aff/s10-3.png",
-    "/static/lesson-images/aff/s10-4.png"
+    "/static/lesson-images/aff/full/slide-10.jpg"
    ]
   },
   {
@@ -123,7 +135,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s11-1.png"
+    "/static/lesson-images/aff/full/slide-11.jpg"
    ]
   },
   {
@@ -133,7 +145,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s12-1.png"
+    "/static/lesson-images/aff/full/slide-12.jpg"
    ]
   },
   {
@@ -151,10 +163,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s13-1.png",
-    "/static/lesson-images/aff/s13-2.png",
-    "/static/lesson-images/aff/s13-3.png",
-    "/static/lesson-images/aff/s13-4.png"
+    "/static/lesson-images/aff/full/slide-13.jpg"
    ]
   },
   {
@@ -170,9 +179,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s14-1.png",
-    "/static/lesson-images/aff/s14-2.png",
-    "/static/lesson-images/aff/s14-3.png"
+    "/static/lesson-images/aff/full/slide-14.jpg"
    ]
   },
   {
@@ -188,7 +195,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s15-1.png"
+    "/static/lesson-images/aff/full/slide-15.jpg"
    ]
   },
   {
@@ -199,7 +206,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s16-1.png"
+    "/static/lesson-images/aff/full/slide-16.jpg"
    ]
   },
   {
@@ -209,7 +216,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s17-1.png"
+    "/static/lesson-images/aff/full/slide-17.jpg"
    ]
   },
   {
@@ -219,7 +226,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s18-1.png"
+    "/static/lesson-images/aff/full/slide-18.jpg"
    ]
   },
   {
@@ -227,7 +234,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s19-1.png"
+    "/static/lesson-images/aff/full/slide-19.jpg"
    ]
   },
   {
@@ -237,8 +244,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s20-1.png",
-    "/static/lesson-images/aff/s20-2.png"
+    "/static/lesson-images/aff/full/slide-20.jpg"
    ]
   },
   {
@@ -252,7 +258,10 @@
     "(*) Đơn hàng ở đây được định nghĩa là đơn hàng được phát sinh từ link TTLK.",
     "TỶ LỆ HOA HỒNG"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/full/slide-21.jpg"
+   ]
   },
   {
    "slide": 22,
@@ -261,7 +270,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s22-1.png"
+    "/static/lesson-images/aff/full/slide-22.jpg"
    ]
   },
   {
@@ -271,7 +280,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s23-1.png"
+    "/static/lesson-images/aff/full/slide-23.jpg"
    ]
   },
   {
@@ -284,7 +293,10 @@
     "02",
     "TÀI NGUYÊN"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/full/slide-24.jpg"
+   ]
   },
   {
    "slide": 25,
@@ -293,7 +305,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s25-1.png"
+    "/static/lesson-images/aff/full/slide-25.jpg"
    ]
   },
   {
@@ -301,7 +313,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s26-1.png"
+    "/static/lesson-images/aff/full/slide-26.jpg"
    ]
   },
   {
@@ -309,7 +321,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s27-1.png"
+    "/static/lesson-images/aff/full/slide-27.jpg"
    ]
   },
   {
@@ -317,8 +329,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s28-1.png",
-    "/static/lesson-images/aff/s28-2.png"
+    "/static/lesson-images/aff/full/slide-28.jpg"
    ]
   },
   {
@@ -326,7 +337,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s29-1.png"
+    "/static/lesson-images/aff/full/slide-29.jpg"
    ]
   },
   {
@@ -334,7 +345,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s30-1.png"
+    "/static/lesson-images/aff/full/slide-30.jpg"
    ]
   },
   {
@@ -348,7 +359,10 @@
     "Chạy quảng cáo",
     "Bước 3"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/full/slide-31.jpg"
+   ]
   },
   {
    "slide": 32,
@@ -357,7 +371,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s32-1.png"
+    "/static/lesson-images/aff/full/slide-32.jpg"
    ]
   },
   {
@@ -365,7 +379,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s33-1.png"
+    "/static/lesson-images/aff/full/slide-33.jpg"
    ]
   },
   {
@@ -373,7 +387,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s34-1.png"
+    "/static/lesson-images/aff/full/slide-34.jpg"
    ]
   },
   {
@@ -381,7 +395,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s35-1.png"
+    "/static/lesson-images/aff/full/slide-35.jpg"
    ]
   },
   {
@@ -391,14 +405,17 @@
     "LƯU Ý: Mỗi link SP sẽ tạo ra được nhiều link AFF.  Mỗi link AFF sẽ chỉ gắn cho 1 sub id và 1 bài quảng cáo.",
     "— Lâm Hồng Thái —"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/full/slide-36.jpg"
+   ]
   },
   {
    "slide": 37,
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s37-1.png"
+    "/static/lesson-images/aff/full/slide-37.jpg"
    ]
   },
   {
@@ -408,7 +425,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s38-1.png"
+    "/static/lesson-images/aff/full/slide-38.jpg"
    ]
   },
   {
@@ -418,7 +435,7 @@
    ],
    "has_text": true,
    "images": [
-    "/static/lesson-images/aff/s39-1.png"
+    "/static/lesson-images/aff/full/slide-39.jpg"
    ]
   },
   {
@@ -426,7 +443,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s40-1.png"
+    "/static/lesson-images/aff/full/slide-40.jpg"
    ]
   },
   {
@@ -434,7 +451,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s41-1.png"
+    "/static/lesson-images/aff/full/slide-41.jpg"
    ]
   },
   {
@@ -443,14 +460,17 @@
     "Tại sao báo cáo bên AFF bán được nhiều. Nhưng bên phân tích bán hàng ko bán đc. Vì KH mua sp khác, hoặc đi mua của shop khác.",
     "Sp chưa tốt, chưa đúng thời điểm, shop chưa uy tín, chưa quảng cáo đến đúng tệp"
    ],
-   "has_text": true
+   "has_text": true,
+   "images": [
+    "/static/lesson-images/aff/full/slide-42.jpg"
+   ]
   },
   {
    "slide": 43,
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s43-1.png"
+    "/static/lesson-images/aff/full/slide-43.jpg"
    ]
   },
   {
@@ -458,7 +478,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s44-1.png"
+    "/static/lesson-images/aff/full/slide-44.jpg"
    ]
   },
   {
@@ -466,7 +486,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s45-1.png"
+    "/static/lesson-images/aff/full/slide-45.jpg"
    ]
   },
   {
@@ -474,7 +494,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s46-1.png"
+    "/static/lesson-images/aff/full/slide-46.jpg"
    ]
   },
   {
@@ -482,7 +502,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s47-1.png"
+    "/static/lesson-images/aff/full/slide-47.jpg"
    ]
   },
   {
@@ -490,7 +510,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s48-1.png"
+    "/static/lesson-images/aff/full/slide-48.jpg"
    ]
   },
   {
@@ -498,7 +518,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s49-1.png"
+    "/static/lesson-images/aff/full/slide-49.jpg"
    ]
   },
   {
@@ -506,7 +526,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s50-1.png"
+    "/static/lesson-images/aff/full/slide-50.jpg"
    ]
   },
   {
@@ -514,7 +534,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s51-1.png"
+    "/static/lesson-images/aff/full/slide-51.jpg"
    ]
   },
   {
@@ -522,7 +542,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s52-1.png"
+    "/static/lesson-images/aff/full/slide-52.jpg"
    ]
   },
   {
@@ -530,7 +550,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s53-1.png"
+    "/static/lesson-images/aff/full/slide-53.jpg"
    ]
   },
   {
@@ -538,7 +558,7 @@
    "paragraphs": [],
    "has_text": false,
    "images": [
-    "/static/lesson-images/aff/s54-1.png"
+    "/static/lesson-images/aff/full/slide-54.jpg"
    ]
   }
  ],

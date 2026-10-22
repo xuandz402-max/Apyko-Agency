@@ -367,3 +367,8 @@ input.input-invalid { border-color: #DC2626; box-shadow: 0 0 0 1px #DC2626; }
 
 /* Ảnh slide gốc ở tab nội dung Affiliate (ảnh chụp màn hình cần đọc rõ chữ) */
 .aff-img { max-width: min(720px, 100%); height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; margin: 10px 0; }
+
+/* Affiliate: lưới slide trải rộng hết chiều ngang (append 2026-10-22) */
+.aff-slides { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(500px, 100%), 1fr)); gap: 16px; align-items: start; }
+.aff-slides .card { margin-bottom: 0; }
+.aff-slide .aff-img { width: 100%; max-width: none; }

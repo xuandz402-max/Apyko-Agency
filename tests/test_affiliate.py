@@ -237,7 +237,7 @@ def test_affiliate_content_tab_renders_all_54_slides(client):
     html = r.text
     assert deck["title"] in html
     # Đủ 54 khối slide, đúng thứ tự
-    assert html.count("aff-slide") == 54
+    assert html.count('class="card aff-slide"') == 54
     positions = [html.index(f"Slide {n}") for n in range(1, 55)]
     assert positions == sorted(positions)
 
@@ -287,23 +287,31 @@ def test_affiliate_deck_images_point_to_real_files():
     # Link bài gốc ở cấp deck
     assert deck["source_url"] == _SOURCE_URL
     total = 0
+    total_bytes = 0
     for s in deck["slides"]:
-        for img in s.get("images", []):
-            total += 1
-            assert img.startswith("/static/lesson-images/aff/")
-            path = os.path.join(_STATIC_DIR, img.removeprefix("/static/"))
-            assert os.path.isfile(path), f"Thiếu file ảnh: {img}"
-            assert os.path.getsize(path) > 0
-    assert total == 54  # 54 ảnh gốc trong deck, ở 44 slide
+        # Thiết kế mới: MỖI slide có đúng 1 ảnh nguyên slide (full-slide)
+        imgs = s.get("images", [])
+        assert len(imgs) == 1, f"Slide {s['slide']} phải có đúng 1 ảnh full-slide"
+        img = imgs[0]
+        assert img == f"/static/lesson-images/aff/full/slide-{s['slide']:02d}.jpg"
+        path = os.path.join(_STATIC_DIR, img.removeprefix("/static/"))
+        assert os.path.isfile(path), f"Thiếu file ảnh: {img}"
+        size = os.path.getsize(path)
+        assert size > 0
+        total += 1
+        total_bytes += size
+    assert total == 54
+    # Ngân sách dung lượng: cả thư mục ảnh full-slide không vượt 25MB
+    assert total_bytes <= 25 * 1024 * 1024
 
 
 def test_affiliate_deck_all_image_only_slides_have_images():
     deck = _load_deck()
     no_text = [s for s in deck["slides"] if not s["has_text"]]
     assert len(no_text) == 28
-    # Cả 28 slide trước đây chỉ có ghi chú nay đều có ảnh thật
+    # Cả 28 slide không có chữ đều có ảnh nguyên slide của chính nó
     for s in no_text:
-        assert s.get("images"), f"Slide {s['slide']} chưa có ảnh"
+        assert len(s.get("images", [])) == 1, f"Slide {s['slide']} chưa có ảnh full-slide"
 
 
 def test_affiliate_content_tab_shows_source_link_and_images(client):
@@ -318,25 +326,34 @@ def test_affiliate_content_tab_shows_source_link_and_images(client):
     assert f'href="{_SOURCE_URL}"' in html
     # Số thẻ ảnh khớp tổng số ảnh trong JSON
     assert html.count('class="aff-img"') == total_images
+    # Danh sách slide nằm trong lưới trải rộng aff-slides
+    assert 'class="aff-slides"' in html
     # Ghi chú cũ đã bỏ hẳn; không slide nào thiếu ảnh tới mức phải ghi chú
     assert "ảnh chụp minh họa trong bản gốc (không có chữ)" not in html
     assert "chưa lấy được hình ảnh" not in html
     # Vẫn đủ 54 khối slide
-    assert html.count("aff-slide") == 54
+    assert html.count('class="card aff-slide"') == 54
 
 
 def test_affiliate_slide_images_served(client):
     create_owner(client)
+    # Hai file ảnh full-slide cụ thể (đầu + cuối deck) phải tải được
+    for img in (
+        "/static/lesson-images/aff/full/slide-01.jpg",
+        "/static/lesson-images/aff/full/slide-54.jpg",
+    ):
+        r = client.get(img)
+        assert r.status_code == 200
+        assert r.headers["content-type"].startswith("image/")
     deck = _load_deck()
     samples = []
     for s in deck["slides"]:
         if s.get("images"):
             samples.append(s["images"][0])
-    # Kiểm mẫu: ảnh đầu tiên của vài slide rải khắp deck + slide cuối có ảnh
-    for img in (samples[0], samples[len(samples) // 2], samples[-1]):
-        r = client.get(img)
-        assert r.status_code == 200
-        assert r.headers["content-type"].startswith("image/")
+    # Kiểm mẫu thêm: ảnh của slide giữa deck
+    r = client.get(samples[len(samples) // 2])
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("image/")
 
 
 def test_affiliate_default_tab_is_tracker(client):

@@ -372,3 +372,6 @@ input.input-invalid { border-color: #DC2626; box-shadow: 0 0 0 1px #DC2626; }
 .aff-slides { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(500px, 100%), 1fr)); gap: 16px; align-items: start; }
 .aff-slides .card { margin-bottom: 0; }
 .aff-slide .aff-img { width: 100%; max-width: none; }
+
+/* Tone trắng đen đồng bộ app cho ảnh nội dung (Affiliate + bài học Uni) — ảnh gốc trên đĩa giữ nguyên màu */
+.aff-slide .aff-img, .lesson-img { filter: grayscale(1); }

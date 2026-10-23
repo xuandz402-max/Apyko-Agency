@@ -1,16 +1,17 @@
-/* Apyko Agency — theme đen trắng. Không CDN, CSS thuần. */
+/* Apyko Agency — theme navy + mint (theo cặp màu user chốt 23/10). Không CDN, CSS thuần. */
 :root {
-  --brand: #111111;
-  --brand-dark: #000000;
-  --brand-soft: #EEEEEE;
-  --ink: #1F2937;
-  --muted: #6B7280;
-  --line: #E5E5E5;
-  --bg: #FFFFFF;
+  --brand: #173A52;
+  --brand-dark: #10293C;
+  --brand-soft: #E7EEF3;
+  --mint: #3FA46F;
+  --ink: #1D2D3A;
+  --muted: #5F7484;
+  --line: #D9E3EA;
+  --bg: #F4F7F9;
   --card: #FFFFFF;
-  --green: #111111;
-  --red: #111111;
-  --amber: #555555;
+  --green: #2F9E63;
+  --red: #DC2626;
+  --amber: #D97706;
   --radius: 16px;
   --shadow: 0 1px 3px rgba(31, 41, 55, 0.08);
 }
@@ -30,29 +31,29 @@ a:hover { text-decoration: underline; }
 .app { display: flex; min-height: 100vh; }
 .sidebar {
   width: 208px; flex-shrink: 0;
-  background: #fff; border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, #173A52, #122E42); border-right: 1px solid #10293C;
   display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh;
   z-index: 40;
 }
-.brand { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 10px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.14); }
 .brand:hover { text-decoration: none; }
-.brand-name { font-weight: 800; font-size: 17px; color: var(--ink); }
+.brand-name { font-weight: 800; font-size: 17px; color: #fff; }
 .logo { display: inline-flex; font-weight: 900; letter-spacing: 0.5px; font-size: 20px; }
-.logo-apy { color: #111; }
-.logo-ko { color: #fff; background: var(--brand); padding: 1px 7px; border-radius: 5px; margin-left: 2px; }
+.logo-apy { color: #173A52; }
+.logo-ko { color: #fff; background: var(--mint); padding: 1px 7px; border-radius: 5px; margin-left: 2px; }
 .brand-img { height: 28px; width: auto; display: block; }
 .auth-logo img { height: 46px; width: auto; }
 .nav { padding: 8px 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; overflow-y: auto; }
 .nav-item {
   display: block; padding: 7px 10px; border-radius: 999px;
-  color: var(--ink); font-weight: 500; font-size: 14px; white-space: nowrap;
+  color: rgba(255,255,255,0.86); font-weight: 500; font-size: 14px; white-space: nowrap;
 }
-.nav-item:hover { background: var(--brand-soft); text-decoration: none; }
-.nav-item.active { background: var(--brand); color: #fff; font-weight: 700; }
-.sidebar-foot { padding: 10px 12px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.me-name { font-weight: 700; font-size: 13px; }
-.me-role { font-size: 12px; color: var(--muted); }
+.nav-item:hover { background: rgba(255,255,255,0.10); color: #fff; text-decoration: none; }
+.nav-item.active { background: var(--mint); color: #fff; font-weight: 700; }
+.sidebar-foot { padding: 10px 12px; border-top: 1px solid rgba(255,255,255,0.14); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.me-name { font-weight: 700; font-size: 13px; color: #fff; }
+.me-role { font-size: 12px; color: rgba(255,255,255,0.65); }
 .main { flex: 1; padding: 26px 30px; max-width: none; min-width: 0; }
 .foot { margin-top: 40px; color: var(--muted); font-size: 12px; text-align: center; }
 
@@ -125,13 +126,13 @@ a:hover { text-decoration: underline; }
 .badge-label { background: var(--brand-soft); color: var(--brand-dark); }
 .badge-done { background: #EDEDED; color: var(--green); }
 .badge-todo { background: var(--brand-soft); color: var(--brand-dark); }
-.badge-owner { background: #111; color: #fff; }
+.badge-owner { background: var(--brand); color: #fff; }
 .badge-locked { background: #F3F4F6; color: var(--muted); }
 .text-green { color: var(--green); }
 .text-red { color: var(--red); }
 .alert { padding: 12px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 14px; }
-.alert-ok { background: #EDEDED; color: #111111; }
-.alert-error { background: #EDEDED; color: #111111; }
+.alert-ok { background: #E7F4EC; color: #1E6B41; }
+.alert-error { background: #FDECEC; color: #991B1B; }
 .code-big { font-size: 20px; font-weight: 800; letter-spacing: 2px; color: var(--brand-dark); }
 .field-error { display: block; color: var(--red); font-size: 13px; margin-top: 4px; }
 
@@ -175,9 +176,9 @@ button { border-radius: 999px; }
 .btn { display: inline-block; padding: 10px 20px; border-radius: 999px; border: 1px solid transparent;
   font-size: 15px; font-weight: 700; cursor: pointer; text-align: center; }
 .btn:hover { text-decoration: none; filter: brightness(0.96); }
-.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary { background: var(--mint); color: #fff; }
 .btn-secondary { background: var(--brand-soft); color: var(--brand-dark); }
-.btn-danger { background: #EDEDED; color: var(--red); }
+.btn-danger { background: #FDECEC; color: var(--red); }
 .btn-ghost { background: #fff; border-color: var(--line); color: var(--ink); }
 .btn-sm { padding: 6px 12px; font-size: 13px; }
 .btn-block { width: 100%; }
@@ -191,7 +192,7 @@ button { border-radius: 999px; }
 /* ---------- progress / scores ---------- */
 .progress { height: 10px; background: #EEEEEE; border-radius: 999px; overflow: hidden; margin-top: 6px; }
 .progress-lg { height: 14px; }
-.progress-bar { height: 100%; background: var(--brand); border-radius: 999px; transition: width 0.4s; }
+.progress-bar { height: 100%; background: var(--mint); border-radius: 999px; transition: width 0.4s; }
 .progress-meta { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
 .score-row { margin-bottom: 12px; }
 .score-head { display: flex; justify-content: space-between; font-size: 14px; }
@@ -315,7 +316,7 @@ button { border-radius: 999px; }
   font-size: 13px; margin-bottom: 8px; }
 .gmv-legend-item { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
 .gmv-swatch { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
-.gmv-swatch-gmv { background: #7C3AED; }
+.gmv-swatch-gmv { background: #3FA46F; }
 .gmv-swatch-cost { background: #9CA3AF; }
 .gmv-chart { margin-bottom: 10px; }
 .gmv-chart-svg { width: 100%; height: auto; display: block; }
@@ -328,7 +329,7 @@ button { border-radius: 999px; }
 .gmv-bar-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; }
 .gmv-bar-track { background: var(--brand-soft); border-radius: 999px; height: 14px; }
-.gmv-bar-fill { background: #7C3AED; height: 100%; border-radius: 999px; min-width: 2px; }
+.gmv-bar-fill { background: #3FA46F; height: 100%; border-radius: 999px; min-width: 2px; }
 .gmv-bar-value { white-space: nowrap; font-weight: 600; }
 .gmv-alert-list { display: flex; flex-direction: column; gap: 8px; }
 .gmv-alert-item { display: flex; gap: 10px; align-items: flex-start;
@@ -347,7 +348,7 @@ button { border-radius: 999px; }
 .ceo-clock { font-size: 15px; font-weight: 600; margin-top: 2px; }
 .delta-up { color: #15803D; font-weight: 700; }
 .delta-down { color: #DC2626; font-weight: 700; }
-.ceo-bar { fill: #7C3AED; }
+.ceo-bar { fill: #173A52; }
 .ceo-bar:hover { fill: #6D28D9; }
 
 /* ---------- Chọn khoảng thời gian dùng chung (Báo cáo ngày / GMV / Bảng Leader) ---------- */
@@ -374,4 +375,3 @@ input.input-invalid { border-color: #DC2626; box-shadow: 0 0 0 1px #DC2626; }
 .aff-slide .aff-img { width: 100%; max-width: none; }
 
 /* Tone trắng đen đồng bộ app cho ảnh nội dung (Affiliate + bài học Uni) — ảnh gốc trên đĩa giữ nguyên màu */
-.aff-slide .aff-img, .lesson-img { filter: grayscale(1); }

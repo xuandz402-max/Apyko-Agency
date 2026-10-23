@@ -1,10 +1,11 @@
 {# Pill chuyển NỀN TẢNG trong mục Phân tích: Shopee (module Đơn hàng
-Shopee) · TikTok · Facebook · Zalo (chưa có nguồn dữ liệu). #}
+Shopee) · TikTok · Facebook · Zalo (chưa có nguồn dữ liệu).
+Icon = logo chính hãng của từng nền tảng trong /static. #}
 {% macro platform_tabs(active) %}
 <div class="tabs">
-  <a href="/analysis" class="tab{% if active == 'shopee' %} active{% endif %}">🛍️ Shopee</a>
-  <a href="/analysis?platform=tiktok" class="tab{% if active == 'tiktok' %} active{% endif %}">🎵 TikTok</a>
-  <a href="/analysis?platform=facebook" class="tab{% if active == 'facebook' %} active{% endif %}">📘 Facebook</a>
-  <a href="/analysis?platform=zalo" class="tab{% if active == 'zalo' %} active{% endif %}">💬 Zalo</a>
+  <a href="/analysis" class="tab{% if active == 'shopee' %} active{% endif %}"><img src="/static/shopee-icon.svg" alt="" class="plat-ico"> Shopee</a>
+  <a href="/analysis?platform=tiktok" class="tab{% if active == 'tiktok' %} active{% endif %}"><img src="/static/tiktok-icon.png" alt="" class="plat-ico"> TikTok</a>
+  <a href="/analysis?platform=facebook" class="tab{% if active == 'facebook' %} active{% endif %}"><img src="/static/facebook-icon.svg" alt="" class="plat-ico"> Facebook</a>
+  <a href="/analysis?platform=zalo" class="tab{% if active == 'zalo' %} active{% endif %}"><img src="/static/zalo-icon.svg" alt="" class="plat-ico"> Zalo</a>
 </div>
 {% endmacro %}

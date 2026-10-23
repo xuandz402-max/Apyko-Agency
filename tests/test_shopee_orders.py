@@ -671,10 +671,11 @@ def test_platform_pills_and_placeholders(client):
     # /analysis (chủ shop có quyền xem đơn) vào thẳng sheet Shopee.
     r = client.get("/analysis")
     assert r.status_code == 200
-    assert "🛍️ Shopee" in r.text
-    assert "🎵 TikTok" in r.text
-    assert "📘 Facebook" in r.text
-    assert "💬 Zalo" in r.text
+    # Pill nền tảng dùng logo chính hãng (file tĩnh), không còn emoji
+    assert "/static/shopee-icon.svg" in r.text
+    assert "/static/tiktok-icon.png" in r.text
+    assert "/static/facebook-icon.svg" in r.text
+    assert "/static/zalo-icon.svg" in r.text
     assert "Phân tích sản phẩm" not in r.text  # mục cũ đã gỡ hẳn
     # Các sheet chưa có nguồn dữ liệu: trạng thái trống trung thực.
     for platform, label in (
@@ -688,5 +689,5 @@ def test_platform_pills_and_placeholders(client):
     # Trang đơn Shopee: pill Shopee đang active, đủ 4 nền tảng.
     r = client.get(f"/analysis/don-hang?{RANGE}")
     assert r.status_code == 200
-    assert "🛍️ Shopee" in r.text and "🎵 TikTok" in r.text
+    assert "/static/shopee-icon.svg" in r.text and "/static/tiktok-icon.png" in r.text
     assert "Phân tích sản phẩm" not in r.text

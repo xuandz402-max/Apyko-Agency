@@ -743,14 +743,16 @@ def _valid_username(username: str) -> bool:
     return bool(re.fullmatch(r"[A-Za-z0-9_.-]{3,32}", username or ""))
 
 
-# --- Kho tài khoản (vault): tab khach / noi-bo / ban-giao của /accounts ---
+# --- Kho tài khoản (vault): tab shop / noi-bo / ban-giao của /accounts ---
 # /accounts KHÔNG có ?tab= giữ nguyên hành vi cũ (đăng nhập & phân quyền,
-# chỉ chủ sở hữu) — các tab kho phải gọi đích danh. Mật khẩu tài khoản nội
-# bộ chỉ render cho chủ sở hữu / người có quyền sửa; người xem thường
-# không thấy giá trị mật khẩu ở bất cứ đâu trong HTML.
+# chỉ chủ sở hữu) — các tab kho phải gọi đích danh. Mật khẩu (tài khoản
+# shop lẫn nội bộ) chỉ render cho chủ sở hữu / người có quyền sửa; người
+# xem thường không thấy giá trị mật khẩu ở bất cứ đâu trong HTML.
 
 _VAULT_KINDS = ["Ngân hàng", "Shopee", "TikTok Shop", "Facebook", "Email", "Zalo", "Khác"]
-_VAULT_TABS = ("khach", "noi-bo", "ban-giao", "dang-nhap")
+_VAULT_TABS = ("shop", "noi-bo", "ban-giao", "dang-nhap")
+_SHOP_PLATFORMS = ["Shopee", "TikTok Shop", "Lazada", "Khác"]
+_SHOP_ROLES = ["Tài khoản chính", "Tài khoản phụ"]
 
 
 def _vault_actor(user: dict) -> str:
@@ -758,18 +760,16 @@ def _vault_actor(user: dict) -> str:
 
 
 def _vault_tab_of(category: str) -> str:
-    return "khach" if category == "khach" else "noi-bo"
+    return "shop" if category == "shop" else "noi-bo"
 
 
-def _vault_khach_copy_text(it: dict) -> str:
-    """Text chép nhanh của 1 tài khoản khách (đúng định dạng gửi khách)."""
-    lines = [
-        f"Ngân hàng: {it.get('bank_name') or ''}",
-        f"Số tài khoản: {it.get('account_number') or ''}",
-        f"Chủ tài khoản: {it.get('account_holder') or ''}",
-    ]
-    if (it.get("note") or "").strip():
-        lines.append(f"Ghi chú: {it['note']}")
+def _vault_shop_copy_text(it: dict) -> str:
+    """Text chép nhanh của 1 tài khoản shop (chỉ tạo cho người có quyền xem mật khẩu)."""
+    lines = [f"Shop: {it.get('label') or ''} ({it.get('kind') or ''})"]
+    if (it.get("username") or "").strip():
+        lines.append(f"Tài khoản: {it['username']}")
+    if (it.get("password") or "").strip():
+        lines.append(f"Mật khẩu: {it['password']}")
     return "\n".join(lines)
 
 
@@ -789,7 +789,7 @@ def _vn_today_str() -> str:
 
 
 def _build_handover_text(
-    assignee: str, internal: list, customers: list, can_see_pw: bool
+    assignee: str, internal: list, shops: list, can_see_pw: bool
 ) -> str:
     """Bản bàn giao tài khoản cho 1 nhân sự — text thuần để chép 1 lần.
 
@@ -814,19 +814,19 @@ def _build_handover_text(
                 lines.append(f"   Link: {it['url']}")
             if (it.get("note") or "").strip():
                 lines.append(f"   Ghi chú: {it['note']}")
-    if customers:
-        lines += ["", "B. TÀI KHOẢN KHÁCH PHỤ TRÁCH"]
-        for i, it in enumerate(customers, 1):
-            lines.append(f"{i}. {it.get('label') or ''}")
-            parts = []
-            if (it.get("bank_name") or "").strip():
-                parts.append(f"Ngân hàng: {it['bank_name']}")
-            if (it.get("account_number") or "").strip():
-                parts.append(f"STK: {it['account_number']}")
+    if shops:
+        lines += ["", "B. TÀI KHOẢN SHOP PHỤ TRÁCH"]
+        for i, it in enumerate(shops, 1):
+            lines.append(f"{i}. [{it.get('kind') or 'Khác'}] {it.get('label') or ''}")
             if (it.get("account_holder") or "").strip():
-                parts.append(f"Chủ TK: {it['account_holder']}")
-            if parts:
-                lines.append("   " + " · ".join(parts))
+                lines.append(f"   Loại tài khoản: {it['account_holder']}")
+            if (it.get("username") or "").strip():
+                lines.append(f"   Đăng nhập: {it['username']}")
+            if (it.get("password") or "").strip():
+                pw = it["password"] if can_see_pw else "(liên hệ quản lý để nhận)"
+                lines.append(f"   Mật khẩu: {pw}")
+            if (it.get("url") or "").strip():
+                lines.append(f"   Link: {it['url']}")
             if (it.get("note") or "").strip():
                 lines.append(f"   Ghi chú: {it['note']}")
     return "\n".join(lines)
@@ -849,10 +849,12 @@ def _accounts_base_ctx(user: dict, tab: str) -> dict:
         "items": [],
         "edit_item": None,
         "kinds": _VAULT_KINDS,
+        "platforms": _SHOP_PLATFORMS,
+        "roles": _SHOP_ROLES,
         "assignees": [],
         "assignee": "",
         "internal_items": [],
-        "customer_items": [],
+        "shop_items": [],
         "handover_text": "",
         "can_edit": can_edit,
         "can_delete": bool(user.get("can_delete_products")),
@@ -887,19 +889,20 @@ def page_accounts(
         return templates.TemplateResponse("accounts.html", _ctx(request, user, **ctx))
     if not (is_owner or user.get("can_view_products")):
         raise HTTPException(status_code=403, detail="Tài khoản không có quyền này.")
-    if tab in ("khach", "noi-bo"):
-        category = "khach" if tab == "khach" else "noi_bo"
+    if tab in ("shop", "noi-bo"):
+        category = "shop" if tab == "shop" else "noi_bo"
         items = db.vault_list(category, q)
         for it in items:
-            if category == "khach":
-                it["copy_text"] = _vault_khach_copy_text(it)
-            elif ctx["can_see_pw"]:
-                it["has_password"] = bool((it.get("password") or "").strip())
-                it["copy_text"] = _vault_noibo_copy_text(it)
+            it["has_password"] = bool((it.get("password") or "").strip())
+            if ctx["can_see_pw"]:
+                it["copy_text"] = (
+                    _vault_shop_copy_text(it)
+                    if category == "shop"
+                    else _vault_noibo_copy_text(it)
+                )
             else:
                 # Người xem thường: mật khẩu không được xuất hiện trong HTML,
                 # template chỉ biết tài khoản CÓ mật khẩu hay không để hiện •••.
-                it["has_password"] = bool((it.get("password") or "").strip())
                 it["password"] = ""
                 it["copy_text"] = ""
         ctx["items"] = items
@@ -913,12 +916,12 @@ def page_accounts(
         chosen = (assignee or "").strip()
         if chosen and chosen in names:
             internal = db.vault_list("noi_bo", assignee=chosen)
-            customers = db.vault_list("khach", assignee=chosen)
+            shops = db.vault_list("shop", assignee=chosen)
             ctx["assignee"] = chosen
             ctx["internal_items"] = internal
-            ctx["customer_items"] = customers
+            ctx["shop_items"] = shops
             ctx["handover_text"] = _build_handover_text(
-                chosen, internal, customers, ctx["can_see_pw"]
+                chosen, internal, shops, ctx["can_see_pw"]
             )
     return templates.TemplateResponse("accounts.html", _ctx(request, user, **ctx))
 
@@ -1052,20 +1055,18 @@ async def page_accounts_delete(user_id: int, request: Request):
 
 
 def _vault_payload(form, category: str) -> dict:
-    """Đọc form thêm/sửa tài khoản kho; `khach` luôn là tài khoản ngân hàng."""
+    """Đọc form thêm/sửa tài khoản kho.
+
+    `shop` = tài khoản vận hành sàn của shop: cột account_holder lưu
+    LOẠI tài khoản (chính/phụ), kind lưu nền tảng (Shopee/TikTok Shop...).
+    """
 
     def _f(name: str) -> str:
         return (form.get(name) or "").strip()
 
-    if category == "khach":
-        kind = "Ngân hàng"
-    else:
-        kind = _f("kind")
-        if kind not in _VAULT_KINDS:
-            kind = "Khác"
-    return {
+    data = {
         "category": category,
-        "kind": kind,
+        "kind": "",
         "label": _f("label"),
         "bank_name": _f("bank_name"),
         "account_number": _f("account_number"),
@@ -1076,6 +1077,17 @@ def _vault_payload(form, category: str) -> dict:
         "assignee": _f("assignee"),
         "note": _f("note"),
     }
+    if category == "shop":
+        kind = _f("kind")
+        data["kind"] = kind if kind in _SHOP_PLATFORMS else "Shopee"
+        role = _f("account_holder")
+        data["account_holder"] = role if role in _SHOP_ROLES else "Tài khoản chính"
+        data["bank_name"] = ""
+        data["account_number"] = ""
+    else:
+        kind = _f("kind")
+        data["kind"] = kind if kind in _VAULT_KINDS else "Khác"
+    return data
 
 
 @router.post("/accounts/vault/create")
@@ -1085,8 +1097,8 @@ async def page_vault_create(request: Request):
         return redir
     form = await request.form()
     category = form.get("category")
-    if category not in ("khach", "noi_bo"):
-        category = "khach"
+    if category not in ("shop", "noi_bo"):
+        category = "shop"
     tab = _vault_tab_of(category)
     data = _vault_payload(form, category)
     if not data["label"]:

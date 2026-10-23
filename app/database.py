@@ -275,7 +275,7 @@ CREATE TABLE IF NOT EXISTS tt_history (
 );
 CREATE TABLE IF NOT EXISTS vault_accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category TEXT NOT NULL DEFAULT 'khach',
+    category TEXT NOT NULL DEFAULT 'shop',
     kind TEXT NOT NULL DEFAULT 'Ngân hàng',
     label TEXT NOT NULL DEFAULT '',
     bank_name TEXT NOT NULL DEFAULT '',
@@ -1683,10 +1683,11 @@ def tt_history_list(limit: int = 100) -> list:
 
 
 # ------------------------------ kho tài khoản (vault) ------------------------------
-# Trang Quản lý tài khoản: tài khoản NHẬN của khách (category='khach', luôn
-# là tài khoản ngân hàng) + tài khoản NỘI BỘ công ty (category='noi_bo':
-# ngân hàng + đăng nhập các nền tảng). Cột password là bí mật: routes chỉ
-# render giá trị cho chủ sở hữu / người có quyền sửa (xem app/routes.py).
+# Trang Quản lý tài khoản: tài khoản vận hành sàn của shop (category='shop':
+# Shopee/TikTok Shop..., đăng nhập + mật khẩu + người phụ trách) + tài khoản
+# NỘI BỘ công ty (category='noi_bo': ngân hàng + đăng nhập các nền tảng).
+# Cột password là bí mật: routes chỉ render giá trị cho chủ sở hữu / người
+# có quyền sửa (xem app/routes.py).
 
 VAULT_COLUMNS = [
     "id",
@@ -1757,7 +1758,7 @@ def vault_create(d: dict, created_by: str = "") -> int:
     """Thêm 1 tài khoản vào kho. Trả về id mới."""
     data = {k: v for k, v in d.items() if k in VAULT_COLUMNS and k != "id"}
     now = _utcnow()
-    data.setdefault("category", "khach")
+    data.setdefault("category", "shop")
     data.setdefault("kind", "Ngân hàng")
     data["created_by"] = created_by
     data["updated_by"] = created_by

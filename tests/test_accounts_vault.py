@@ -1,20 +1,23 @@
-"""Kho tài khoản (vault) trong trang Quản lý tài khoản: tab khách / nội bộ /
+"""Kho tài khoản (vault) trong trang Quản lý tài khoản: tab shop / nội bộ /
 bàn giao — quyền xem, che mật khẩu, cổng sửa/xóa, tìm kiếm và bản bàn giao."""
 
 from conftest import activate, create_owner, create_staff, login, logout
 
 SECRET = "MatKhauSieuBiMat123"
+SHOP_SECRET = "ShopPw!123"
 
 
-def _create_khach(client, **over):
+def _create_shop(client, **over):
     data = {
-        "category": "khach",
-        "label": "Khách sỉ Anh Tuấn",
-        "bank_name": "Vietcombank",
-        "account_number": "0123456789",
-        "account_holder": "NGUYEN VAN TUAN",
+        "category": "shop",
+        "kind": "Shopee",
+        "label": "APYKO Official",
+        "account_holder": "Tài khoản chính",
+        "username": "apyko.shop",
+        "password": SHOP_SECRET,
+        "url": "https://seller.shopee.vn",
         "assignee": "Lan Anh",
-        "note": "Nhận tiền cọc",
+        "note": "Shop chính",
     }
     data.update(over)
     return client.post("/accounts/vault/create", data=data, follow_redirects=False)
@@ -47,7 +50,7 @@ def _login_staff(client, username, perms):
 def test_vault_tabs_require_view_perm(client):
     create_owner(client)
     _login_staff(client, "nv_khongquyen", perms=())
-    for tab in ("khach", "noi-bo", "ban-giao"):
+    for tab in ("shop", "noi-bo", "ban-giao"):
         r = client.get(f"/accounts?tab={tab}", follow_redirects=False)
         assert r.status_code == 403, tab
 
@@ -55,7 +58,7 @@ def test_vault_tabs_require_view_perm(client):
 def test_viewer_opens_vault_tabs_but_not_login_admin(client):
     create_owner(client)
     _login_staff(client, "nv_xem", perms=("can_view_products",))
-    for tab in ("khach", "noi-bo", "ban-giao"):
+    for tab in ("shop", "noi-bo", "ban-giao"):
         assert client.get(f"/accounts?tab={tab}").status_code == 200, tab
     r = client.get("/accounts?tab=dang-nhap", follow_redirects=False)
     assert r.status_code == 403
@@ -71,25 +74,29 @@ def test_owner_bare_accounts_still_login_admin(client):
     assert "Danh sách tài khoản" in r.text
     assert "chushop" in r.text
     # Thanh tab của hub vẫn hiện cho chủ sở hữu
-    assert "Tài khoản khách" in r.text
+    assert "Tài khoản shop" in r.text
     assert "Đăng nhập" in r.text
 
 
 def test_password_not_in_html_for_viewer(client):
     create_owner(client)
     assert _create_noibo(client).status_code == 303
-    # Chủ sở hữu thấy mật khẩu thật
-    r = client.get("/accounts?tab=noi-bo")
-    assert SECRET in r.text
+    assert _create_shop(client).status_code == 303
+    # Chủ sở hữu thấy mật khẩu thật ở cả 2 tab
+    assert SECRET in client.get("/accounts?tab=noi-bo").text
+    assert SHOP_SECRET in client.get("/accounts?tab=shop").text
     _login_staff(client, "nv_xem", perms=("can_view_products",))
-    r = client.get("/accounts?tab=noi-bo")
-    assert r.status_code == 200
-    assert SECRET not in r.text
-    assert "••••••" in r.text
+    for tab in ("noi-bo", "shop"):
+        r = client.get(f"/accounts?tab={tab}")
+        assert r.status_code == 200
+        assert SECRET not in r.text
+        assert SHOP_SECRET not in r.text
+        assert "••••••" in r.text
     # Ở tab bàn giao: mật khẩu bị thay bằng dòng liên hệ quản lý
     r = client.get("/accounts", params={"tab": "ban-giao", "assignee": "Lan Anh"})
     assert r.status_code == 200
     assert SECRET not in r.text
+    assert SHOP_SECRET not in r.text
     assert "(liên hệ quản lý để nhận)" in r.text
 
 
@@ -135,7 +142,7 @@ def test_vault_post_permission_gates(client):
     _login_staff(
         client, "nv_sua", perms=("can_view_products", "can_add_edit_products")
     )
-    assert _create_khach(client).status_code == 303
+    assert _create_shop(client).status_code == 303
     r = client.post(
         f"/accounts/vault/{item['id']}/update", data=upd, follow_redirects=False
     )
@@ -151,23 +158,25 @@ def test_vault_post_permission_gates(client):
     assert db.vault_get(item["id"]) is None
 
 
-def test_khach_create_and_search_by_account_number(client):
+def test_shop_create_and_search(client):
     create_owner(client)
-    assert _create_khach(client).status_code == 303
-    r = client.get("/accounts?tab=khach")
+    assert _create_shop(client).status_code == 303
+    r = client.get("/accounts?tab=shop")
     assert r.status_code == 200
-    assert "Khách sỉ Anh Tuấn" in r.text
-    assert "0123456789" in r.text
-    # Text chép nhanh đúng định dạng gửi khách
+    assert "APYKO Official" in r.text
+    assert "apyko.shop" in r.text
+    assert "Tài khoản chính" in r.text
+    # Text chép nhanh: shop + đăng nhập + mật khẩu (chủ sở hữu xem được)
     assert (
-        "Ngân hàng: Vietcombank\nSố tài khoản: 0123456789\n"
-        "Chủ tài khoản: NGUYEN VAN TUAN\nGhi chú: Nhận tiền cọc"
+        f"Shop: APYKO Official (Shopee)\nTài khoản: apyko.shop\n"
+        f"Mật khẩu: {SHOP_SECRET}"
     ) in r.text
-    # Tìm theo số tài khoản
-    r = client.get("/accounts", params={"tab": "khach", "q": "0123456789"})
-    assert "Khách sỉ Anh Tuấn" in r.text
-    r = client.get("/accounts", params={"tab": "khach", "q": "khong-co-dau-nay"})
-    assert "Khách sỉ Anh Tuấn" not in r.text
+    # Tìm theo tên đăng nhập (khẳng định theo dòng dữ liệu trong bảng,
+    # tránh trùng chữ ví dụ trong placeholder của form thêm mới)
+    r = client.get("/accounts", params={"tab": "shop", "q": "apyko.shop"})
+    assert "<strong>APYKO Official</strong>" in r.text
+    r = client.get("/accounts", params={"tab": "shop", "q": "khong-co-dau-nay"})
+    assert "<strong>APYKO Official</strong>" not in r.text
 
 
 def test_handover_groups_items_by_assignee(client):
@@ -181,7 +190,7 @@ def test_handover_groups_items_by_assignee(client):
         password="EmailPw456",
         url="",
     ).status_code == 303
-    assert _create_khach(client).status_code == 303
+    assert _create_shop(client).status_code == 303
     assert _create_noibo(
         client,
         label="TK của người khác",
@@ -194,15 +203,13 @@ def test_handover_groups_items_by_assignee(client):
     assert r.status_code == 200
     assert "Shopee shop chính" in r.text
     assert "Email hỗ trợ" in r.text
-    assert "Khách sỉ Anh Tuấn" in r.text
+    assert "APYKO Official" in r.text
     assert "TK của người khác" not in r.text
     # Bản chép bàn giao (chủ sở hữu): đủ 2 mục + mật khẩu thật
     assert "THÔNG TIN BÀN GIAO TÀI KHOẢN" in r.text
     assert "Nhân sự: Lan Anh" in r.text
     assert "A. TÀI KHOẢN NỘI BỘ" in r.text
-    assert "B. TÀI KHOẢN KHÁCH PHỤ TRÁCH" in r.text
+    assert "B. TÀI KHOẢN SHOP PHỤ TRÁCH" in r.text
     assert f"Mật khẩu: {SECRET}" in r.text
-    assert (
-        "Ngân hàng: Vietcombank · STK: 0123456789 · Chủ TK: NGUYEN VAN TUAN"
-        in r.text
-    )
+    assert f"Mật khẩu: {SHOP_SECRET}" in r.text
+    assert "Loại tài khoản: Tài khoản chính" in r.text

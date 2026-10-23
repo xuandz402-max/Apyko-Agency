@@ -59,7 +59,7 @@
       <a href="/uni" class="nav-item{% if nav_active == 'uni' %} active{% endif %}">🎓 Apyko Uni</a>
       {% endif %}
       {% if user and (user.is_owner or user.can_view_products) %}
-      <a href="/accounts?tab=khach" class="nav-item{% if nav_active == 'accounts' %} active{% endif %}">👥 Quản lý tài khoản</a>
+      <a href="/accounts?tab=shop" class="nav-item{% if nav_active == 'accounts' %} active{% endif %}">👥 Quản lý tài khoản</a>
       {% endif %}
       {% if user and user.is_owner %}
       <a href="/sao-luu" class="nav-item{% if nav_active == 'backup' %} active{% endif %}">💾 Sao lưu & Khôi phục</a>

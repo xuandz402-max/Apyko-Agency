@@ -1,6 +1,7 @@
 """Routes: trang HTML (Jinja2) + JSON API. Mọi route đều qua kiểm tra quyền."""
 
 import csv
+import hashlib
 import io
 import logging
 import os
@@ -34,6 +35,7 @@ from . import (
     gmv_charts,
     importer,
     lessons,
+    orders,
     periods,
     pricing,
     rangeview,
@@ -233,6 +235,11 @@ async def page_setup_create(request: Request):
             "can_view_tiktok": 1,
             "can_view_cskh": 1,
             "can_view_accounts": 1,
+            "can_view_orders": 1,
+            "can_view_order_finance": 1,
+            "can_import_orders": 1,
+            "can_export_orders": 1,
+            "can_view_buyer_pii": 1,
         }
     )
     resp = RedirectResponse(url="/", status_code=303)
@@ -594,6 +601,547 @@ def page_analysis(request: Request):
     )
 
 
+# ------------------- phân tích đơn hàng Shopee -----------------------------
+# Mục con của trang Phân tích (/analysis): sidebar giữ nguyên cổng
+# can_view_products; PHẦN đơn hàng gác thêm can_view_orders ở server.
+# Quyền con (kiểm tra ở server, không chỉ ẩn giao diện):
+# - can_view_order_finance: số tiền chi tiết (AC/AT/voucher/phí) — thiếu
+#   quyền thì số tiền bị loại khỏi dữ liệu trả về, không chỉ ẩn bằng CSS.
+# - can_import_orders / can_export_orders: nhập file / xuất CSV.
+# - can_view_buyer_pii: mở thông tin người mua (mỗi lần mở ghi audit).
+# Mọi thao tác nhạy cảm (nhập, xuất, mở PII, xoá đợt nhập) đều ghi
+# order_audit_log.
+
+_ORDERS_BASE = "/analysis/don-hang"
+_ORDER_TABS = [
+    ("tong-quan", "Tổng quan"),
+    ("san-pham", "Sản phẩm & biến thể"),
+    ("gia", "Giá, voucher, trợ giá & phí"),
+    ("van-hanh", "Vận hành & giao hàng"),
+    ("huy-tra", "Hủy, trả hàng & hoàn tiền"),
+    ("don-hang", "Đơn hàng"),
+    ("chat-luong", "Chất lượng dữ liệu"),
+    ("nhap", "Nhập dữ liệu"),
+]
+
+
+def _orders_guard(request: Request):
+    """Cổng chung của phần đơn hàng: (user, None) hoặc (None, redirect)."""
+    user, redir = auth.page_guard(request, "can_view_products")
+    if redir:
+        return None, redir
+    if not user.get("can_view_orders"):
+        raise HTTPException(
+            status_code=403, detail="Tài khoản không có quyền xem Phân tích đơn Shopee."
+        )
+    return user, None
+
+
+def _orders_filters(request: Request) -> dict:
+    """Bộ lọc chung các tab: shop + khoảng ngày (rangeview) + trạng thái."""
+    qp = request.query_params
+    today = checklist.today_str()
+    rng = rangeview.resolve_range(qp, today, default="last30")
+    return {
+        "shop": (qp.get("shop") or "").strip(),
+        "status": (qp.get("status") or "").strip(),
+        "rng": rng,
+        "today": today,
+    }
+
+
+def _orders_extra(flt: dict, tab: str) -> str:
+    """Chuỗi query giữ shop/trạng thái/tab khi chuyển khoảng ngày."""
+    parts = [f"&tab={tab}"]
+    if flt["shop"]:
+        parts.append(f"&shop={quote(flt['shop'])}")
+    if flt["status"]:
+        parts.append(f"&status={quote(flt['status'])}")
+    return "".join(parts)
+
+
+def _orders_lines(flt: dict) -> list:
+    return db.orders_list_lines(
+        shop=flt["shop"] or None,
+        date_from=flt["rng"]["cur_start"],
+        date_to=flt["rng"]["cur_end"],
+        status=flt["status"] or None,
+    )
+
+
+def _actor(user: dict) -> str:
+    return (user.get("display_name") or user.get("username") or "").strip()
+
+
+@router.get(_ORDERS_BASE, response_class=HTMLResponse)
+def page_analysis_orders(request: Request, tab: str = "tong-quan"):
+    user, redir = _orders_guard(request)
+    if redir:
+        return redir
+    if tab not in dict(_ORDER_TABS):
+        tab = "tong-quan"
+    has_finance = bool(user.get("can_view_order_finance"))
+    if tab == "gia" and not has_finance:
+        raise HTTPException(
+            status_code=403, detail="Tài khoản không có quyền xem dữ liệu tài chính đơn hàng."
+        )
+    flt = _orders_filters(request)
+    lines = _orders_lines(flt)
+    rollups = orders.rollup_orders(lines)
+    ctx: dict = {
+        "tab": tab,
+        "tabs": _ORDER_TABS,
+        "flt": flt,
+        "rng": flt["rng"],
+        "extra": _orders_extra(flt, tab),
+        "shops": db.orders_distinct_shops(),
+        "statuses": db.orders_distinct_statuses(),
+        "has_finance": has_finance,
+        "can_import": bool(user.get("can_import_orders")),
+        "can_export": bool(user.get("can_export_orders")),
+        "can_pii": bool(user.get("can_view_buyer_pii")),
+        "ac_label": orders.AC_LABEL,
+        "at_label": orders.AT_LABEL,
+        "msg": request.query_params.get("msg") or "",
+    }
+    if tab == "tong-quan":
+        ov = orders.overview_stats(rollups)
+        if not has_finance:
+            ov = {**ov, "line_value": None, "at_total": None, "trend": [
+                {**t, "at": None} for t in ov["trend"]
+            ]}
+        ctx["ov"] = ov
+    elif tab == "san-pham":
+        stats = orders.product_stats(lines)
+        if not has_finance:
+            stats = [{**s, "line_value": None} for s in stats]
+        ctx["products"] = stats
+    elif tab == "gia":
+        ctx["fin"] = orders.finance_stats(lines, rollups)
+    elif tab == "van-hanh":
+        ctx["ops"] = orders.ops_stats(rollups)
+    elif tab == "huy-tra":
+        ctx["cancel"] = orders.cancel_stats(rollups, lines)
+    elif tab == "don-hang":
+        q = (request.query_params.get("q") or "").strip().lower()
+        carrier = (request.query_params.get("carrier") or "").strip()
+        shown = rollups
+        if carrier:
+            shown = [r for r in shown if r["carrier"] == carrier]
+        if q:
+            shown = [
+                r
+                for r in shown
+                if q in r["order_id"].lower()
+                or any(q in (ln.get("product_name") or "").lower() for ln in r["lines"])
+            ]
+        ctx["carriers"] = db.orders_distinct_carriers()
+        ctx["q"] = request.query_params.get("q") or ""
+        ctx["carrier"] = carrier
+        ctx["orders_total"] = len(shown)
+        ctx["order_rows"] = [
+            {
+                **r,
+                "line_value": r["line_value"] if has_finance else None,
+                "at": r["at"] if has_finance else None,
+            }
+            for r in shown[:200]
+        ]
+    elif tab == "chat-luong":
+        ctx["dq"] = orders.data_quality(lines, rollups)
+        ctx["quarantine"] = db.orders_list_quarantine(100)
+        ctx["imports"] = db.orders_list_imports(20)
+    elif tab == "nhap":
+        vault_shops = []
+        for it in db.vault_list(category="shop"):
+            label = (it.get("label") or "").strip()
+            if label and label not in vault_shops:
+                vault_shops.append(label)
+        known = sorted(set(vault_shops) | set(db.orders_distinct_shops()))
+        ctx["shop_choices"] = known
+        ctx["imports"] = db.orders_list_imports(50)
+        ctx["audit"] = db.orders_list_audit(30)
+    return templates.TemplateResponse("orders.html", _ctx(request, user, **ctx))
+
+
+def _strip_order_money(rollup: dict, lines: list) -> tuple:
+    """Loại số tiền khỏi dữ liệu trả về khi user thiếu quyền tài chính
+    (loại ở server — giá trị không hề xuất hiện trong HTML)."""
+    rollup = {**rollup, "line_value": None, "at": None, "ad": None}
+    lines = [
+        {
+            **ln,
+            "amount_ac": None,
+            "voucher_shop": None,
+            "voucher_shopee": None,
+            "buyer_paid_at": None,
+            "order_total_ad": None,
+            "line_value": None,
+        }
+        for ln in lines
+    ]
+    return rollup, lines
+
+
+@router.get(_ORDERS_BASE + "/don/{order_id}", response_class=HTMLResponse)
+def page_order_detail(request: Request, order_id: str):
+    user, redir = _orders_guard(request)
+    if redir:
+        return redir
+    shop = (request.query_params.get("shop") or "").strip()
+    lines = db.orders_get_lines(shop, order_id) if shop else []
+    if not lines:
+        # Không truyền shop: tìm theo mã đơn trên mọi shop.
+        for ln in db.orders_list_lines():
+            if ln["order_id"] == order_id:
+                shop = ln["shop"]
+                lines = db.orders_get_lines(shop, order_id)
+                break
+    if not lines:
+        raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng.")
+    rollup = orders.rollup_order(order_id, lines)
+    has_finance = bool(user.get("can_view_order_finance"))
+    lines = [{**ln, "line_value": orders.line_value(ln)} for ln in lines]
+    if not has_finance:
+        rollup, lines = _strip_order_money(rollup, lines)
+    buyer = db.orders_get_buyer(shop, order_id)
+    return templates.TemplateResponse(
+        "orders_detail.html",
+        _ctx(
+            request,
+            user,
+            rollup=rollup,
+            lines=lines,
+            shop=shop,
+            buyer=buyer,
+            buyer_revealed=False,
+            has_finance=has_finance,
+            can_pii=bool(user.get("can_view_buyer_pii")),
+            ac_label=orders.AC_LABEL,
+            at_label=orders.AT_LABEL,
+        ),
+    )
+
+
+@router.post(_ORDERS_BASE + "/don/{order_id}/reveal", response_class=HTMLResponse)
+def page_order_reveal_pii(request: Request, order_id: str):
+    user, redir = _orders_guard(request)
+    if redir:
+        return redir
+    if not user.get("can_view_buyer_pii"):
+        raise HTTPException(
+            status_code=403, detail="Tài khoản không có quyền xem thông tin người mua."
+        )
+    shop = (request.query_params.get("shop") or "").strip()
+    lines = db.orders_get_lines(shop, order_id) if shop else []
+    if not lines:
+        raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng.")
+    db.orders_audit(
+        user["id"], user["username"], "reveal_pii", f"Đơn {order_id} (shop: {shop})"
+    )
+    rollup = orders.rollup_order(order_id, lines)
+    has_finance = bool(user.get("can_view_order_finance"))
+    lines = [{**ln, "line_value": orders.line_value(ln)} for ln in lines]
+    if not has_finance:
+        rollup, lines = _strip_order_money(rollup, lines)
+    buyer = db.orders_get_buyer(shop, order_id)
+    return templates.TemplateResponse(
+        "orders_detail.html",
+        _ctx(
+            request,
+            user,
+            rollup=rollup,
+            lines=lines,
+            shop=shop,
+            buyer=buyer,
+            buyer_revealed=True,
+            has_finance=has_finance,
+            can_pii=True,
+            ac_label=orders.AC_LABEL,
+            at_label=orders.AT_LABEL,
+        ),
+    )
+
+
+def _orders_preview_analysis(shop: str, items: list) -> dict:
+    """Phân tích xem trước: dòng mới/trùng, đơn đã có, đơn cần kiểm tra
+    tiền (đối soát trên dữ liệu GỘP file mới + dòng đã có trong hệ thống)."""
+    ok_items = [it for it in items if it["status"] == "ok"]
+    new_lines = dup_lines = 0
+    for it in ok_items:
+        it["exists"] = db.orders_line_exists(shop, it["data"]["order_id"], it["data"]["line_key"])
+        if it["exists"]:
+            dup_lines += 1
+        else:
+            new_lines += 1
+    file_order_ids = {it["data"]["order_id"] for it in ok_items}
+    existing_ids = db.orders_existing_order_ids(shop)
+    # Gộp theo line_key: dòng trong file thắng (trùng khóa = cùng dữ liệu).
+    merged: dict[str, dict] = {}
+    for oid in file_order_ids & existing_ids:
+        for ln in db.orders_get_lines(shop, oid):
+            merged[ln["line_key"]] = ln
+    for it in ok_items:
+        d = {**it["data"], "shop": shop}
+        merged[d["line_key"]] = d
+    by_order: dict[str, list] = {}
+    for ln in merged.values():
+        by_order.setdefault(ln["order_id"], []).append(ln)
+    flagged = []
+    for oid in sorted(file_order_ids):
+        r = orders.rollup_order(oid, by_order.get(oid, []))
+        if r["flagged"]:
+            flagged.append(r)
+    return {
+        "total_rows": len(items),
+        "ok_rows": len(ok_items),
+        "quarantine_rows": len(items) - len(ok_items),
+        "unique_orders": len(file_order_ids),
+        "new_lines": new_lines,
+        "dup_lines": dup_lines,
+        "existing_orders": len(file_order_ids & existing_ids),
+        "new_orders": len(file_order_ids - existing_ids),
+        "flagged": flagged,
+    }
+
+
+@router.post(_ORDERS_BASE + "/import", response_class=HTMLResponse)
+async def page_orders_import(
+    request: Request,
+    file: Annotated[UploadFile | None, File()] = None,
+    shop_select: Annotated[str, Form()] = "",
+    shop_new: Annotated[str, Form()] = "",
+):
+    user, redir = auth.page_guard(request, "can_view_products")
+    if redir:
+        return redir
+    if not user.get("can_import_orders"):
+        raise HTTPException(status_code=403, detail="Tài khoản không có quyền nhập file đơn hàng.")
+    shop = (shop_new or "").strip() or (shop_select or "").strip()
+    back = _ORDERS_BASE + "?tab=nhap"
+    if not shop:
+        return _import_error_page(request, user, "Chưa chọn shop cho file đơn này.", back)
+    if file is None or not file.filename:
+        return _import_error_page(request, user, "Chưa chọn file để nạp.", back)
+    raw = await file.read()
+    try:
+        headers, rows = importer.read_order_table(raw, file.filename)
+        items, _mapping, col_warnings = orders.parse_order_rows(headers, rows, shop)
+    except ValueError as e:
+        return _import_error_page(request, user, str(e), back)
+    file_hash = hashlib.sha256(raw).hexdigest()
+    prev_import = db.orders_import_by_hash(file_hash)
+    analysis = _orders_preview_analysis(shop, items)
+    token = _stash_put(
+        user["id"],
+        {
+            "kind": "orders",
+            "filename": file.filename,
+            "shop": shop,
+            "file_hash": file_hash,
+            "items": items,
+            "col_warnings": col_warnings,
+        },
+    )
+    return templates.TemplateResponse(
+        "orders_preview.html",
+        _ctx(
+            request,
+            user,
+            filename=file.filename,
+            shop=shop,
+            items=items,
+            analysis=analysis,
+            col_warnings=col_warnings,
+            prev_import=prev_import,
+            token=token,
+            back_url=back,
+            confirm_url=_ORDERS_BASE + "/import/confirm",
+            cancel_url=_ORDERS_BASE + "/import/cancel",
+        ),
+    )
+
+
+@router.post(_ORDERS_BASE + "/import/confirm", response_class=HTMLResponse)
+async def page_orders_import_confirm(
+    request: Request, token: Annotated[str, Form()] = ""
+):
+    user, redir = auth.page_guard(request, "can_view_products")
+    if redir:
+        return redir
+    if not user.get("can_import_orders"):
+        raise HTTPException(status_code=403, detail="Tài khoản không có quyền nhập file đơn hàng.")
+    stash = _stash_get(token, user["id"], "orders")
+    back = _ORDERS_BASE + "?tab=nhap"
+    if stash is None:
+        return _import_error_page(
+            request,
+            user,
+            "Phiên xem trước đã hết hạn hoặc không hợp lệ — chưa ghi gì cả. Hãy nạp lại file.",
+            back,
+            status=400,
+        )
+    _stash_pop(token)
+    shop = stash["shop"]
+    items = stash["items"]
+    analysis = _orders_preview_analysis(shop, items)
+    batch_id = db.orders_create_import(
+        {
+            "shop": shop,
+            "filename": stash["filename"],
+            "file_hash": stash["file_hash"],
+            "total_rows": analysis["total_rows"],
+            "unique_orders": analysis["unique_orders"],
+            "new_orders": analysis["new_orders"],
+            "dup_orders": analysis["existing_orders"],
+            "new_lines": 0,  # cập nhật sau khi ghi thật bên dưới
+            "dup_lines": analysis["dup_lines"],
+            "flagged_orders": len(analysis["flagged"]),
+            "quarantine_rows": analysis["quarantine_rows"],
+            "missing_columns": ", ".join(stash["col_warnings"]),
+            "imported_by": _actor(user),
+        }
+    )
+    n_inserted = 0
+    touched_orders: set[str] = set()
+    for it in items:
+        if it["status"] == "quarantine":
+            db.orders_insert_quarantine(
+                {
+                    "import_id": batch_id,
+                    "shop": shop,
+                    "row_no": it["row"],
+                    "reason": it["reason"],
+                    **it["raw"],
+                }
+            )
+            continue
+        d = {**it["data"], "shop": shop, "import_id": batch_id}
+        if db.orders_insert_line(d):
+            n_inserted += 1
+            touched_orders.add(d["order_id"])
+            if it.get("buyer"):
+                db.orders_upsert_buyer(shop, d["order_id"], it["buyer"])
+    # Ghi đè số dòng mới bằng số ghi thật (chống trùng khóa ở tầng DB).
+    db.orders_update_import_new_lines(batch_id, n_inserted)
+    db.orders_audit(
+        user["id"],
+        user["username"],
+        "import",
+        f"File {stash['filename']} (shop: {shop}): {n_inserted} dòng mới, "
+        f"{analysis['dup_lines']} dòng trùng, {analysis['quarantine_rows']} dòng cách ly.",
+    )
+    return templates.TemplateResponse(
+        "orders_result.html",
+        _ctx(
+            request,
+            user,
+            filename=stash["filename"],
+            shop=shop,
+            n_inserted=n_inserted,
+            n_dup=analysis["dup_lines"],
+            n_quarantine=analysis["quarantine_rows"],
+            n_flagged=len(analysis["flagged"]),
+            back_url=_ORDERS_BASE + "?tab=tong-quan",
+        ),
+    )
+
+
+@router.post(_ORDERS_BASE + "/import/cancel")
+async def page_orders_import_cancel(
+    request: Request, token: Annotated[str, Form()] = ""
+):
+    user, redir = auth.page_guard(request, "can_view_products")
+    if redir:
+        return redir
+    _stash_pop(token)
+    return RedirectResponse(url=_ORDERS_BASE + "?tab=nhap", status_code=303)
+
+
+@router.post(_ORDERS_BASE + "/import/{batch_id}/delete")
+async def page_orders_import_delete(request: Request, batch_id: int):
+    user, redir = auth.page_guard(request, "can_view_products")
+    if redir:
+        return redir
+    if not user.get("can_import_orders"):
+        raise HTTPException(status_code=403, detail="Tài khoản không có quyền nhập file đơn hàng.")
+    batch = next((b for b in db.orders_list_imports(500) if b["id"] == batch_id), None)
+    if batch is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy đợt nhập.")
+    res = db.orders_delete_import(batch_id)
+    db.orders_audit(
+        user["id"],
+        user["username"],
+        "delete_batch",
+        f"Xoá đợt nhập #{batch_id} (file {batch['filename']}, shop {batch['shop']}): "
+        f"{res['lines']} dòng, {res['quarantine']} dòng cách ly, {res['buyers']} người mua.",
+    )
+    return RedirectResponse(
+        url=_ORDERS_BASE + "?tab=nhap&msg=" + quote("Đã xoá đợt nhập."), status_code=303
+    )
+
+
+@router.get(_ORDERS_BASE + "/export")
+def page_orders_export(request: Request):
+    user, redir = _orders_guard(request)
+    if redir:
+        return redir
+    if not user.get("can_export_orders"):
+        raise HTTPException(
+            status_code=403, detail="Tài khoản không có quyền xuất dữ liệu đơn hàng."
+        )
+    has_finance = bool(user.get("can_view_order_finance"))
+    can_pii = bool(user.get("can_view_buyer_pii"))
+    flt = _orders_filters(request)
+    lines = _orders_lines(flt)
+    rollups = orders.rollup_orders(lines)
+    out = io.StringIO()
+    w = csv.writer(out)
+    header = [
+        "Shop", "Mã đơn hàng", "Ngày đặt", "Trạng thái", "Số dòng", "Số lượng",
+        "Đơn vị vận chuyển", "Phương thức thanh toán", "Tỉnh/Thành phố",
+    ]
+    if has_finance:
+        header += ["Giá trị sau voucher (VNĐ)", orders.AT_LABEL + " (VNĐ)"]
+    if can_pii:
+        header += ["Người mua", "Tên người nhận", "Số điện thoại", "Địa chỉ nhận hàng"]
+    w.writerow(header)
+    for r in rollups:
+        row = [
+            r["shop"], r["order_id"], r["order_date"], r["status"], r["n_lines"],
+            r["qty"], r["carrier"], r["payment_method"], r["province"],
+        ]
+        if has_finance:
+            row += [
+                "" if r["line_value"] is None else int(round(r["line_value"])),
+                "" if r["at"] is None else int(round(r["at"])),
+            ]
+        if can_pii:
+            b = db.orders_get_buyer(r["shop"], r["order_id"]) or {}
+            row += [
+                b.get("buyer_username") or "",
+                b.get("recipient_name") or "",
+                b.get("phone") or "",
+                b.get("address") or "",
+            ]
+        w.writerow(row)
+    db.orders_audit(
+        user["id"],
+        user["username"],
+        "export",
+        f"Xuất {len(rollups)} đơn (shop: {flt['shop'] or 'tất cả'}, "
+        f"{flt['rng']['cur_start']}..{flt['rng']['cur_end']}).",
+    )
+    content = "﻿" + out.getvalue()
+    return Response(
+        content=content,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename="shopee-orders.csv"'
+        },
+    )
+
+
 # ------------------------------ apyko uni ---------------------------------
 
 
@@ -660,6 +1208,11 @@ _PERM_FIELDS = [
     ("can_view_uni", "Xem Apyko Uni"),
     ("can_view_cskh", "Xem Mẫu CSKH"),
     ("can_view_accounts", "Xem Quản lý tài khoản (kho)"),
+    ("can_view_orders", "Xem Phân tích đơn Shopee"),
+    ("can_view_order_finance", "Xem dữ liệu tài chính đơn hàng"),
+    ("can_import_orders", "Nhập file đơn hàng Shopee"),
+    ("can_export_orders", "Xuất dữ liệu đơn hàng"),
+    ("can_view_buyer_pii", "Xem thông tin người mua (đơn hàng)"),
     ("can_add_edit_products", "Thêm / sửa dữ liệu"),
     ("can_delete_products", "Xóa dữ liệu"),
     ("can_checklist_leader", "Leader checklist"),

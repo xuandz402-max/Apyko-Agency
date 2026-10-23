@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% set nav_active = "analysis" %}
+{% block title %}Xem trước file đơn Shopee · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>👀 Xem trước — chưa ghi dữ liệu</h1>
+  <p class="muted">File <strong>{{ filename }}</strong> · Shop: <strong>{{ shop }}</strong>. Kiểm tra kỹ rồi mới bấm Xác nhận nhập.</p>
+</div>
+
+{% if prev_import %}
+<div class="alert">⚠️ File này (cùng nội dung) đã được nhập trước đây ở đợt #{{ prev_import.id }} ({{ prev_import.imported_at[:16].replace("T", " ") }}). Nếu xác nhận nhập lại, chống trùng theo dòng sẽ chặn ghi trùng — số đơn và doanh thu không tăng thêm.</div>
+{% endif %}
+{% if col_warnings %}
+<div class="alert">⚠️ Cột thiếu/khác dự kiến: {{ col_warnings|join(", ") }}. Các cột này sẽ để trống khi ghi.</div>
+{% endif %}
+
+<div class="card">
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Tổng dòng trong file</div>
+      <div class="stat-value">{{ analysis.total_rows }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Số mã đơn duy nhất</div>
+      <div class="stat-value">{{ analysis.unique_orders }}</div>
+      <div class="stat-note">{{ analysis.new_orders }} đơn mới · {{ analysis.existing_orders }} đơn đã có trong hệ thống</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dòng sẽ ghi mới</div>
+      <div class="stat-value">{{ analysis.new_lines }}</div>
+      <div class="stat-note">{{ analysis.dup_lines }} dòng trùng (đã có, sẽ bỏ qua)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dòng lỗi / cách ly</div>
+      <div class="stat-value">{{ analysis.quarantine_rows }}</div>
+      <div class="stat-note">Trống mã đơn hoặc dữ liệu chí mạng không đọc được</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Đơn cần kiểm tra tiền</div>
+      <div class="stat-value">{{ analysis.flagged|length }}</div>
+      <div class="stat-note">Không khớp đối soát hoặc AT không nhất quán</div>
+    </div>
+  </div>
+
+  {% if analysis.flagged %}
+  <div class="card-head"><h3>Đơn cần kiểm tra tiền (vẫn nhập, nhưng bị gắn cờ)</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Mã đơn</th><th>Lý do</th></tr></thead>
+    <tbody>
+    {% for r in analysis.flagged %}
+      <tr><td>{{ r.order_id }}</td><td>{% if r.at_inconsistent %}AT không nhất quán giữa các dòng{% else %}Σ(AC × AA − AE − AG) không khớp AT theo cả 2 biến thể đối soát{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+
+  <div class="card-head"><h3>Chi tiết theo dòng</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Dòng</th><th>Trạng thái</th><th>Mã đơn</th><th>Sản phẩm</th><th>SL</th><th>Ghi chú</th></tr></thead>
+    <tbody>
+    {% for it in items %}
+      <tr>
+        <td>{{ it.row }}</td>
+        <td>{% if it.status == "quarantine" %}<span class="badge badge-need">Cách ly</span>{% elif it.exists %}<span class="badge badge-todo">Đã có</span>{% else %}<span class="badge badge-done">Mới</span>{% endif %}</td>
+        <td>{{ it.data.order_id if it.data else it.raw.order_id_raw }}</td>
+        <td>{{ it.data.product_name if it.data else it.raw.product_name }}</td>
+        <td>{{ it.data.qty if it.data else "—" }}</td>
+        <td>{{ it.reason }}{% if it.cell_errors %} Lỗi ô: {{ it.cell_errors|join(", ") }}{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+
+  <form method="post" action="{{ confirm_url }}" class="form-inline">
+    <input type="hidden" name="token" value="{{ token }}">
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">✅ Xác nhận nhập {{ analysis.new_lines }} dòng mới</button>
+    </div>
+  </form>
+  <form method="post" action="{{ cancel_url }}" class="form-inline">
+    <input type="hidden" name="token" value="{{ token }}">
+    <div class="form-actions">
+      <button type="submit" class="btn btn-ghost">Huỷ, không nhập</button>
+    </div>
+  </form>
+  <p><a href="{{ back_url }}" class="btn btn-ghost btn-sm">← Quay lại</a></p>
+</div>
+{% endblock %}

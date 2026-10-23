@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+{% from "_period_bar.html" import range_picker %}
+{% set nav_active = "analysis" %}
+{% block title %}Đơn hàng Shopee — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Phân tích</h1>
+  <p class="muted">Phân tích chuyên sâu file đơn hàng xuất từ Shopee Seller Centre</p>
+</div>
+<div class="tabs">
+  <a href="/analysis" class="tab">📈 Phân tích sản phẩm</a>
+  <a href="/analysis/don-hang" class="tab active">🛍️ Đơn hàng Shopee</a>
+</div>
+
+{% if msg %}<div class="alert alert-ok">{{ msg }}</div>{% endif %}
+
+<div class="card">
+  <form method="get" action="/analysis/don-hang" class="ord-filter">
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <input type="hidden" name="from" value="{{ rng.cur_start }}">
+    <input type="hidden" name="to" value="{{ rng.cur_end }}">
+    <label>Shop
+      <select name="shop" class="input">
+        <option value="">Tất cả shop</option>
+        {% for s in shops %}
+        <option value="{{ s }}"{% if flt.shop == s %} selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Trạng thái đơn
+      <select name="status" class="input">
+        <option value="">Tất cả trạng thái</option>
+        {% for s in statuses %}
+        <option value="{{ s }}"{% if flt.status == s %} selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
+    </div>
+    {{ range_picker("/analysis/don-hang", rng, extra) }}
+    {% if can_export %}
+    <a class="btn btn-ghost btn-sm" href="/analysis/don-hang/export?from={{ rng.cur_start }}&to={{ rng.cur_end }}{% if flt.shop %}&shop={{ flt.shop }}{% endif %}{% if flt.status %}&status={{ flt.status }}{% endif %}">⬇️ Xuất CSV</a>
+    {% endif %}
+  </form>
+  <div class="tabs">
+    {% for key, label in tabs %}
+    {% if key != "gia" or has_finance %}
+    <a href="/analysis/don-hang?tab={{ key }}&from={{ rng.cur_start }}&to={{ rng.cur_end }}{% if flt.shop %}&shop={{ flt.shop|urlencode }}{% endif %}{% if flt.status %}&status={{ flt.status|urlencode }}{% endif %}" class="tab{% if tab == key %} active{% endif %}">{{ label }}</a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+{% if tab == "tong-quan" %}
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Số đơn duy nhất</div>
+      <div class="stat-value">{{ ov.orders }}</div>
+      <div class="stat-note">Trong đó {{ ov.cancelled }} đơn đã hủy</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Số dòng hàng</div>
+      <div class="stat-value">{{ ov.lines }}</div>
+      <div class="stat-note">Tổng số lượng bán (không tính đơn hủy): {{ ov.qty }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Giá trị đơn sau voucher</div>
+      {% if has_finance %}
+      <div class="stat-value">{{ "{:,.0f}".format(ov.line_value).replace(",", ".") }}đ</div>
+      {% else %}
+      <div class="stat-value">—</div>
+      <div class="stat-note">Cần quyền xem dữ liệu tài chính</div>
+      {% endif %}
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">{{ at_label }}</div>
+      {% if has_finance %}
+      <div class="stat-value">{{ "{:,.0f}".format(ov.at_total).replace(",", ".") }}đ</div>
+      <div class="stat-note">Từ {{ ov.at_orders }} đơn có AT nhất quán</div>
+      {% else %}
+      <div class="stat-value">—</div>
+      <div class="stat-note">Cần quyền xem dữ liệu tài chính</div>
+      {% endif %}
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Đơn cần kiểm tra tiền</div>
+      <div class="stat-value">{{ ov.flagged }}</div>
+      <div class="stat-note">Xem chi tiết ở tab Chất lượng dữ liệu</div>
+    </div>
+  </div>
+  <p class="kpi-note">Nguồn: file đơn Shopee đã nhập. Giá trị sau voucher của 1 dòng = AC × AA − AE − AG (AC = tiền trước voucher, AA = số lượng, AE = voucher shop, AG = voucher Shopee); giá trị của đơn = tổng các dòng thuộc cùng Mã đơn hàng. {{ at_label }} là số cấp đơn — chỉ cộng 1 lần/đơn khi mọi dòng ghi AT giống nhau. Phạm vi: ngày đặt hàng trong khoảng đang chọn; các chỉ số tiền LOẠI TRỪ đơn Đã hủy.</p>
+
+  <div class="card-head"><h3>Xu hướng theo ngày</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Ngày</th><th>Số đơn</th>{% if has_finance %}<th>{{ at_label }} (đ)</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for t in ov.trend %}
+      <tr><td>{{ t.date }}</td><td>{{ t.orders }}</td>{% if has_finance %}<td>{{ "{:,.0f}".format(t.at).replace(",", ".") }}</td>{% endif %}</tr>
+    {% else %}
+      <tr><td colspan="3" class="muted empty">Chưa có dữ liệu trong khoảng này — hãy nhập file đơn ở tab Nhập dữ liệu.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+
+  <div class="card-head"><h3>Tỷ lệ trạng thái</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Trạng thái</th><th>Số đơn</th><th>Tỷ lệ</th></tr></thead>
+    <tbody>
+    {% for st, n in ov.status_dist.items() %}
+      <tr><td>{{ st }}</td><td>{{ n }}</td><td>{{ "%.1f"|format(n * 100 / ov.orders) if ov.orders else 0 }}%</td></tr>
+    {% else %}
+      <tr><td colspan="3" class="muted empty">Chưa có dữ liệu.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+{% endif %}
+
+{% if tab == "san-pham" %}
+  <div class="table-wrap"><table class="table">
+    <thead><tr>
+      <th>Sản phẩm</th><th>SKU</th><th>Phân loại</th><th>Số đơn</th><th>Số dòng</th>
+      <th>SL bán</th><th>SL hoàn</th><th>SL đơn hủy</th>
+      {% if has_finance %}<th>Giá trị sau voucher (đ)</th>{% endif %}
+    </tr></thead>
+    <tbody>
+    {% for p in products %}
+      <tr>
+        <td>{{ p.product_name }}</td>
+        <td>{{ p.sku or p.variation_sku or "—" }}</td>
+        <td>{{ p.variation_name or "—" }}</td>
+        <td>{{ p.orders }}</td>
+        <td>{{ p.lines }}</td>
+        <td>{{ p.qty }}</td>
+        <td>{{ p.qty_returned }}</td>
+        <td>{{ p.qty_cancelled }}</td>
+        {% if has_finance %}<td>{{ "{:,.0f}".format(p.line_value).replace(",", ".") }}</td>{% endif %}
+      </tr>
+    {% else %}
+      <tr><td colspan="9" class="muted empty">Chưa có dữ liệu trong khoảng này.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="kpi-note">Nguồn cột: Q (Tên sản phẩm), P/T (SKU / SKU phân loại), U (Tên phân loại), AA (Số lượng), AB (Số lượng hoàn trả). SL bán và giá trị chỉ tính dòng thuộc đơn KHÔNG hủy; SL của đơn hủy tách riêng ở cột cuối. SKU trống trong file xuất Shopee là bình thường — nhóm theo Tên sản phẩm + Tên phân loại. Giá trị sau voucher của dòng = AC × AA − AE − AG. Đây là GIÁ TRỊ ĐƠN, không phải lợi nhuận (chưa trừ giá vốn).</p>
+{% endif %}
+
+{% if tab == "gia" %}
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Tổng giá gốc (V × AA)</div>
+      <div class="stat-value">{{ "{:,.0f}".format(fin.gross_original).replace(",", ".") }}đ</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Tổng giá ưu đãi (Z × AA)</div>
+      <div class="stat-value">{{ "{:,.0f}".format(fin.promo_total).replace(",", ".") }}đ</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Giá trị sau voucher (AC×AA − AE − AG)</div>
+      <div class="stat-value">{{ "{:,.0f}".format(fin.line_value).replace(",", ".") }}đ</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">{{ at_label }}</div>
+      <div class="stat-value">{{ "{:,.0f}".format(fin.at_total).replace(",", ".") }}đ</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Tổng giá trị đơn hàng AD</div>
+      <div class="stat-value">{{ "{:,.0f}".format(fin.ad_total).replace(",", ".") }}đ</div>
+      <div class="stat-note">Cộng 1 lần/đơn khi nhất quán</div>
+    </div>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Khoản mục</th><th>Nguồn cột</th><th>Tổng (đ)</th></tr></thead>
+    <tbody>
+      <tr><td>Voucher của Shop</td><td>AE — Mã giảm giá của Shop (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.voucher_shop).replace(",", ".") }}</td></tr>
+      <tr><td>Voucher của Shopee</td><td>AG — Mã giảm giá của Shopee (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.voucher_shopee).replace(",", ".") }}</td></tr>
+      <tr><td>Người bán trợ giá</td><td>Y — Tổng số tiền được người bán trợ giá (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.seller_subsidy_total).replace(",", ".") }}</td></tr>
+      <tr><td>Shopee trợ giá</td><td>X — Được Shopee trợ giá (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.shopee_subsidy).replace(",", ".") }}</td></tr>
+      <tr><td>Giảm giá combo Shopee</td><td>AI (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.combo_shopee).replace(",", ".") }}</td></tr>
+      <tr><td>Giảm giá combo của Shop</td><td>AJ (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.combo_shop).replace(",", ".") }}</td></tr>
+      <tr><td>Giảm khi thanh toán bằng thẻ</td><td>AL (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.card_discount).replace(",", ".") }}</td></tr>
+      <tr><td>Hoàn Xu</td><td>AF (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.coin_cashback).replace(",", ".") }}</td></tr>
+      <tr><td>Shopee Xu được hoàn</td><td>AK — cấp đơn, cộng 1 lần/đơn khi nhất quán</td><td>{{ "{:,.0f}".format(fin.ak_xu).replace(",", ".") }} Xu (≈ {{ "{:,.0f}".format(fin.ak_vnd).replace(",", ".") }}đ khi đối soát)</td></tr>
+      {% for field, info in fin.order_level.items() %}
+      <tr><td>{{ info.label }}</td><td>Cấp đơn — cộng 1 lần/đơn ({{ info.orders }} đơn nhất quán{% if info.inconsistent %}, {{ info.inconsistent }} đơn không nhất quán bị loại{% endif %})</td><td>{{ "{:,.0f}".format(info.total).replace(",", ".") }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="kpi-note">Cách tính: khoản CẤP DÒNG cộng theo từng dòng sản phẩm; khoản CẤP ĐƠN (phí AX/AY/AZ, phí vận chuyển AO/AQ/AR/AS, AD, AK, AT) chỉ cộng 1 lần cho mỗi đơn khi mọi dòng của đơn ghi giống nhau — đơn nhiều dòng không bị cộng lặp. Đối soát từng đơn: A) Σ(AC × AA − AE − AG) = AT, hoặc B) Σ(AC × AA − AE − AG) − AK × 100 + AQ = AT (dung sai 1đ). Kết quả đối soát trong phạm vi: {{ fin.recon_ok }} đơn khớp, {{ fin.recon_review }} đơn cần kiểm tra, {{ fin.recon_na }} đơn không áp dụng (đã hủy/thiếu AT). Mọi số ở tab này là GIÁ TRỊ ĐƠN và PHÍ theo file Shopee — KHÔNG phải lợi nhuận (chưa có giá vốn và chi phí ngoài file).</p>
+{% endif %}
+
+{% if tab == "van-hanh" %}
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Thời gian xử lý trung bình</div>
+      <div class="stat-value">{% if ops.avg_proc is not none %}{{ ops.avg_proc }} ngày{% else %}—{% endif %}</div>
+      <div class="stat-note">Từ {{ ops.n_proc }} đơn có ngày gửi hàng</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Thời gian giao trung bình</div>
+      <div class="stat-value">{% if ops.avg_ship is not none %}{{ ops.avg_ship }} ngày{% else %}—{% endif %}</div>
+      <div class="stat-note">Từ {{ ops.n_ship }} đơn có thời gian giao</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Giao trễ</div>
+      <div class="stat-value">{{ ops.late }}{% if ops.late_pct is not none %} ({{ ops.late_pct }}%){% endif %}</div>
+      <div class="stat-note">Trên {{ ops.late_known }} đơn có cả ngày giao dự kiến và giao thực tế</div>
+    </div>
+  </div>
+  <div class="card-head"><h3>Theo đơn vị vận chuyển</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Đơn vị vận chuyển</th><th>Số đơn</th><th>Xử lý TB (ngày)</th><th>Giao TB (ngày)</th><th>Giao trễ</th></tr></thead>
+    <tbody>
+    {% for c in ops.carriers %}
+      <tr><td>{{ c.carrier }}</td><td>{{ c.orders }}</td><td>{{ c.avg_proc if c.avg_proc is not none else "—" }}</td><td>{{ c.avg_ship if c.avg_ship is not none else "—" }}</td><td>{{ c.late }}/{{ c.late_known }}</td></tr>
+    {% else %}
+      <tr><td colspan="5" class="muted empty">Chưa có dữ liệu.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <div class="card-head"><h3>Theo phương thức thanh toán</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Phương thức thanh toán</th><th>Số đơn</th></tr></thead>
+    <tbody>
+    {% for name, n in ops.payments %}
+      <tr><td>{{ name }}</td><td>{{ n }}</td></tr>
+    {% else %}
+      <tr><td colspan="2" class="muted empty">Chưa có dữ liệu.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="kpi-note">Nguồn cột: C (Ngày đặt hàng), M (Ngày gửi hàng), N (Thời gian giao hàng), L (Ngày giao hàng dự kiến), I (Đơn vị vận chuyển), J (Phương thức giao hàng), AW (Phương thức thanh toán). Thời gian xử lý = ngày gửi − ngày đặt; thời gian giao = ngày giao − ngày gửi; giao trễ = ngày giao thực tế sau ngày giao dự kiến. Chỉ tính đơn không hủy và có đủ mốc thời gian tương ứng.</p>
+{% endif %}
+
+{% if tab == "huy-tra" %}
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Tỷ lệ hủy</div>
+      <div class="stat-value">{% if cancel.cancel_pct is not none %}{{ cancel.cancel_pct }}%{% else %}—{% endif %}</div>
+      <div class="stat-note">{{ cancel.cancelled }}/{{ cancel.total_orders }} đơn trong phạm vi</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Đơn có trả hàng/hoàn tiền</div>
+      <div class="stat-value">{{ cancel.return_orders }}</div>
+      <div class="stat-note">Tổng số lượng hoàn: {{ cancel.qty_returned }}</div>
+    </div>
+  </div>
+  <div class="cards">
+    <div class="card">
+      <div class="card-head"><h3>Lý do hủy</h3></div>
+      <div class="table-wrap"><table class="table table-compact">
+        <tbody>
+        {% for name, n in cancel.by_reason %}<tr><td>{{ name }}</td><td>{{ n }}</td></tr>
+        {% else %}<tr><td class="muted empty">Chưa có đơn hủy.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Hủy theo sản phẩm (số lượng)</h3></div>
+      <div class="table-wrap"><table class="table table-compact">
+        <tbody>
+        {% for name, n in cancel.by_product %}<tr><td>{{ name }}</td><td>{{ n }}</td></tr>
+        {% else %}<tr><td class="muted empty">Chưa có đơn hủy.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Hủy theo khu vực / vận chuyển</h3></div>
+      <div class="table-wrap"><table class="table table-compact">
+        <tbody>
+        {% for name, n in cancel.by_province %}<tr><td>{{ name }}</td><td>{{ n }}</td></tr>{% endfor %}
+        {% for name, n in cancel.by_carrier %}<tr><td>{{ name }}</td><td>{{ n }}</td></tr>
+        {% else %}<tr><td class="muted empty">Chưa có đơn hủy.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Trả hàng / hoàn tiền</h3></div>
+      <div class="table-wrap"><table class="table table-compact">
+        <tbody>
+        {% for name, n in cancel.return_by_status %}<tr><td>{{ name }}</td><td>{{ n }}</td></tr>
+        {% else %}<tr><td class="muted empty">Chưa có đơn trả/hoàn trong phạm vi.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+  <p class="kpi-note">Nguồn cột: D (Trạng thái Đơn Hàng = "Đã hủy"), F (Lý do hủy), O (Trạng thái Trả hàng/Hoàn tiền), AB (Số lượng sản phẩm được hoàn trả), BE (Tỉnh/Thành phố), I (Đơn vị vận chuyển). Tỷ lệ hủy = số đơn hủy / tổng số đơn trong phạm vi lọc. Đơn trả/hoàn = đơn (không hủy) có trạng thái trả/hoàn hoặc số lượng hoàn &gt; 0.</p>
+{% endif %}
+
+{% if tab == "don-hang" %}
+  <form method="get" action="/analysis/don-hang" class="ord-filter">
+    <input type="hidden" name="tab" value="don-hang">
+    <input type="hidden" name="from" value="{{ rng.cur_start }}">
+    <input type="hidden" name="to" value="{{ rng.cur_end }}">
+    <input type="hidden" name="shop" value="{{ flt.shop }}">
+    <input type="hidden" name="status" value="{{ flt.status }}">
+    <label>Tìm mã đơn / sản phẩm
+      <input type="text" name="q" value="{{ q }}" class="input" placeholder="VD: 261018VUCSNGU4">
+    </label>
+    <label>Đơn vị vận chuyển
+      <select name="carrier" class="input">
+        <option value="">Tất cả</option>
+        {% for c in carriers %}
+        <option value="{{ c }}"{% if carrier == c %} selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Tìm</button>
+    </div>
+  </form>
+  <p class="muted">Tìm thấy {{ orders_total }} đơn{% if orders_total > 200 %} — chỉ hiện 200 đơn đầu{% endif %}.</p>
+  <div class="table-wrap"><table class="table">
+    <thead><tr>
+      <th>Mã đơn hàng</th><th>Shop</th><th>Ngày đặt</th><th>Trạng thái</th><th>Số dòng</th><th>SL</th>
+      {% if has_finance %}<th>Giá trị sau voucher (đ)</th><th>{{ at_label }} (đ)</th>{% endif %}
+      <th>Vận chuyển</th><th>Cờ</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for r in order_rows %}
+      <tr>
+        <td>{{ r.order_id }}</td>
+        <td>{{ r.shop }}</td>
+        <td>{{ r.order_date }}</td>
+        <td>{{ r.status }}</td>
+        <td>{{ r.n_lines }}</td>
+        <td>{{ r.qty }}</td>
+        {% if has_finance %}
+        <td>{% if r.line_value is not none %}{{ "{:,.0f}".format(r.line_value).replace(",", ".") }}{% else %}—{% endif %}</td>
+        <td>{% if r.at is not none %}{{ "{:,.0f}".format(r.at).replace(",", ".") }}{% else %}—{% endif %}</td>
+        {% endif %}
+        <td>{{ r.carrier }}</td>
+        <td>{% if r.flagged %}<span class="badge badge-need">Cần kiểm tra</span>{% endif %}</td>
+        <td><a class="btn btn-ghost btn-sm" href="/analysis/don-hang/don/{{ r.order_id }}?shop={{ r.shop|urlencode }}">Chi tiết</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="11" class="muted empty">Không có đơn nào khớp bộ lọc.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="kpi-note">Giá trị sau voucher của đơn = tổng (AC × AA − AE − AG) các dòng. {{ at_label }} chỉ hiện khi mọi dòng của đơn ghi AT giống nhau; đơn bị gắn cờ "Cần kiểm tra" là đơn không khớp đối soát hoặc AT không nhất quán — xem tab Chất lượng dữ liệu.</p>
+{% endif %}
+
+{% if tab == "chat-luong" %}
+  <div class="card-head"><h3>Dòng bị cách ly khi nhập (không tham gia chỉ số)</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Đợt nhập</th><th>Shop</th><th>Dòng trong file</th><th>Lý do</th><th>Sản phẩm</th><th>Trạng thái</th></tr></thead>
+    <tbody>
+    {% for q in quarantine %}
+      <tr><td>#{{ q.import_id }}</td><td>{{ q.shop }}</td><td>{{ q.row_no }}</td><td>{{ q.reason }}</td><td>{{ q.product_name }}</td><td>{{ q.status }}</td></tr>
+    {% else %}
+      <tr><td colspan="6" class="muted empty">Không có dòng cách ly nào.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+
+  <div class="card-head"><h3>Đơn không khớp đối soát tiền</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Mã đơn</th><th>Shop</th><th>Vấn đề</th>{% if has_finance %}<th>Chênh lệch biến thể A (đ)</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for r in dq.recon_review %}
+      <tr><td>{{ r.order_id }}</td><td>{{ r.shop }}</td><td>Σ(AC × AA − AE − AG) không khớp AT theo cả 2 biến thể đối soát</td>{% if has_finance %}<td>{{ "{:,.0f}".format(r.recon_diff).replace(",", ".") if r.recon_diff is not none else "—" }}</td>{% endif %}</tr>
+    {% endfor %}
+    {% for r in dq.at_inconsistent %}
+      <tr><td>{{ r.order_id }}</td><td>{{ r.shop }}</td><td>AT không nhất quán giữa các dòng của đơn — đã loại khỏi tổng AT</td>{% if has_finance %}<td>—</td>{% endif %}</tr>
+    {% endfor %}
+    {% if not dq.recon_review and not dq.at_inconsistent %}
+      <tr><td colspan="4" class="muted empty">Không có đơn nào lệch đối soát trong phạm vi.</td></tr>
+    {% endif %}
+    </tbody>
+  </table></div>
+
+  <div class="card-head"><h3>Lỗi kiểu dữ liệu theo ô & trạng thái bất thường</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Loại</th><th>Chi tiết</th><th>Số lượng</th></tr></thead>
+    <tbody>
+    {% for e in dq.cell_error_lines %}
+      <tr><td>Ô tiền/số đọc không được</td><td>Đơn {{ e.order_id }} (shop {{ e.shop }}) — cột: {{ e.fields|join(", ") }}</td><td>1 dòng</td></tr>
+    {% endfor %}
+    {% for st, n in dq.unknown_statuses %}
+      <tr><td>Trạng thái lạ</td><td>"{{ st }}" — không nằm trong danh sách trạng thái Shopee thường gặp</td><td>{{ n }} dòng</td></tr>
+    {% endfor %}
+    {% for r in dq.status_conflicts %}
+      <tr><td>Trạng thái không nhất quán</td><td>Đơn {{ r.order_id }} có nhiều trạng thái khác nhau giữa các dòng</td><td>1 đơn</td></tr>
+    {% endfor %}
+    {% if not dq.cell_error_lines and not dq.unknown_statuses and not dq.status_conflicts %}
+      <tr><td colspan="3" class="muted empty">Không phát hiện vấn đề nào trong phạm vi.</td></tr>
+    {% endif %}
+    </tbody>
+  </table></div>
+
+  <div class="card-head"><h3>Cột thiếu / khác dự kiến ở các đợt nhập gần đây</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Đợt nhập</th><th>File</th><th>Cột thiếu/khác</th></tr></thead>
+    <tbody>
+    {% for b in imports %}
+      <tr><td>#{{ b.id }}</td><td>{{ b.filename }}</td><td>{{ b.missing_columns or "—" }}</td></tr>
+    {% else %}
+      <tr><td colspan="3" class="muted empty">Chưa có đợt nhập nào.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="kpi-note">Nguyên tắc: dữ liệu không rõ hoặc mâu thuẫn chỉ bị GẮN CỜ và loại khỏi chỉ số liên quan — hệ thống không tự suy diễn hay sửa số. Dòng cách ly (trống mã đơn, số lượng/AC không đọc được, ngày đặt không đọc được) không bao giờ tham gia chỉ số.</p>
+{% endif %}
+
+{% if tab == "nhap" %}
+  {% if can_import %}
+  <div class="card-head"><h3>Tải file đơn Shopee (.csv / .xlsx, tối đa 20MB, 50.000 dòng)</h3></div>
+  <form method="post" action="/analysis/don-hang/import" enctype="multipart/form-data" class="ord-filter">
+    <label>Shop của file này
+      <select name="shop_select" class="input">
+        <option value="">— Chọn shop —</option>
+        {% for s in shop_choices %}
+        <option value="{{ s }}">{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>hoặc gõ tên shop mới
+      <input type="text" name="shop_new" class="input" placeholder="Tên shop">
+    </label>
+    <label>File đơn hàng
+      <input type="file" name="file" accept=".csv,.xlsx" class="input" required>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Xem trước khi nhập</button>
+    </div>
+  </form>
+  <p class="kpi-note">Luồng nhập an toàn: tải lên → XEM TRƯỚC (chưa ghi gì) → xác nhận mới ghi. File không có cột shop nên phải chọn shop ở bước này; khóa chống trùng gồm shop + mã đơn + dấu vân tay dòng. Nạp lại cùng file không làm tăng số đơn/doanh thu.</p>
+  {% else %}
+  <div class="alert">Tài khoản của bạn không có quyền nhập file đơn hàng.</div>
+  {% endif %}
+
+  <div class="card-head"><h3>Lịch sử nhập</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>#</th><th>Thời gian</th><th>File</th><th>Shop</th><th>Dòng</th><th>Đơn duy nhất</th><th>Dòng mới</th><th>Dòng trùng</th><th>Đơn cần kiểm tra</th><th>Cách ly</th><th>Người nhập</th><th></th></tr></thead>
+    <tbody>
+    {% for b in imports %}
+      <tr>
+        <td>{{ b.id }}</td><td>{{ b.imported_at[:16].replace("T", " ") }}</td><td>{{ b.filename }}</td><td>{{ b.shop }}</td>
+        <td>{{ b.total_rows }}</td><td>{{ b.unique_orders }}</td><td>{{ b.new_lines }}</td><td>{{ b.dup_lines }}</td>
+        <td>{{ b.flagged_orders }}</td><td>{{ b.quarantine_rows }}</td><td>{{ b.imported_by }}</td>
+        <td>
+          {% if can_import %}
+          <form method="post" action="/analysis/don-hang/import/{{ b.id }}/delete" onsubmit="return confirm('Xoá đợt nhập #{{ b.id }}? Chỉ xoá các dòng do đợt này ghi lần đầu.');">
+            <button type="submit" class="btn btn-ghost btn-sm">Xoá đợt nhập</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="12" class="muted empty">Chưa có đợt nhập nào.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+
+  <div class="card-head"><h3>Nhật ký thao tác nhạy cảm</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Thời gian</th><th>Người dùng</th><th>Thao tác</th><th>Chi tiết</th></tr></thead>
+    <tbody>
+    {% for a in audit %}
+      <tr><td>{{ a.created_at[:16].replace("T", " ") }}</td><td>{{ a.username }}</td><td>{{ a.action }}</td><td>{{ a.detail }}</td></tr>
+    {% else %}
+      <tr><td colspan="4" class="muted empty">Chưa có thao tác nào được ghi.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="kpi-note">Nhật ký ghi lại: nhập file (import), xuất dữ liệu (export), mở thông tin người mua (reveal_pii) và xoá đợt nhập (delete_batch) — kèm người thực hiện và thời gian.</p>
+{% endif %}
+</div>
+{% endblock %}

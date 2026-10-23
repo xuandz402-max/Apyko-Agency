@@ -62,6 +62,11 @@ USER_COLUMNS = [
     "can_view_tiktok",
     "can_view_cskh",
     "can_view_accounts",
+    "can_view_orders",
+    "can_view_order_finance",
+    "can_import_orders",
+    "can_export_orders",
+    "can_view_buyer_pii",
     "can_checklist_leader",
     "can_checklist_admin",
     "created_at",
@@ -113,6 +118,11 @@ CREATE TABLE IF NOT EXISTS users (
     can_view_tiktok INTEGER NOT NULL DEFAULT 0,
     can_view_cskh INTEGER NOT NULL DEFAULT 1,
     can_view_accounts INTEGER NOT NULL DEFAULT 0,
+    can_view_orders INTEGER NOT NULL DEFAULT 0,
+    can_view_order_finance INTEGER NOT NULL DEFAULT 0,
+    can_import_orders INTEGER NOT NULL DEFAULT 0,
+    can_export_orders INTEGER NOT NULL DEFAULT 0,
+    can_view_buyer_pii INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -305,6 +315,113 @@ CREATE TABLE IF NOT EXISTS vault_accounts (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS order_imports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shop TEXT NOT NULL DEFAULT '',
+    filename TEXT NOT NULL DEFAULT '',
+    file_hash TEXT NOT NULL DEFAULT '',
+    total_rows INTEGER NOT NULL DEFAULT 0,
+    unique_orders INTEGER NOT NULL DEFAULT 0,
+    new_orders INTEGER NOT NULL DEFAULT 0,
+    dup_orders INTEGER NOT NULL DEFAULT 0,
+    new_lines INTEGER NOT NULL DEFAULT 0,
+    dup_lines INTEGER NOT NULL DEFAULT 0,
+    flagged_orders INTEGER NOT NULL DEFAULT 0,
+    quarantine_rows INTEGER NOT NULL DEFAULT 0,
+    missing_columns TEXT NOT NULL DEFAULT '',
+    imported_by TEXT NOT NULL DEFAULT '',
+    imported_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS order_lines (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    import_id INTEGER NOT NULL DEFAULT 0,
+    shop TEXT NOT NULL DEFAULT '',
+    order_id TEXT NOT NULL,
+    line_key TEXT NOT NULL,
+    package_id TEXT NOT NULL DEFAULT '',
+    order_date TEXT NOT NULL DEFAULT '',
+    order_dt TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT '',
+    cancel_reason TEXT NOT NULL DEFAULT '',
+    tracking_no TEXT NOT NULL DEFAULT '',
+    carrier TEXT NOT NULL DEFAULT '',
+    delivery_method TEXT NOT NULL DEFAULT '',
+    order_type TEXT NOT NULL DEFAULT '',
+    expected_date TEXT NOT NULL DEFAULT '',
+    ship_date TEXT NOT NULL DEFAULT '',
+    delivery_date TEXT NOT NULL DEFAULT '',
+    return_status TEXT NOT NULL DEFAULT '',
+    sku TEXT NOT NULL DEFAULT '',
+    product_name TEXT NOT NULL DEFAULT '',
+    variation_sku TEXT NOT NULL DEFAULT '',
+    variation_name TEXT NOT NULL DEFAULT '',
+    price_original REAL,
+    seller_subsidy REAL,
+    shopee_subsidy REAL,
+    seller_subsidy_total REAL,
+    price_promo REAL,
+    qty INTEGER,
+    qty_returned INTEGER,
+    amount_ac REAL,
+    order_total_ad REAL,
+    voucher_shop REAL,
+    coin_cashback REAL,
+    voucher_shopee REAL,
+    combo_shopee REAL,
+    combo_shop REAL,
+    shopee_coin REAL,
+    card_discount REAL,
+    ship_est REAL,
+    ship_buyer REAL,
+    ship_sponsored REAL,
+    ship_return_fee REAL,
+    buyer_paid_at REAL,
+    completed_date TEXT NOT NULL DEFAULT '',
+    paid_date TEXT NOT NULL DEFAULT '',
+    payment_method TEXT NOT NULL DEFAULT '',
+    fee_fixed REAL,
+    fee_service REAL,
+    fee_transaction REAL,
+    province TEXT NOT NULL DEFAULT '',
+    district TEXT NOT NULL DEFAULT '',
+    ward TEXT NOT NULL DEFAULT '',
+    cell_errors TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    UNIQUE (shop, order_id, line_key)
+);
+CREATE TABLE IF NOT EXISTS order_buyers (
+    shop TEXT NOT NULL,
+    order_id TEXT NOT NULL,
+    buyer_username TEXT NOT NULL DEFAULT '',
+    recipient_name TEXT NOT NULL DEFAULT '',
+    phone TEXT NOT NULL DEFAULT '',
+    address TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (shop, order_id)
+);
+CREATE TABLE IF NOT EXISTS order_quarantine (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    import_id INTEGER NOT NULL DEFAULT 0,
+    shop TEXT NOT NULL DEFAULT '',
+    row_no INTEGER NOT NULL DEFAULT 0,
+    reason TEXT NOT NULL DEFAULT '',
+    order_id_raw TEXT NOT NULL DEFAULT '',
+    product_name TEXT NOT NULL DEFAULT '',
+    variation_name TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT '',
+    order_date TEXT NOT NULL DEFAULT '',
+    amount_ac REAL,
+    buyer_paid_at REAL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS order_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 0,
+    username TEXT NOT NULL DEFAULT '',
+    action TEXT NOT NULL DEFAULT '',
+    detail TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+);
 """
 
 # Migration cộng thêm cho các DB đã tồn tại trước các module sau này:
@@ -320,7 +437,24 @@ _USER_MIGRATION_COLUMNS = [
     ("can_view_tiktok", "INTEGER NOT NULL DEFAULT 0"),
     ("can_view_cskh", "INTEGER NOT NULL DEFAULT 1"),
     ("can_view_accounts", "INTEGER NOT NULL DEFAULT 0"),
+    # Quyền module Phân tích đơn Shopee: mặc định ĐÓNG với tài khoản cũ
+    # (fail-closed); chủ sở hữu được bật = 1 khi di trú (xem _OWNER_FLAGS).
+    ("can_view_orders", "INTEGER NOT NULL DEFAULT 0"),
+    ("can_view_order_finance", "INTEGER NOT NULL DEFAULT 0"),
+    ("can_import_orders", "INTEGER NOT NULL DEFAULT 0"),
+    ("can_export_orders", "INTEGER NOT NULL DEFAULT 0"),
+    ("can_view_buyer_pii", "INTEGER NOT NULL DEFAULT 0"),
 ]
+
+# Cờ quyền chỉ bật sẵn cho CHỦ SỞ HỮU khi cột được thêm vào DB cũ; nhân sự
+# hiện hữu giữ nguyên mặc định 0 (cấp tay trong Quản lý tài khoản).
+_OWNER_FLAGS = (
+    "can_view_orders",
+    "can_view_order_finance",
+    "can_import_orders",
+    "can_export_orders",
+    "can_view_buyer_pii",
+)
 
 # Các quyền xem module vừa tách: khi cột lần đầu được thêm vào DB cũ, giá trị
 # khởi tạo = quyền xem SẢN PHẨM hiện tại của từng user (không ai mất quyền
@@ -544,6 +678,8 @@ def _migrate_users_columns(conn) -> None:
     for col in added:
         if col in ("can_view_cskh", "can_view_pricing"):
             conn.execute(f"UPDATE users SET {col} = 1")
+        elif col in _OWNER_FLAGS:
+            conn.execute(f"UPDATE users SET {col} = 1 WHERE is_owner = 1")
         elif col in _VIEW_FLAGS_FROM_PRODUCTS:
             conn.execute(
                 f"UPDATE users SET {col} = "
@@ -1874,3 +2010,275 @@ def vault_assignees() -> list:
             " WHERE assignee <> '' ORDER BY assignee ASC"
         ).fetchall()
     return [r["assignee"] for r in rows]
+
+
+# --------------------- phân tích đơn hàng Shopee ---------------------------
+# Dữ liệu nạp từ file xuất Seller Centre (xem app/orders.py để biết cách
+# ánh xạ cột + đối soát). Ở đây chỉ là tầng lưu trữ: dòng sản phẩm
+# (order_lines, chống trùng bằng UNIQUE(shop, order_id, line_key)),
+# thông tin người mua TÁCH RIÊNG (order_buyers), dòng cách ly
+# (order_quarantine), đợt nhập (order_imports) và nhật ký thao tác nhạy
+# cảm (order_audit_log).
+
+ORDER_LINE_COLUMNS = [
+    "import_id", "shop", "order_id", "line_key", "package_id",
+    "order_date", "order_dt", "status", "cancel_reason", "tracking_no",
+    "carrier", "delivery_method", "order_type", "expected_date",
+    "ship_date", "delivery_date", "return_status", "sku", "product_name",
+    "variation_sku", "variation_name", "price_original", "seller_subsidy",
+    "shopee_subsidy", "seller_subsidy_total", "price_promo", "qty",
+    "qty_returned", "amount_ac", "order_total_ad", "voucher_shop",
+    "coin_cashback", "voucher_shopee", "combo_shopee", "combo_shop",
+    "shopee_coin", "card_discount", "ship_est", "ship_buyer",
+    "ship_sponsored", "ship_return_fee", "buyer_paid_at", "completed_date",
+    "paid_date", "payment_method", "fee_fixed", "fee_service",
+    "fee_transaction", "province", "district", "ward", "cell_errors",
+]
+
+
+_IMPORT_TEXT_COLS = ("shop", "filename", "file_hash", "missing_columns", "imported_by")
+
+
+def orders_create_import(d: dict) -> int:
+    cols = [
+        "shop", "filename", "file_hash", "total_rows", "unique_orders",
+        "new_orders", "dup_orders", "new_lines", "dup_lines",
+        "flagged_orders", "quarantine_rows", "missing_columns",
+        "imported_by",
+    ]
+    data = {
+        c: d.get(c, "" if c in _IMPORT_TEXT_COLS else 0) for c in cols
+    }
+    data["imported_at"] = _utcnow()
+    all_cols = [*cols, "imported_at"]
+    placeholders = ", ".join("?" for _ in all_cols)
+    with get_conn() as conn:
+        cur = conn.execute(
+            f"INSERT INTO order_imports ({', '.join(all_cols)}) VALUES ({placeholders})",
+            [data[c] for c in all_cols],
+        )
+        return cur.lastrowid
+
+
+def orders_update_import_new_lines(batch_id: int, n: int) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE order_imports SET new_lines = ? WHERE id = ?", (n, batch_id)
+        )
+
+
+def orders_insert_line(d: dict) -> bool:
+    """Ghi 1 dòng sản phẩm; trùng khóa (shop, mã đơn, line_key) -> False."""
+    data = {c: d.get(c) for c in ORDER_LINE_COLUMNS}
+    data["created_at"] = _utcnow()
+    cols = [*ORDER_LINE_COLUMNS, "created_at"]
+    placeholders = ", ".join("?" for _ in cols)
+    with get_conn() as conn:
+        cur = conn.execute(
+            f"INSERT OR IGNORE INTO order_lines ({', '.join(cols)}) VALUES ({placeholders})",
+            [data[c] for c in cols],
+        )
+        return cur.rowcount > 0
+
+
+def orders_upsert_buyer(shop: str, order_id: str, d: dict) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO order_buyers (shop, order_id, buyer_username,"
+            " recipient_name, phone, address, updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?)"
+            " ON CONFLICT(shop, order_id) DO UPDATE SET"
+            " buyer_username = excluded.buyer_username,"
+            " recipient_name = excluded.recipient_name,"
+            " phone = excluded.phone, address = excluded.address,"
+            " updated_at = excluded.updated_at",
+            (
+                shop,
+                order_id,
+                d.get("buyer_username") or "",
+                d.get("recipient_name") or "",
+                d.get("phone") or "",
+                d.get("address") or "",
+                _utcnow(),
+            ),
+        )
+
+
+def orders_insert_quarantine(d: dict) -> int:
+    cols = [
+        "import_id", "shop", "row_no", "reason", "order_id_raw",
+        "product_name", "variation_name", "status", "order_date",
+        "amount_ac", "buyer_paid_at",
+    ]
+    data = {c: d.get(c) for c in cols}
+    data["created_at"] = _utcnow()
+    all_cols = [*cols, "created_at"]
+    placeholders = ", ".join("?" for _ in all_cols)
+    with get_conn() as conn:
+        cur = conn.execute(
+            f"INSERT INTO order_quarantine ({', '.join(all_cols)}) VALUES ({placeholders})",
+            [data[c] for c in all_cols],
+        )
+        return cur.lastrowid
+
+
+def orders_line_exists(shop: str, order_id: str, line_key: str) -> bool:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM order_lines WHERE shop = ? AND order_id = ? AND line_key = ?",
+            (shop, order_id, line_key),
+        ).fetchone()
+    return row is not None
+
+
+def orders_existing_order_ids(shop: str) -> set:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT order_id FROM order_lines WHERE shop = ?", (shop,)
+        ).fetchall()
+    return {r["order_id"] for r in rows}
+
+
+def orders_list_lines(
+    shop: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    status: str | None = None,
+) -> list:
+    clauses: list[str] = []
+    params: list = []
+    if shop:
+        clauses.append("shop = ?")
+        params.append(shop)
+    if date_from:
+        clauses.append("order_date >= ?")
+        params.append(date_from)
+    if date_to:
+        clauses.append("order_date <= ?")
+        params.append(date_to)
+    if status:
+        clauses.append("status = ?")
+        params.append(status)
+    where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+    with get_conn() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM order_lines{where} ORDER BY order_date, order_id, id",
+            params,
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def orders_get_lines(shop: str, order_id: str) -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM order_lines WHERE shop = ? AND order_id = ? ORDER BY id",
+            (shop, order_id),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def orders_get_buyer(shop: str, order_id: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM order_buyers WHERE shop = ? AND order_id = ?",
+            (shop, order_id),
+        ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def orders_list_imports(limit: int = 50) -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM order_imports ORDER BY id DESC LIMIT ?", (limit,)
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def orders_import_by_hash(file_hash: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM order_imports WHERE file_hash = ? ORDER BY id DESC LIMIT 1",
+            (file_hash,),
+        ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def orders_list_quarantine(limit: int = 200) -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM order_quarantine ORDER BY id DESC LIMIT ?", (limit,)
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def orders_delete_import(batch_id: int) -> dict:
+    """Xoá 1 đợt nhập: chỉ xoá các dòng do CHÍNH đợt đó ghi lần đầu
+    (import_id = batch), dòng cách ly của đợt, và thông tin người mua của
+    những đơn không còn dòng nào. Trả số lượng đã xoá."""
+    with get_conn() as conn:
+        touched = conn.execute(
+            "SELECT DISTINCT shop, order_id FROM order_lines WHERE import_id = ?",
+            (batch_id,),
+        ).fetchall()
+        cur = conn.execute("DELETE FROM order_lines WHERE import_id = ?", (batch_id,))
+        n_lines = cur.rowcount
+        cur = conn.execute(
+            "DELETE FROM order_quarantine WHERE import_id = ?", (batch_id,)
+        )
+        n_quar = cur.rowcount
+        n_buyers = 0
+        for t in touched:
+            left = conn.execute(
+                "SELECT 1 FROM order_lines WHERE shop = ? AND order_id = ?",
+                (t["shop"], t["order_id"]),
+            ).fetchone()
+            if left is None:
+                cur = conn.execute(
+                    "DELETE FROM order_buyers WHERE shop = ? AND order_id = ?",
+                    (t["shop"], t["order_id"]),
+                )
+                n_buyers += cur.rowcount
+        cur = conn.execute("DELETE FROM order_imports WHERE id = ?", (batch_id,))
+        n_batch = cur.rowcount
+    return {"lines": n_lines, "quarantine": n_quar, "buyers": n_buyers, "batch": n_batch}
+
+
+def orders_audit(user_id: int, username: str, action: str, detail: str) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO order_audit_log (user_id, username, action, detail, created_at)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (user_id, username, action, detail, _utcnow()),
+        )
+
+
+def orders_list_audit(limit: int = 30) -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM order_audit_log ORDER BY id DESC LIMIT ?", (limit,)
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def orders_distinct_shops() -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT shop FROM order_lines WHERE shop <> '' ORDER BY shop"
+        ).fetchall()
+    return [r["shop"] for r in rows]
+
+
+def orders_distinct_statuses() -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT status FROM order_lines WHERE status <> '' ORDER BY status"
+        ).fetchall()
+    return [r["status"] for r in rows]
+
+
+def orders_distinct_carriers() -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT carrier FROM order_lines WHERE carrier <> '' ORDER BY carrier"
+        ).fetchall()
+    return [r["carrier"] for r in rows]

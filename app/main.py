@@ -76,6 +76,11 @@ def _bootstrap_owner_from_env() -> None:
             "can_view_tiktok": 1,
             "can_view_cskh": 1,
             "can_view_accounts": 1,
+            "can_view_orders": 1,
+            "can_view_order_finance": 1,
+            "can_import_orders": 1,
+            "can_export_orders": 1,
+            "can_view_buyer_pii": 1,
         }
     )
     log.warning("Đã tạo tài khoản chủ sở hữu '%s' từ biến môi trường.", config.OWNER_USERNAME)

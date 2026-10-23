@@ -486,3 +486,10 @@ input.input-invalid { border-color: #DC2626; box-shadow: 0 0 0 1px #DC2626; }
 .va-src { position: absolute; left: -9999px; top: 0; width: 1px; height: 1px;
   opacity: 0; border: 0; padding: 0; }
 .va-actions { position: relative; }
+
+/* ---------- phân tích đơn hàng Shopee ---------- */
+/* Chú thích nguồn/công thức dưới mỗi thẻ chỉ số + khối người mua. */
+.kpi-note { font-size: 12px; color: var(--muted); line-height: 1.55; margin-top: 8px; }
+.stat-note { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+.ord-filter { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 14px; }
+.ord-filter label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }

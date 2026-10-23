@@ -6,6 +6,12 @@
   <h1>Phân tích</h1>
   <p class="muted">Xếp hạng cơ hội theo điểm số</p>
 </div>
+<div class="tabs">
+  <a href="/analysis" class="tab active">📈 Phân tích sản phẩm</a>
+  {% if user and user.can_view_orders %}
+  <a href="/analysis/don-hang" class="tab">🛍️ Đơn hàng Shopee</a>
+  {% endif %}
+</div>
 <div class="stats">
   {% for label, count in by_label.items() %}
   <div class="stat-card">

@@ -161,6 +161,51 @@ def read_table(file_bytes: bytes, filename: str) -> tuple:
     return headers, data_rows
 
 
+# --------------------- đọc file ĐƠN HÀNG Shopee ---------------------------
+# File đơn xuất từ Shopee Seller Centre: 62 cột cố định, có thể rất dài.
+# Giới hạn riêng (lớn hơn hẳn file GMV/ngày): 20MB / 50.000 dòng.
+# XLSX: ưu tiên sheet tên "orders" (sheet chuẩn của Shopee), không có
+# thì lấy sheet đầu tiên như read_table.
+
+ORDER_MAX_FILE_BYTES = 20 * 1024 * 1024
+ORDER_MAX_ROWS = 50000
+ORDER_SHEET_NAME = "orders"
+
+
+def read_order_table(file_bytes: bytes, filename: str) -> tuple:
+    """Đọc file đơn Shopee .csv/.xlsx -> (headers, rows).
+
+    headers/rows là list[str] như read_table. Raises ValueError tiếng
+    Việt khi file sai định dạng/quá lớn/quá nhiều dòng.
+    """
+    if file_bytes is None or len(file_bytes) == 0:
+        raise ValueError("File trống — hãy chọn file có dữ liệu.")
+    if len(file_bytes) > ORDER_MAX_FILE_BYTES:
+        raise ValueError(
+            "File quá lớn (tối đa 20MB) — hãy xuất lại với khoảng ngày ngắn hơn."
+        )
+    name = (filename or "").lower()
+    if name.endswith(".csv"):
+        raw_rows = _read_csv(file_bytes)
+    elif name.endswith(".xlsx"):
+        raw_rows = _read_xlsx(file_bytes, sheet_name=ORDER_SHEET_NAME)
+    else:
+        raise ValueError("Chỉ nhận file .csv hoặc .xlsx — file bạn chọn không đúng định dạng.")
+    rows = [[("" if c is None else str(c)) for c in row] for row in raw_rows]
+    rows = [r for r in rows if any(c.strip() for c in r)]
+    if not rows:
+        raise ValueError("File không có dòng dữ liệu nào.")
+    headers = [h.strip() for h in rows[0]]
+    if not any(headers):
+        raise ValueError("File thiếu dòng tiêu đề cột.")
+    data_rows = rows[1:]
+    if len(data_rows) > ORDER_MAX_ROWS:
+        raise ValueError(
+            f"File có quá nhiều dòng (tối đa {ORDER_MAX_ROWS:,} dòng dữ liệu)."
+        )
+    return headers, data_rows
+
+
 def _read_csv(file_bytes: bytes) -> list:
     try:
         text = file_bytes.decode("utf-8-sig")
@@ -247,7 +292,39 @@ def _serial_to_iso(value: float) -> str:
     return (_EXCEL_EPOCH + timedelta(days=int(value))).isoformat()
 
 
-def _read_xlsx(file_bytes: bytes) -> list:
+def _xlsx_sheet_path(zf: zipfile.ZipFile, sheet_name: str) -> str | None:
+    """Part của sheet theo TÊN hiển thị (qua workbook.xml + rels).
+
+    File Shopee xuất có sheet tên 'orders' nhưng part bên trong không
+    nhất thiết là sheet1.xml — phải tra quan hệ r:id -> Target.
+    Không tra được -> None (caller tự quay về sheet đầu tiên).
+    """
+    try:
+        wb_root = ElementTree.fromstring(zf.read("xl/workbook.xml"))
+        rels_root = ElementTree.fromstring(zf.read("xl/_rels/workbook.xml.rels"))
+    except (KeyError, ElementTree.ParseError):
+        return None
+    rel_ns = "{http://schemas.openxmlformats.org/package/2006/relationships}"
+    r_ns = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
+    targets: dict[str, str] = {}
+    for rel in rels_root.iter(f"{rel_ns}Relationship"):
+        rid, target = rel.get("Id"), rel.get("Target") or ""
+        if rid and target:
+            if target.startswith("/"):
+                target = target.lstrip("/")
+            elif not target.startswith("xl/"):
+                target = "xl/" + target
+            targets[rid] = target
+    sheets_el = wb_root.find(f"{_NS}sheets")
+    if sheets_el is None:
+        return None
+    for sh in sheets_el:
+        if (sh.get("name") or "") == sheet_name:
+            return targets.get(sh.get(f"{r_ns}id") or "")
+    return None
+
+
+def _read_xlsx(file_bytes: bytes, sheet_name: str | None = None) -> list:
     try:
         zf = zipfile.ZipFile(io.BytesIO(file_bytes))
     except zipfile.BadZipFile:
@@ -261,10 +338,15 @@ def _read_xlsx(file_bytes: bytes) -> list:
         )
         if not sheet_names:
             raise ValueError("File .xlsx không có trang tính nào.")
+        sheet_part = sheet_names[0]
+        if sheet_name:
+            named = _xlsx_sheet_path(zf, sheet_name)
+            if named and named in names:
+                sheet_part = named
         shared = _xlsx_shared_strings(zf)
         date_styles = _xlsx_date_style_indexes(zf)
         try:
-            root = ElementTree.fromstring(zf.read(sheet_names[0]))
+            root = ElementTree.fromstring(zf.read(sheet_part))
         except ElementTree.ParseError:
             raise ValueError("File .xlsx bị lỗi cấu trúc — hãy xuất lại từ Excel/Shopee.") from None
     sheet_data = root.find(f"{_NS}sheetData")

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% set nav_active = "analysis" %}
+{% block title %}Đã nhập file đơn Shopee · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>✅ Đã ghi dữ liệu từ file {{ filename }}</h1>
+  <p class="muted">Shop: {{ shop }}</p>
+</div>
+<div class="card">
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Dòng ghi mới</div>
+      <div class="stat-value">{{ n_inserted }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dòng trùng (bỏ qua)</div>
+      <div class="stat-value">{{ n_dup }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dòng cách ly (lỗi dữ liệu)</div>
+      <div class="stat-value">{{ n_quarantine }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Đơn cần kiểm tra tiền</div>
+      <div class="stat-value">{{ n_flagged }}</div>
+    </div>
+  </div>
+  <a href="{{ back_url }}" class="btn btn-primary btn-sm">🛍️ Xem Tổng quan đơn hàng</a>
+</div>
+{% endblock %}

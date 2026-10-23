@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% set nav_active = "analysis" %}
+{% block title %}Đơn {{ rollup.order_id }} — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Đơn {{ rollup.order_id }}</h1>
+  <p class="muted">Shop: {{ shop }} · Ngày đặt: {{ rollup.order_dt or rollup.order_date }} · Trạng thái: {{ rollup.status }}
+  {% if rollup.flagged %} · <span class="badge badge-need">Cần kiểm tra tiền</span>{% endif %}</p>
+</div>
+
+<div class="tabs">
+  <a href="/analysis/don-hang?tab=don-hang" class="tab">← Về danh sách đơn</a>
+</div>
+
+<div class="card">
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Số dòng / Số lượng</div>
+      <div class="stat-value">{{ rollup.n_lines }} / {{ rollup.qty }}</div>
+      <div class="stat-note">Số lượng hoàn: {{ rollup.qty_returned }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Giá trị sau voucher của đơn</div>
+      {% if has_finance and rollup.line_value is not none %}
+      <div class="stat-value">{{ "{:,.0f}".format(rollup.line_value).replace(",", ".") }}đ</div>
+      {% else %}
+      <div class="stat-value">—</div>
+      {% endif %}
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">{{ at_label }}</div>
+      {% if has_finance and rollup.at is not none %}
+      <div class="stat-value">{{ "{:,.0f}".format(rollup.at).replace(",", ".") }}đ</div>
+      {% elif rollup.at_inconsistent %}
+      <div class="stat-value">Không nhất quán</div>
+      <div class="stat-note">Các dòng ghi AT khác nhau — đã loại khỏi tổng AT</div>
+      {% else %}
+      <div class="stat-value">—</div>
+      {% endif %}
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Đối soát</div>
+      <div class="stat-value">
+        {% if rollup.recon == "ok" %}Khớp (biến thể {{ rollup.recon_variant }})
+        {% elif rollup.recon == "review" %}Cần kiểm tra
+        {% else %}Không áp dụng{% endif %}
+      </div>
+      {% if has_finance and rollup.recon_diff is not none %}
+      <div class="stat-note">Lệch biến thể A: {{ "{:,.0f}".format(rollup.recon_diff).replace(",", ".") }}đ</div>
+      {% endif %}
+    </div>
+  </div>
+  <p class="kpi-note">Vận chuyển: {{ rollup.carrier or "—" }} · Thanh toán: {{ rollup.payment_method or "—" }} · Tỉnh/Thành phố: {{ rollup.province or "—" }}{% if rollup.cancel_reason %} · Lý do hủy: {{ rollup.cancel_reason }}{% endif %}{% if rollup.return_status %} · Trả hàng/Hoàn tiền: {{ rollup.return_status }}{% endif %}</p>
+
+  <div class="card-head"><h3>Dòng sản phẩm</h3></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr>
+      <th>Sản phẩm</th><th>SKU</th><th>Phân loại</th><th>SL</th><th>SL hoàn</th>
+      {% if has_finance %}<th>AC (đ)</th><th>Voucher Shop (đ)</th><th>Voucher Shopee (đ)</th><th>Giá trị sau voucher (đ)</th><th>AT (đ)</th>{% endif %}
+    </tr></thead>
+    <tbody>
+    {% for ln in lines %}
+      <tr>
+        <td>{{ ln.product_name }}</td>
+        <td>{{ ln.sku or ln.variation_sku or "—" }}</td>
+        <td>{{ ln.variation_name or "—" }}</td>
+        <td>{{ ln.qty }}</td>
+        <td>{{ ln.qty_returned or 0 }}</td>
+        {% if has_finance %}
+        <td>{% if ln.amount_ac is not none %}{{ "{:,.0f}".format(ln.amount_ac).replace(",", ".") }}{% else %}—{% endif %}</td>
+        <td>{% if ln.voucher_shop is not none %}{{ "{:,.0f}".format(ln.voucher_shop).replace(",", ".") }}{% else %}—{% endif %}</td>
+        <td>{% if ln.voucher_shopee is not none %}{{ "{:,.0f}".format(ln.voucher_shopee).replace(",", ".") }}{% else %}—{% endif %}</td>
+        <td>{% if ln.line_value is not none %}{{ "{:,.0f}".format(ln.line_value).replace(",", ".") }}{% else %}—{% endif %}</td>
+        <td>{% if ln.buyer_paid_at is not none %}{{ "{:,.0f}".format(ln.buyer_paid_at).replace(",", ".") }}{% else %}—{% endif %}</td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="kpi-note">AC = {{ ac_label }}; AT = {{ at_label }} (số cấp đơn, hiển thị theo từng dòng như trong file xuất — tổng của đơn chỉ tính AT 1 lần). Giá trị sau voucher của dòng = AC × AA − AE − AG.</p>
+</div>
+
+<div class="card">
+  <div class="card-head"><h3>Thông tin người mua</h3></div>
+  {% if not buyer %}
+  <p class="muted">Không có thông tin người mua cho đơn này.</p>
+  {% elif buyer_revealed %}
+  <div class="table-wrap"><table class="table table-compact">
+    <tbody>
+      <tr><td>Người mua</td><td>{{ buyer.buyer_username }}</td></tr>
+      <tr><td>Tên người nhận</td><td>{{ buyer.recipient_name }}</td></tr>
+      <tr><td>Số điện thoại</td><td>{{ buyer.phone }}</td></tr>
+      <tr><td>Địa chỉ nhận hàng</td><td>{{ buyer.address }}</td></tr>
+    </tbody>
+  </table></div>
+  <p class="kpi-note">Lần mở này đã được ghi vào nhật ký thao tác nhạy cảm (tab Nhập dữ liệu).</p>
+  {% else %}
+  <p class="muted">Thông tin người mua (tên, số điện thoại, địa chỉ) đang được CHE. {% if can_pii %}Bấm nút bên dưới để xem — thao tác sẽ được ghi nhật ký.{% else %}Tài khoản của bạn không có quyền xem thông tin người mua.{% endif %}</p>
+  {% if can_pii %}
+  <form method="post" action="/analysis/don-hang/don/{{ rollup.order_id }}/reveal?shop={{ shop|urlencode }}">
+    <button type="submit" class="btn btn-secondary btn-sm">👁️ Xem thông tin người mua</button>
+  </form>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

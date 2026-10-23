@@ -42,7 +42,7 @@ a:hover { text-decoration: underline; }
 .logo { display: inline-flex; font-weight: 900; letter-spacing: 0.5px; font-size: 20px; }
 .logo-apy { color: #173A52; }
 .logo-ko { color: #fff; background: var(--mint); padding: 1px 7px; border-radius: 5px; margin-left: 2px; }
-.brand-img { height: 28px; width: auto; display: block; border-radius: 6px; }
+.brand-img { height: 30px; width: auto; display: block; }
 .auth-logo img { height: 46px; width: auto; }
 .nav { padding: 8px 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; overflow-y: auto; }
 .nav-item {

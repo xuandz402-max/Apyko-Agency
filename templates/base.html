@@ -19,17 +19,11 @@
       <img src="/static/logo.png" alt="{{ app_name }}" class="brand-img">
     </a>
     <nav class="nav">
-      {% if user and user.can_view_products %}
-      <a href="/" class="nav-item{% if nav_active == 'dashboard' %} active{% endif %}">📊 Dashboard</a>
-      {% endif %}
       {% if user and (user.is_owner or user.can_checklist_leader or user.can_checklist_admin) %}
       <a href="/ceo" class="nav-item{% if nav_active == 'ceo' %} active{% endif %}">👑 Dashboard CEO</a>
       {% endif %}
       {% if user and user.can_view_products %}
       <a href="/products" class="nav-item{% if nav_active == 'products' %} active{% endif %}">📦 Sản phẩm</a>
-      {% if user.can_add_edit_products %}
-      <a href="/products/new" class="nav-item{% if nav_active == 'product_new' %} active{% endif %}">➕ Thêm sản phẩm</a>
-      {% endif %}
       <a href="/analysis" class="nav-item{% if nav_active == 'analysis' %} active{% endif %}">📈 Phân tích</a>
       {% endif %}
       {% if user and user.can_view_pricing %}

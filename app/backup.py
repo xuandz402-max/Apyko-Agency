@@ -144,6 +144,20 @@ def backup_path(name: str) -> str:
     return path
 
 
+def delete_backup(name: str) -> str:
+    """Xoá hẳn 1 bản sao lưu. Trả về thông báo cho người dùng.
+
+    Tên file được kiểm tra qua backup_path() (chặn path traversal, sai
+    định dạng/không tồn tại -> ValueError). Xoá là không hoàn tác.
+    """
+    if _turso_enabled():
+        raise ValueError("Xoá bản sao lưu chỉ áp dụng cho bản chạy máy tính (DB local).")
+    path = backup_path(name)
+    os.remove(path)
+    log.info("Đã xoá bản sao lưu %s", name)
+    return f"Đã xoá bản sao lưu {name}."
+
+
 def restore_backup(name: str) -> str:
     """Khôi phục dữ liệu từ 1 bản sao lưu. Trả về thông báo cho người dùng.
 

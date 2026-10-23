@@ -1,7 +1,7 @@
 """Quyền xem RIÊNG từng mục sidebar: mỗi module một cờ can_view_* riêng,
 không còn mượn can_view_products; migration backfill giữ quyền cho user cũ."""
 
-from conftest import activate, create_owner, create_staff, logout
+from conftest import activate, create_owner, create_staff, login, logout
 
 NEW_VIEW_FLAGS = (
     "can_view_daily",
@@ -155,3 +155,29 @@ def test_perms_update_persists_new_flag(client):
     created = db.get_user_by_username("nv_moi")
     assert created["can_view_tiktok"] == 0
     assert created["can_view_daily"] == 0
+
+
+def test_home_redirects_to_first_permitted_page(client):
+    """Trang chủ Dashboard đã bỏ: / chuyển thẳng tới trang đầu tiên có quyền."""
+    create_owner(client)
+    r = client.get("/", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"] == "/ceo"  # chủ shop -> Dashboard CEO
+
+    code = create_staff(client, "nv_home_sp", perms=("can_view_products",))
+    logout(client)
+    activate(client, "nv_home_sp", code)
+    r = client.get("/", follow_redirects=False)
+    assert r.headers["location"] == "/products"
+
+    logout(client)
+    login(client, "chushop", "matkhau123")
+    code2 = create_staff(client, "nv_home_tt", perms=("can_view_tiktok",))
+    logout(client)
+    activate(client, "nv_home_tt", code2)
+    r = client.get("/", follow_redirects=False)
+    assert r.headers["location"] == "/tiktok-onboard"
+    # Sidebar không còn mục Dashboard và Thêm sản phẩm
+    page = client.get("/tiktok-onboard")
+    assert "📊 Dashboard" not in page.text
+    assert 'href="/products/new" class="nav-item' not in page.text

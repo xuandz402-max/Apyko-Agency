@@ -268,20 +268,18 @@ def test_sync_no_alerts_creates_nothing(client):
 # -------------------------------- trang /gmv --------------------------------
 
 
-def test_gmv_page_has_chart_and_alerts(client):
+def test_gmv_page_has_alerts_and_table_no_charts(client):
     create_owner(client)
     pid = _product("SP TRANG")
     _entry(pid, "2026-10-20", revenue_rm=100, ad_cost=100)
     r = client.get("/gmv")
     assert r.status_code == 200
     html = r.text
-    assert "📊 Biểu đồ GMV" in html
+    # Khối biểu đồ đã bỏ theo yêu cầu tối giản
+    assert "📊 Biểu đồ GMV" not in html
+    assert "chartMoney" not in html
+    assert "chartRoas" not in html
     assert "⚠️ Cảnh báo" in html
-    assert "chartMoney" in html
-    assert "chartRoas" in html
-    # dữ liệu series được nhúng vào trang (labels ngày + dãy GMV)
-    assert '"labels"' in html
-    assert '"gmv_vnd"' in html
     # cảnh báo ROAS thấp hiển thị
     assert "chỉ đạt 1.0" in html
     # bảng cũ vẫn còn
@@ -299,7 +297,9 @@ def test_gmv_page_query_validation(client):
     assert r.status_code == 200
     r = client.get(f"/gmv?days=30&product={pid}")
     assert r.status_code == 200
-    assert '"days": 30' in r.text
+    # Tham số days/product hợp lệ được route chấp nhận (khối biểu đồ đã bỏ
+    # nên JSON series không còn nhúng trong trang)
+    assert "gmvTable" in r.text
 
 
 def test_gmv_page_forbidden_without_view_perm(client):

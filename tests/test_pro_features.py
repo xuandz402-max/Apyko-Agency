@@ -129,6 +129,35 @@ def test_maybe_daily_backup_once_per_day(client):
     assert len(autos) == 1
 
 
+def test_backup_delete_route_and_safety(client):
+    create_owner(client)
+    backup = _backup()
+    name = backup.create_backup("manual")
+    assert name in [b["name"] for b in backup.list_backups()]
+    r = client.post(f"/sao-luu/xoa/{name}", follow_redirects=False)
+    assert r.status_code == 303
+    assert "msg=" in r.headers["location"]
+    assert name not in [b["name"] for b in backup.list_backups()]
+    # Xoá tên không tồn tại / tên bậy -> quay về trang kèm lỗi, không crash
+    r = client.post("/sao-luu/xoa/apyko-20260101-000000-auto.db", follow_redirects=False)
+    assert r.status_code == 303
+    assert "err=" in r.headers["location"]
+    with pytest.raises(ValueError):
+        backup.delete_backup("../t.db")
+
+
+def test_backup_delete_forbidden_for_staff(client):
+    create_owner(client)
+    backup = _backup()
+    name = backup.create_backup("manual")
+    code = create_staff(client, "nv_xoa", perms=("can_view_products",))
+    logout(client)
+    activate(client, "nv_xoa", code)
+    assert client.post(f"/sao-luu/xoa/{name}").status_code == 403
+    # File vẫn còn nguyên
+    assert name in [b["name"] for b in backup.list_backups()]
+
+
 def test_backup_forbidden_for_staff_and_menu_hidden(client):
     create_owner(client)
     code = create_staff(client, "nv_thuong", perms=("can_view_products",))

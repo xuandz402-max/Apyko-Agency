@@ -50,6 +50,10 @@
                     onsubmit="return confirm('Khôi phục dữ liệu từ bản {{ b.name }}? Dữ liệu hiện tại sẽ được sao lưu lại trước (bản pre-restore) rồi bị thay bằng dữ liệu trong bản này.');">
                 <button type="submit" class="btn btn-danger btn-sm">↩️ Khôi phục</button>
               </form>
+              <form method="post" action="/sao-luu/xoa/{{ b.name }}" class="inline"
+                    onsubmit="return confirm('Xoá hẳn bản sao lưu {{ b.name }}? Xoá rồi không lấy lại được.');">
+                <button type="submit" class="btn btn-ghost btn-sm">🗑️ Xoá</button>
+              </form>
             </div>
           </td>
         </tr>

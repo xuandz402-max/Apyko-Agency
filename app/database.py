@@ -881,6 +881,15 @@ def gmv_last_updated(product_id: int) -> str | None:
     return row["m"] if row is not None else None
 
 
+def _invalidate_ceo_caches() -> None:
+    """Sau khi ghi dữ liệu nguồn (GMV / Báo cáo ngày): xoá cache tổng hợp
+    của trang CEO để số liệu mới hiện ngay. Import trễ tránh vòng lặp
+    module (ceo.py dùng database.py)."""
+    from . import ceo
+
+    ceo.invalidate_caches()
+
+
 def gmv_upsert_entry(product_id: int, data: dict, updated_by: str) -> tuple:
     """Thêm dòng theo ngày; ngày đã tồn tại thì cập nhật. Trả về (entry, created)."""
     now = _utcnow()
@@ -929,6 +938,7 @@ def gmv_upsert_entry(product_id: int, data: dict, updated_by: str) -> tuple:
             entry_id = cur.lastrowid
             created = True
         row = conn.execute("SELECT * FROM gmv_entries WHERE id = ?", (entry_id,)).fetchone()
+    _invalidate_ceo_caches()
     return dict(row), created
 
 
@@ -955,13 +965,19 @@ def gmv_update_entry(entry_id: int, data: dict, updated_by: str) -> dict | None:
         if cur.rowcount == 0:
             return None
         row = conn.execute("SELECT * FROM gmv_entries WHERE id = ?", (entry_id,)).fetchone()
-    return dict(row) if row is not None else None
+    result = dict(row) if row is not None else None
+    if result is not None:
+        _invalidate_ceo_caches()
+    return result
 
 
 def gmv_delete_entry(entry_id: int) -> bool:
     with get_conn() as conn:
         cur = conn.execute("DELETE FROM gmv_entries WHERE id = ?", (entry_id,))
-        return cur.rowcount > 0
+        ok = cur.rowcount > 0
+    if ok:
+        _invalidate_ceo_caches()
+    return ok
 
 
 # --------------------------- báo cáo ngày -------------------------------
@@ -1019,13 +1035,17 @@ def daily_upsert(data: dict, updated_by: str) -> tuple:
             entry_id = cur.lastrowid
             created = True
         row = conn.execute("SELECT * FROM daily_reports WHERE id = ?", (entry_id,)).fetchone()
+    _invalidate_ceo_caches()
     return dict(row), created
 
 
 def daily_delete(report_date: str) -> bool:
     with get_conn() as conn:
         cur = conn.execute("DELETE FROM daily_reports WHERE date = ?", (report_date,))
-        return cur.rowcount > 0
+        ok = cur.rowcount > 0
+    if ok:
+        _invalidate_ceo_caches()
+    return ok
 
 
 def gmv_seed_defaults() -> int:

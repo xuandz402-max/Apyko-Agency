@@ -176,12 +176,6 @@
 </div>
 
 <div class="card">
-  <div class="card-head"><h2>📊 Doanh thu 30 ngày gần nhất</h2><a href="/bao-cao" class="link">Báo cáo ngày →</a></div>
-  <p class="muted">Ngày chưa nhập Báo cáo ngày được để trống trên biểu đồ (không tính là 0). Rê chuột lên cột để xem số.</p>
-  <div id="ceoRevChart" class="gmv-chart"></div>
-</div>
-
-<div class="card">
   <div class="card-head"><h2>⚠️ Cần chú ý</h2></div>
   {% if ov.alerts %}
   <div class="table-wrap"><table class="table">
@@ -257,52 +251,6 @@
   }
   tickClock();
   setInterval(tickClock, 30000);
-
-  // ---- biểu đồ cột doanh thu 30 ngày (SVG thuần, ngày thiếu = để trống) ----
-  var SERIES = {{ rev_series | tojson }};
-  var NS = "http://www.w3.org/2000/svg";
-  function mk(tag, attrs, parent) {
-    var el = document.createElementNS(NS, tag);
-    for (var k in attrs) el.setAttribute(k, attrs[k]);
-    if (parent) parent.appendChild(el);
-    return el;
-  }
-  function fmtVnd(v) { return Number(Math.round(v)).toLocaleString("vi-VN") + "đ"; }
-
-  var host = document.getElementById("ceoRevChart");
-  if (!host) return;
-  var vals = SERIES.revenue.filter(function (v) { return v != null; });
-  if (!vals.length) {
-    host.innerHTML = '<p class="muted">Chưa có dữ liệu doanh thu trong 30 ngày gần nhất.</p>';
-    return;
-  }
-  var W = 720, H = 220, PL = 76, PR = 12, PT = 12, PB = 22;
-  var iw = W - PL - PR, ih = H - PT - PB;
-  var max = Math.max.apply(null, vals);
-  if (max <= 0) max = 1;
-  var n = SERIES.labels.length;
-  var bw = iw / n;
-  var svg = mk("svg", {viewBox: "0 0 " + W + " " + H, "class": "gmv-chart-svg", role: "img"}, host);
-  mk("line", {x1: PL, y1: PT + ih, x2: PL + iw, y2: PT + ih, stroke: "#E5E5E5"}, svg);
-  var tTop = mk("text", {x: PL - 6, y: PT + 4, "text-anchor": "end", "class": "gmv-axis"}, svg);
-  tTop.textContent = fmtVnd(max);
-  var tBot = mk("text", {x: PL - 6, y: PT + ih + 4, "text-anchor": "end", "class": "gmv-axis"}, svg);
-  tBot.textContent = "0đ";
-  SERIES.revenue.forEach(function (v, i) {
-    var lab = SERIES.labels[i];
-    if (i % 5 === 0 || i === n - 1) {
-      var t = mk("text", {x: PL + bw * i + bw / 2, y: H - 6, "text-anchor": "middle", "class": "gmv-axis"}, svg);
-      t.textContent = lab.slice(8, 10) + "/" + lab.slice(5, 7);
-    }
-    if (v == null) return;
-    var h = ih * (v / max);
-    var rect = mk("rect", {
-      x: PL + bw * i + 1, y: PT + ih - h,
-      width: Math.max(1, bw - 2), height: h, rx: 2, "class": "ceo-bar"
-    }, svg);
-    var title = mk("title", {}, rect);
-    title.textContent = lab + " · Doanh thu: " + fmtVnd(v);
-  });
 })();
 </script>
 {% endblock %}

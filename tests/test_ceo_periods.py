@@ -302,11 +302,11 @@ def test_ceo_route_default_day_with_delta_up(client):
     assert "So sánh theo kỳ" in html
     assert "delta-up" in html
     assert "+20.0%" in html
-    # Đồng hồ + biểu đồ 30 ngày
+    # Đồng hồ giờ Việt Nam (khối biểu đồ 30 ngày đã bỏ theo yêu cầu tối giản)
     assert "ceoClock" in html
     assert "giờ Việt Nam" in html
-    assert "ceoRevChart" in html
-    assert "Doanh thu 30 ngày gần nhất" in html
+    assert "ceoRevChart" not in html
+    assert "Doanh thu 30 ngày gần nhất" not in html
 
 
 def test_ceo_route_delta_down_class(client):

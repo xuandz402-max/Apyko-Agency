@@ -344,14 +344,36 @@ def _dashboard_data() -> dict:
     }
 
 
-@router.get("/", response_class=HTMLResponse)
-def page_dashboard(request: Request):
-    user, redir = auth.page_guard(request, "can_view_products")
+@router.get("/")
+def page_home(request: Request):
+    """Trang chủ: không còn Dashboard riêng — chuyển thẳng tới trang đầu
+    tiên trong sidebar mà user có quyền xem."""
+    user, redir = auth.page_guard(request)
     if redir:
         return redir
-    data = _dashboard_data()
-    data["uni_total"] = len(lessons.list_lessons())
-    return templates.TemplateResponse("dashboard.html", _ctx(request, user, **data))
+    if _ceo_can_view(user):
+        target = "/ceo"
+    elif user.get("can_view_products"):
+        target = "/products"
+    elif user.get("can_view_daily"):
+        target = "/bao-cao"
+    elif user.get("can_view_gmv"):
+        target = "/gmv"
+    elif user.get("can_view_affiliate"):
+        target = "/affiliate"
+    elif user.get("can_view_tiktok"):
+        target = "/tiktok-onboard"
+    elif user.get("can_view_pricing"):
+        target = "/dinh-gia"
+    elif user.get("can_view_cskh"):
+        target = "/cskh"
+    elif user.get("can_view_accounts"):
+        target = "/accounts?tab=shop"
+    elif user.get("can_view_uni"):
+        target = "/uni"
+    else:
+        target = "/checklist"
+    return RedirectResponse(url=target, status_code=303)
 
 
 # ------------------------------ dashboard CEO -------------------------------
@@ -2901,6 +2923,23 @@ def page_backup_download(request: Request, name: str):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     return FileResponse(path, filename=name, media_type="application/octet-stream")
+
+
+@router.post("/sao-luu/xoa/{name}")
+def page_backup_delete(request: Request, name: str):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    _require_owner(user)
+    try:
+        message = backup.delete_backup(name)
+    except ValueError as e:
+        return RedirectResponse(
+            url="/sao-luu?err=" + quote(str(e)), status_code=303
+        )
+    return RedirectResponse(
+        url="/sao-luu?msg=" + quote(message), status_code=303
+    )
 
 
 @router.post("/sao-luu/khoi-phuc/{name}")

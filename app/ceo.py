@@ -450,6 +450,15 @@ def revenue_series(today: str, days: int = 30) -> dict:
     return {"labels": labels, "revenue": values}
 
 
+def invalidate_caches() -> None:
+    """Xoá mọi cache tổng hợp CEO — gọi sau khi ghi Báo cáo ngày / GMV để
+    trang CEO phản ánh số liệu mới ngay, không đợi hết TTL 60 giây."""
+    with _overview_lock:
+        _overview_cache.clear()
+    with _period_lock:
+        _period_cache.clear()
+
+
 def _ttl_get(key: tuple, producer) -> dict:
     """Cache TTL dùng chung cho so sánh kỳ + series (khoá theo (loại, ngày, kỳ))."""
     now = time.monotonic()

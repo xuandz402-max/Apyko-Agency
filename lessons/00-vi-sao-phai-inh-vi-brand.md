@@ -2,10 +2,6 @@
 
 ## Vì sao phải định vị thương hiệu — thoát khỏi cuộc đua giá
 
-✓ Đã học
-
- Video tóm tắt (~1,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Rất nhiều gian hàng khi mới vận hành chỉ tập trung vào 1 câu hỏi duy nhất: "làm sao để giá rẻ hơn đối thủ?". Cách này hiệu quả trong ngắn hạn, nhưng đẩy shop vào 1 cuộc đua không có điểm dừng — gọi là cuộc đua giá (race to the bottom).
 
 ## Vì sao cạnh tranh chỉ bằng giá là con đường cụt

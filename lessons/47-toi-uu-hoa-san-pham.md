@@ -1,6 +1,6 @@
 # Tối ưu hóa sản phẩm
 
-# CHECKLIST TỐI ƯU HÓA SẢN PHẨM
+## CHECKLIST TỐI ƯU HÓA SẢN PHẨM
 
 Người kiểm tra: ____________________Ngày: ____________________Sản phẩm/Tên Listing: _________________________________
 

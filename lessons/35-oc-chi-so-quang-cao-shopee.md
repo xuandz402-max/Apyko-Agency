@@ -2,8 +2,6 @@
 
 ## Đọc chỉ số quảng cáo Shopee
 
- Video tóm tắt (~2,6 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Bài này giả định đã học "Hành trình khách hàng" (Buổi 1) và "Cơ bản về Shopee Ads" (Buổi 6). Nếu chưa nắm, quay lại 2 bài đó trước khi học tiếp phần chỉ số.
 
 Phải đọc được con số Shopee trả về để biết tiền bỏ ra chảy đi đâu và có hiệu quả không.

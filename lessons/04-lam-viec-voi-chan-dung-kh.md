@@ -2,8 +2,6 @@
 
 ## Làm việc với từng Chân dung khách hàng — Hành động ngay từ khi nhận shop
 
-✓ Đã học
-
 Bài trước đã giúp hiểu RÕ 3 chân dung khách hàng Apyko Uni Care — bài này chuyển hoá hiểu biết đó thành hành động cụ thể ngay từ ngày đầu tiên nhận bàn giao 1 shop, để tránh áp dụng chung 1 cách làm cho mọi khách trong khi mỗi chân dung có nỗi sợ và kỳ vọng khác hẳn nhau.
 
 Bước đầu tiên bắt buộc: xác nhận lại ĐÚNG khách đang thuộc chân dung nào — dựa theo bảng tiêu chí đã học ở bài trước (kinh nghiệm bán sàn, doanh thu hiện tại, nguồn lực), không suy đoán theo cảm tính. Nếu khách nằm ở ranh giới giữa 2 chân dung, ưu tiên hỏi trực tiếp Leader/CEO trước khi chọn cách tiếp cận, thay vì tự đoán và áp dụng sai ngay từ đầu.

@@ -2,10 +2,6 @@
 
 ## Quy trình tối ưu chiến dịch quảng cáo — 3 giai đoạn
 
-✓ Đã học
-
- Video tóm tắt (~3,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 ## Giai đoạn 1: Phân tích insight khách hàng để nắm Key
 
 Mọi thứ bắt đầu từ hiểu khách. Insight là sự thật ngầm hiểu (lý do mua), Key là điểm mấu chốt khách chọn shop mình.

@@ -2,8 +2,6 @@
 
 ## Tối ưu 9 slot hình ảnh
 
- Video tóm tắt (~45 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Khách hàng ra quyết định phần lớn dựa trên yếu tố trực quan. Việc bỏ trống vị trí ảnh hoặc đăng ảnh trùng lặp sẽ làm giảm điểm chất lượng của bài đăng. Một bài đăng chuẩn cần đủ 1 đoạn phim + 9 ảnh, mỗi vị trí có vai trò riêng:
 
 Đoạn phim thực tế (bắt buộc): thời lượng dưới 60 giây. Cần quay cận cảnh chất liệu, phom dáng hoặc thao tác sử dụng sản phẩm. Tính chân thực giúp xóa bỏ sự hoài nghi của người mua.
@@ -24,9 +22,7 @@ Cực kỳ quan trọng để giảm thiểu tỷ lệ hoàn hàng do đặt nh�
 
 Dùng hình ảnh đánh giá 5 sao thực tế từ khách hàng cũ, kèm hình ảnh tuyên bố cam kết dịch vụ của Apyko Uni Care: quy trình đóng gói chuẩn, hỗ trợ đổi trả 15 ngày, thời gian xử lý đơn siêu tốc.
 
-# Bố cục mô tả sản phẩm
-
- Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+## Bố cục mô tả sản phẩm
 
 Khách hàng lướt rất nhanh và chỉ tìm kiếm thông tin kỹ thuật. Đồng thời, hệ thống máy học sẽ quét mạnh nhất ở những dòng đầu tiên. Mô tả sản phẩm phải viết dưới dạng thông báo, gạch đầu dòng và rải từ khóa thông minh. Bắt buộc tuân thủ cấu trúc 5 phần sau:
 

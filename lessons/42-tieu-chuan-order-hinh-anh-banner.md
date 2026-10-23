@@ -1,14 +1,12 @@
 # Tiêu chuẩn Order — Hình ảnh & Banner
 
-# Tiêu chuẩn Order — Hình ảnh & Banner
+## Tiêu chuẩn Order — Hình ảnh & Banner
 
 Quản trị và xây hệ thống
 
 Hướng dẫn tư duy khi đặt order Banner/Ảnh SP trên App Care — viết brief rõ ràng để Team Design làm đúng ý ngay từ lần đầu, tránh phải sửa đi sửa lại nhiều lần.
 
 ## Trước khi đặt order — Trả lời đủ 5 câu hỏi
-
- Video tóm tắt bài học cũ — đang chờ dựng lại theo quy trình mới, tạm thời đọc phần chữ bên dưới là bản cập nhật chính xác nhất.
 
 Order càng rõ ràng ngay từ đầu, Team Design càng ít phải hỏi lại/sửa lại — tiết kiệm thời gian cho cả 2 bên. Trước khi mở form "Đặt order thiết kế", kiểm tra 1 điều kiện cần và tự trả lời đủ 5 câu hỏi sau.
 
@@ -39,8 +37,6 @@ Chọn đúng Mức ưu tiên theo nhu cầu THẬT — không phải lúc nào 
 Nhớ lại quy trình đã học: nếu Team Design giao demo chưa đúng ý, trả lại chỉnh sửa trên CÙNG 1 order (dùng nút Sửa order) — không tạo order mới, tránh Team Design bị rối không biết theo bản nào. Sale cả tháng theo lịch → gộp 1 lệnh đầu tháng kèm lịch từng ngày, không đặt từng cái rời rạc.
 
 ## Viết Brief rõ ràng — theo đúng từng ô trên form Order
-
- Video tóm tắt bài học cũ — đang chờ dựng lại theo quy trình mới, tạm thời đọc phần chữ bên dưới là bản cập nhật chính xác nhất.
 
 ## So sánh Brief mơ hồ và Brief cụ thể
 
@@ -88,11 +84,11 @@ Mô tả đủ: tông màu, nội dung chữ cần có, phong cách mong muốn,
 
 ## Dùng AI hỗ trợ đúng cách khi đặt order
 
-Nên làm 
+Nên làm
 
 Shop chưa có mẫu/ý tưởng sẵn → tự gen nhanh 1–2 ảnh AI để shop tham khảo hoặc để đính kèm brief. Team Design nhìn ảnh AI đó sẽ hiểu hướng làm nhanh hơn nhiều so với chỉ đọc mô tả bằng chữ.
 
-Không nên làm 
+Không nên làm
 
 Lấy chính ảnh Team Design đã thiết kế, đưa cho AI "chấm điểm/nhận xét", rồi copy nguyên lời AI để feedback lại cho Team Design. Nhận xét của AI chỉ nên để tự mình tham khảo — nếu bản thiết kế chưa đạt, hãy tự đọc và góp ý bằng lời của chính mình, hoặc trả job kèm lý do rõ ràng. Team Design đã bỏ công sức và chất xám vào sản phẩm, cần được góp ý một cách tôn trọng.
 

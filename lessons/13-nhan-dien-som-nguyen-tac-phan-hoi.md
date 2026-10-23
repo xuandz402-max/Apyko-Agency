@@ -2,10 +2,6 @@
 
 ## Nhận diện sớm & nguyên tắc phản hồi khi khách không hài lòng
 
-✓ Đã học
-
- Video tóm tắt (~1,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Khủng hoảng quan hệ khách hàng hiếm khi bùng phát đột ngột — thường có dấu hiệu cảnh báo từ trước, và cách phản hồi ngay LẦN ĐẦU khi khách nói thẳng sự không hài lòng sẽ quyết định tình huống có leo thang hay được xử lý êm xuôi.
 
 ## Nhận diện sớm — dấu hiệu cảnh báo trước khi khách nói thẳng

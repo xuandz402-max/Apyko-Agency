@@ -2,8 +2,6 @@
 
 ## Shopee Ads là gì
 
- Video tóm tắt (~50 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Shopee Ads là hình thức shop trả tiền để mua vị trí hiển thị tốt hơn trong cỗ máy phân phối của sàn — sản phẩm tốt mà không ai thấy thì cũng không bán được, quảng cáo là cách chủ động kéo sản phẩm ra trước mắt khách thay vì chờ được xếp ngẫu nhiên.
 
 Cơ chế tính phí (quan trọng): Shopee tính tiền theo CPM (Cost Per Mille) — cứ quảng cáo hiện ra là mất tiền, dù khách có bấm vào hay không. Vì vậy hiển thị đúng người quan trọng hơn hiển thị nhiều.

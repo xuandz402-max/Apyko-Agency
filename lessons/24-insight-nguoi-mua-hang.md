@@ -66,7 +66,7 @@ Thử đổi câu insight vừa viết sang MỘT NGÀNH HÀNG KHÁC hẳn (VD t
 
 Vận hành
 
-#### Đọc đánh giá/bình luận sản phẩm
+### Đọc đánh giá/bình luận sản phẩm
 
 Đọc đánh giá của shop mình VÀ shop đối thủ cùng ngành hàng — chú ý điều khách khen thật (không phải lời khen chung chung) và điều khách chê/phàn nàn. Đây là dữ liệu thật từ chính người đã mua, đáng tin hơn suy đoán.
 
@@ -80,7 +80,7 @@ Biết chính xác điều người mua thật sự quan tâm khi dùng sản ph
 
 Vận hành
 
-#### Soi sản phẩm bán chạy cùng ngành — luôn hỏi "Vì sao"
+### Soi sản phẩm bán chạy cùng ngành — luôn hỏi "Vì sao"
 
 Xem các sản phẩm bán chạy nhất cùng ngành hàng, rồi tự hỏi: vì sao họ thiết kế ảnh như thế này? Vì sao họ chạy CTKM kiểu này? Vì sao họ đặt tên và viết mô tả như vậy? Trả lời được câu hỏi đó thường sẽ "vỡ" ra 1 insight áp dụng được cho gian hàng mình.
 
@@ -92,7 +92,7 @@ Có ví dụ thực tế đã được thị trường kiểm chứng, không ph
 
 Vận hành
 
-#### Đọc câu hỏi khách hay hỏi qua Chat/Q&A
+### Đọc câu hỏi khách hay hỏi qua Chat/Q&A
 
 Câu hỏi lặp đi lặp lại từ nhiều khách khác nhau chính là nỗi lo/mối quan tâm thật — cho thấy phần đăng sản phẩm, thiết kế hình ảnh hoặc thông điệp truyền thông của shop chưa đủ tốt để khách an tâm mà không cần hỏi lại, ảnh hưởng trực tiếp tới tỷ lệ chuyển đổi.
 

@@ -1,6 +1,6 @@
 # Nhân sự Vận hành
 
-# Nhân sự Vận hành
+## Nhân sự Vận hành
 
 JD-NSVH-01 · Phiên bản 1.0 · Hiệu lực 01.07.2026 · Phòng Vận hành, Apyko Uni Care.
 
@@ -8,7 +8,7 @@ JD-NSVH-01 · Phiên bản 1.0 · Hiệu lực 01.07.2026 · Phòng Vận hành,
 
 Sứ mệnh vị trí: Nhân sự Vận hành là người trực tiếp vận hành gian hàng Shopee cho khách hàng của Apyko Uni Care. Vai trò là biến cam kết dịch vụ trong hợp đồng thành kết quả kinh doanh thực tế trên gian hàng của khách, thông qua việc thực hiện đầy đủ đầu mục công việc, chăm sóc khách hàng chuyên nghiệp và đạt mục tiêu doanh số đã cam kết.
 
-# Chức năng
+## Chức năng
 
 ## Phạm vi phụ trách
 
@@ -20,7 +20,7 @@ Sứ mệnh vị trí: Nhân sự Vận hành là người trực tiếp vận h
 
 Cấu trúc báo cáo: Giám đốc Apyko Uni Care → Trưởng phòng Vận hành → Nhân sự Vận hành (bạn) → phối hợp ngang: Bộ phận Thiết kế · Bộ phận Kiểm soát chất lượng · Kế toán · Phòng Kinh doanh và Marketing.
 
-# Nhiệm vụ
+## Nhiệm vụ
 
 ## 4 nguyên tắc làm việc
 
@@ -95,7 +95,7 @@ Nhóm 3 — Cam kết doanh số
 | Ảnh thiết kế | Theo gói dịch vụ | Đủ số lượng trong thời gian gói dịch vụ |
 | Banner thiết kế | Theo gói dịch vụ | Đủ số lượng trong thời gian gói dịch vụ |
 
-# Quyền hạn
+## Quyền hạn
 
 ## Quyền được tự quyết
 
@@ -120,8 +120,6 @@ Nhóm 3 — Cam kết doanh số
 - Có khiếu nại chính thức từ khách hàng
 
 ## Nhịp làm việc, Yêu cầu năng lực & Cơ chế lương
-
- Video tóm tắt (~2,7 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 ## Nhịp làm việc theo ngày, tuần, tháng
 

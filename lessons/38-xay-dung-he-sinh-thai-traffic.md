@@ -2,10 +2,6 @@
 
 ## Xây dựng hệ sinh thái Traffic
 
-✓ Đã học
-
- Video tóm tắt (~1,4 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 ## Mục đích
 
 Chủ động tạo điểm chạm, kéo tệp Mức 3 (nhóm khách có ROAS cao nhất). Làm tuần tự từ Level 1 đến Level 5.

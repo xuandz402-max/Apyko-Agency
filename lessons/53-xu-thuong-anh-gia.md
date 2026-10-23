@@ -1,6 +1,6 @@
 # Xu Thường Đánh Gíá
 
-# CHECKLIST – XU THƯỞNG ĐÁNH GIÁ
+## CHECKLIST – XU THƯỞNG ĐÁNH GIÁ
 
 ## 1. TẠO CHƯƠNG TRÌNH MỚI
 

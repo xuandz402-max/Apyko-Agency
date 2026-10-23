@@ -2,8 +2,6 @@
 
 ## Chân dung khách hàng APYKO
 
-✓ Đã học
-
 Tài liệu này phân chân dung khách hàng Apyko Uni Care theo nguồn lực hiện có (những gì khách đang có), không theo nhu cầu hay doanh thu. Cách phân này thực dụng cho toàn bộ team — Sales nhìn ra gói phù hợp, CSKH và Vận hành biết khách đang ở giai đoạn nào, Marketing viết nội dung trúng tâm lý khách hàng.
 
 ## Bảng tổng hợp 3 nhóm khách hàng

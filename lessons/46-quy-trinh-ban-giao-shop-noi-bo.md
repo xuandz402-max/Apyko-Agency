@@ -1,6 +1,6 @@
 # Quy trình Bàn giao Shop Nội bộ
 
-# Quy trình Bàn giao Shop Nội bộ
+## Quy trình Bàn giao Shop Nội bộ
 
 Quản trị và xây hệ thống
 
@@ -24,7 +24,7 @@ Chuẩn hóa việc chuyển giao shop giữa nhân sự trong nội bộ Apyko 
 
 Người bàn giao
 
-#### Chọn người nhận, ngày bàn giao và ghi chú tình trạng shop
+### Chọn người nhận, ngày bàn giao và ghi chú tình trạng shop
 
 Vào trang chi tiết shop cần bàn giao, bấm "Bàn giao". Chọn người nhận trong danh sách, chọn ngày bàn giao (mặc định hôm nay), có thể ghi chú tình trạng shop (không bắt buộc — VD: đã set xong 3 SP, còn chờ ảnh khách, lưu ý giá…).
 
@@ -36,7 +36,7 @@ Xác định đúng người nhận, mốc ngày và tình trạng bàn giao l�
 
 Người bàn giao
 
-#### Bấm "Gửi bàn giao"
+### Bấm "Gửi bàn giao"
 
 Yêu cầu chuyển sang trạng thái "Chờ xác nhận". Hệ thống báo ngay vào Lark và gửi thông báo trong app cho người nhận, kèm link vào thẳng trang Bàn giao.
 
@@ -46,7 +46,7 @@ Người nhận biết ngay có shop đang chờ mình tiếp nhận
 
 Người nhận
 
-#### Vào trang Bàn giao, xác nhận hoặc từ chối
+### Vào trang Bàn giao, xác nhận hoặc từ chối
 
 Mục "Shop chờ bạn tiếp nhận" liệt kê đầy đủ tên shop, người bàn giao, ngày bàn giao và ghi chú (nếu có). Bấm "Xác nhận tiếp nhận" hoặc "Từ chối".
 
@@ -56,7 +56,7 @@ Bàn giao được xử lý dứt điểm, không treo vô thời hạn
 
 Người nhận
 
-#### Shop chính thức đổi người phụ trách ngay khi xác nhận
+### Shop chính thức đổi người phụ trách ngay khi xác nhận
 
 Xác nhận xong, shop lập tức chuyển sang người nhận (đổi cả người phụ trách lẫn team theo người nhận) — không cần chờ duyệt thêm bước nào. Nếu từ chối, shop vẫn thuộc người cũ như bình thường.
 

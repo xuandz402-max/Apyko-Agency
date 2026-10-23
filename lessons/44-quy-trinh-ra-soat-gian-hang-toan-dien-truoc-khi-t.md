@@ -1,14 +1,12 @@
 # Quy trình Rà soát Gian hàng Toàn diện trước khi T…
 
-# Quy trình Rà soát Gian hàng Toàn diện trước khi Tiếp nhận Triển khai
+## Quy trình Rà soát Gian hàng Toàn diện trước khi Tiếp nhận Triển khai
 
 Quản trị và xây hệ thống
 
 Nhận diện 100% rủi ro tiềm ẩn, đánh giá chính xác "sức khỏe" gian hàng để thiết lập kế hoạch triển khai an toàn, tối ưu hiệu quả và tránh tranh chấp chỉ số với đối tác sau khi tiếp nhận.
 
 ## Tổng quan quy trình & 7 bước rà soát
-
- Video tóm tắt (~1 phút 10 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 ## Mục đích
 

@@ -2,8 +2,6 @@
 
 ## Apyko Uni là gì?
 
- Video tóm tắt (~2,5 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 →
 
 Đọc bài này đầu tiên — 3 phút để hiểu rõ Apyko Uni Care Uni dùng để làm gì, trước khi bắt đầu học hoặc tra cứu bất kỳ nội dung nào khác.
@@ -40,31 +38,31 @@ Ngoài ra còn có Mô tả công việc (JD từng vị trí) và Lộ trình O
 
 1
 
-#### Mới vào công ty
+### Mới vào công ty
 
 Học theo đúng Lộ trình Onboarding được gán — không cần tự hỏi "hôm nay học gì".
 
 2
 
-#### Quên hoặc không chắc cách làm 1 việc
+### Quên hoặc không chắc cách làm 1 việc
 
 Dùng ô tìm kiếm ở Tổng quan, gõ từ khóa không cần dấu — ra ngay đúng quy trình cần xem.
 
 3
 
-#### Cần kịch bản/mẫu câu trao đổi với khách
+### Cần kịch bản/mẫu câu trao đổi với khách
 
 Hầu hết quy trình đều có sẵn kịch bản chuẩn — copy dùng ngay, không cần tự soạn lại.
 
 4
 
-#### Trước khi thi đánh giá năng lực
+### Trước khi thi đánh giá năng lực
 
 Ôn lại đúng khóa học liên quan trước khi làm bài thi.
 
 5
 
-#### Cần biết rõ phạm vi công việc của vị trí mình
+### Cần biết rõ phạm vi công việc của vị trí mình
 
 Xem Mô tả công việc đúng vị trí đang đảm nhận.
 

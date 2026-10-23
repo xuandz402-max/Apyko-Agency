@@ -2,8 +2,6 @@
 
 ## Nội quy lao động
 
-✓ Đã học
-
 Áp dụng cho tất cả người lao động tại Apyko Uni Group, kể cả người đang thử việc/học việc. Đọc kỹ và ký ngay hôm nay — đây là căn cứ xử lý khi có vi phạm kỷ luật.
 
 ## A. Thời gian làm việc, nghỉ ngơi

@@ -2,10 +2,6 @@
 
 ## Khi khách dọa dừng hợp đồng hoặc so sánh với Agency khác
 
-✓ Đã học
-
- Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 ## Khi khách dọa dừng hợp đồng
 
 Mẫu phản hồi tạm thời trong lúc chờ cấp trên xử lý:

@@ -2,10 +2,6 @@
 
 ## Quản trị phạm vi công việc & Tư duy phát triển doanh thu
 
-✓ Đã học
-
- Video tóm tắt (~50 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Để đảm bảo hiệu suất công việc và mang lại giá trị cao nhất cho khách hàng, nhân sự cần nắm vững các gói dịch vụ và các chỉ số đo lường tương ứng.
 
 ## 1. Nhận diện và xử lý theo Phạm vi công việc (Scope of Work)

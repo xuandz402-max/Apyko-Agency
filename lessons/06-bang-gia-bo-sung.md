@@ -2,8 +2,6 @@
 
 ## Bảng giá dịch vụ bổ sung
 
-✓ Đã học
-
 Ngoài 2 gói vận hành chính (Apyko Uni Care/Master Care), team còn có các dịch vụ bổ sung theo yêu cầu — nắm rõ để tư vấn đúng khi khách cần thêm ngoài gói chính.
 
 ## 1. TA Team — Tăng lượt bán (Seeding) & Tăng Follow

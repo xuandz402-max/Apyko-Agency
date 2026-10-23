@@ -2,10 +2,6 @@
 
 ## 3 Nguyên tắc QUAN TRỌNG trong sử dụng ngôn từ CSKH
 
-✓ Đã học
-
- Video tóm tắt (~1,1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Đây là 3 nguyên tắc bắt buộc tuân thủ khi giao tiếp với khách hàng tại Apyko Uni Care — vi phạm làm giảm sự chuyên nghiệp và uy tín của cả team trong mắt khách hàng. Áp dụng cho MỌI kênh: chat, gọi điện, email, họp trực tiếp.
 
 ## 1. Không sử dụng từ "cho"

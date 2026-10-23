@@ -89,7 +89,7 @@ Gõ "Áo thun nam trắng" nghĩa là đã cầm tiền sẵn. Mở 7–10 shop 
 
 Hãy đọc kỹ tài liệu này. Nếu đã hiểu rõ luật chơi, chúng ta sẽ bước vào bài học tối ưu hình ảnh và đăng sản phẩm chuẩn thuật toán!
 
-# Hành trình khách hàng
+## Hành trình khách hàng
 
 ## Hành trình khách hàng
 

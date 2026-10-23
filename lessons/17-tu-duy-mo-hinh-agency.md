@@ -2,10 +2,6 @@
 
 ## Tư duy mô hình Agency — Chuyên gia đồng hành vs Người thao tác kỹ thuật
 
-✓ Đã học
-
- Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Khách hàng hợp tác với Apyko Uni Care không phải để tìm kiếm một nhân sự chỉ biết nhấp chuột trên hệ thống. Họ đầu tư chi phí để mua "Năng lực chuyên môn", "Giải pháp tối ưu" và "Sự an tâm". Việc phân biệt rõ hai nhóm tư duy sau đây là cơ sở để đánh giá năng lực của một chuyên viên vận hành.
 
 ## 1. Tư duy tiếp nhận yêu cầu chiến dịch Quảng cáo (Shopee Ads)

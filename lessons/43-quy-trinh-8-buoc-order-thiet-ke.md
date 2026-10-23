@@ -1,6 +1,6 @@
 # Quy trình 8 bước Order Thiết kế
 
-# Quy trình 8 bước Order Thiết kế
+## Quy trình 8 bước Order Thiết kế
 
 Quản trị và xây hệ thống
 
@@ -26,7 +26,7 @@ Quy trình cũ để Team Design tự sắp lịch theo từng order rời rạc
 
 Nhân viên Vận hành
 
-#### Đặt order thiết kế — đúng lịch, đủ thông tin
+### Đặt order thiết kế — đúng lịch, đủ thông tin
 
 Chỉ đặt được order thường trong Ngày 1 → 5 hàng tháng, hoặc sáng Thứ Ba & Thứ Sáu (9:00–12:00) hàng tuần. Điền đủ: link sản phẩm, ảnh gốc, tên hãng/thương hiệu, yêu cầu cụ thể, ngày sử dụng — và chọn đúng loại (Banner / Ảnh đại diện / Ảnh thông tin sản phẩm). Thật sự gấp mới chọn Ưu tiên = Gấp, kèm lý do rõ ràng.
 
@@ -36,7 +36,7 @@ Order được tạo, hệ tự sinh 2 mốc: hạn giao khách + hạn gửi de
 
 Team Design
 
-#### Nhận job
+### Nhận job
 
 Hệ thống tự chia job cho từng bạn Design theo khối lượng đang tải — làm xong việc đang có mới nhận thêm job mới, không ôm nhiều job cùng lúc. Thiếu thông tin thì yêu cầu Nhân viên Vận hành bổ sung.
 
@@ -46,7 +46,7 @@ Việc được nhận, đủ thông tin để làm
 
 Team Design
 
-#### Làm bản HOÀN CHỈNH
+### Làm bản HOÀN CHỈNH
 
 Bản gửi duyệt phải là bản hoàn chỉnh — đúng bố cục, màu, chữ, hình — không phải bản nháp thô. Vì sau khi đủ 2 phiếu duyệt, bước tiếp theo chỉ là xuất file, không thiết kế lại.
 
@@ -56,7 +56,7 @@ Bản demo (= bản chính thức) sẵn sàng gửi duyệt
 
 Team Design
 
-#### Gửi demo lên duyệt — trước "hạn gửi demo"
+### Gửi demo lên duyệt — trước "hạn gửi demo"
 
 Nộp trước mốc "hạn gửi demo" (đơn thường: sớm hơn hạn giao khách ít nhất 3 ngày làm việc; đơn gấp: theo mốc hệ báo riêng) — đủ thời gian để 2 bên duyệt và sửa nếu cần mà vẫn kịp hạn giao khách.
 
@@ -66,7 +66,7 @@ Demo được gửi lên hệ thống duyệt
 
 Trưởng khối Kinh doanh & Nhân viên Vận hành
 
-#### Duyệt song song — 2 phiếu độc lập
+### Duyệt song song — 2 phiếu độc lập
 
 Cả 2 bên duyệt độc lập, không cần ai trước ai sau. Trong lúc chờ Trưởng khối, Vận hành cứ gửi khách xem trước để gom góp ý sớm. Trưởng khối chưa duyệt quá 8 giờ làm việc (đơn gấp: 4 giờ) → hệ tự điền phiếu để không kẹt nhịp. Bất kỳ ai trả lại → quay lại bước 3, Design làm lại.
 
@@ -76,7 +76,7 @@ Cả 2 bên duyệt độc lập, không cần ai trước ai sau. Trong lúc ch
 
 Team Design
 
-#### Xuất file chính thức
+### Xuất file chính thức
 
 Chỉ khi đủ CẢ 2 phiếu duyệt. Xuất đúng kích thước sàn, đúng định dạng, bỏ watermark, giao Nhân viên Vận hành lên shop — không thiết kế lại.
 
@@ -86,7 +86,7 @@ File chuẩn được giao cho Vận hành
 
 Nhân viên Vận hành
 
-#### Lên shop
+### Lên shop
 
 Đăng bản thiết kế chính thức lên gian hàng.
 
@@ -96,7 +96,7 @@ Bản thiết kế đã có mặt trên gian hàng
 
 Nhân viên Vận hành
 
-#### Đóng job kịp thời
+### Đóng job kịp thời
 
 Order đã nộp / đã lên shop thì xác nhận đóng ngay — không để đơn treo, không để cuối ngày mới nhớ ra.
 

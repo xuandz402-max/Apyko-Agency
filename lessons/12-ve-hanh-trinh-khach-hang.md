@@ -2,10 +2,6 @@
 
 ## Vẽ hành trình khách hàng thuê dịch vụ & phát hiện sớm rủi ro rời bỏ
 
-✓ Đã học
-
- Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Bài "Nhận diện sớm" ở module Xử lý Khủng hoảng đã dạy cách đọc dấu hiệu hành vi ngày-qua-ngày (khách trả lời cụt hơn, hỏi kỹ điều khoản hơn...). Bài này bổ sung thêm 1 lớp nhìn khác: rủi ro rời bỏ tập trung nhiều nhất vào GIAI ĐOẠN NÀO trong suốt vòng đời hợp tác — biết trước giai đoạn nguy hiểm để chủ động phòng ngừa từ sớm, thay vì chỉ chờ đọc dấu hiệu hàng ngày.
 
 ## 4 giai đoạn vòng đời khách hàng thuê dịch vụ

@@ -2,10 +2,6 @@
 
 ## Tỷ lệ & thời gian phản hồi
 
-✓ Đã học
-
- Video tóm tắt (~1,2 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Nhiều nhân sự nghĩ chat với khách chỉ là việc "trả lời cho lịch sự" — thực ra đây là 1 trong những điểm chạm ảnh hưởng trực tiếp nhất tới việc chốt đơn. Khách đang phân vân giữa 2-3 shop bán y hệt nhau, ai trả lời nhanh và đúng trọng tâm hơn thường là người chốt được đơn trước.
 
 ## 2 chỉ số nền tảng cần theo dõi
@@ -42,6 +38,6 @@ Nếu tốc độ phản hồi đã tốt nhưng tỷ lệ chat ra đơn vẫn t
 
 Theo dõi định kỳ cả 4 chỉ số trên (tỷ lệ phản hồi, thời gian phản hồi, tỷ lệ chat ra đơn, phân loại nội dung chat) qua Business Insights, đúng phương pháp chẩn đoán đã học ở bài "Đọc báo cáo Business Insights" — không chỉ nhìn tốc độ trả lời rồi kết luận CSKH đã tốt.
 
-# Tin nhắn tự động & FAQ
+## Tin nhắn tự động & FAQ
 
 Cách cài đặt Tin nhắn tự động (Auto-reply), Hỏi đáp tự động (FAQ).

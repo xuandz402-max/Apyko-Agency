@@ -2,10 +2,6 @@
 
 ## Tại sao PHẢI gửi báo cáo hàng ngày — không phải thủ tục hình thức
 
-✓ Đã học
-
- Video tóm tắt (~1,1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 →
 
 Nhiều nhân sự nghĩ gửi báo cáo hàng ngày chỉ là "làm cho có", tốn thời gian. Thực tế đây là 1 trong những việc bảo vệ chính nhân sự và Apyko Uni Care nhiều nhất — đọc hết bài này để hiểu rõ vì sao.

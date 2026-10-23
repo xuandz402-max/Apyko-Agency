@@ -2,8 +2,6 @@
 
 ## Phân tích điểm nghẽn
 
- Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Khi chiến dịch không ra kết quả, phải biết vấn đề nằm ở đâu để sửa đúng chỗ — không phải cứ thấy quảng cáo không hiệu quả là tăng tiền.
 
 ## Traffic thấp → vấn đề do đâu?

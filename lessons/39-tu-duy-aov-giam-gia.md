@@ -2,8 +2,6 @@
 
 ## Tư duy AOV: Vì sao Voucher không phải là "giảm giá"
 
- Video tóm tắt (~1,4 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Rất nhiều nhân sự khi mới vận hành 1 gian hàng có thói quen đặt voucher theo kiểu "tròn số cho dễ nhớ": giảm 5k cho đơn từ 100k, giảm 10k cho đơn từ 200k. Cách làm này không sai, nhưng non và cơ bản — vì nó bỏ lỡ hoàn toàn mục tiêu thật sự của 1 voucher.
 
 ## Voucher không phải là "giảm giá" — mà là đòn bẩy tăng AOV

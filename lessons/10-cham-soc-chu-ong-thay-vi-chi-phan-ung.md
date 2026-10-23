@@ -2,10 +2,6 @@
 
 ## Chăm sóc chủ động thay vì chỉ phản ứng
 
-✓ Đã học
-
- Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Phần lớn thời gian, nhân sự vận hành đang ở tư duy Reactive — đợi khách hàng hỏi/phàn nàn thì mới xử lý. Tư duy Proactive là chủ động báo trước cho khách những thông tin họ CẦN biết, trước khi họ phải tự hỏi hoặc tự phát hiện ra.
 
 Reactive — bị động

@@ -2,7 +2,7 @@
 
 Quy tắc & cách làm việc
 
-# Quy trình làm việc
+## Quy trình làm việc
 
 Bạn đang trong lộ trình onboarding — vẫn xem được đầy đủ như bình thường.
 

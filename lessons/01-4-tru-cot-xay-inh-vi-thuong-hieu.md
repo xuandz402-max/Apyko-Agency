@@ -2,10 +2,6 @@
 
 ## 4 Trụ cột xây định vị thương hiệu cho 1 gian hàng Shopee
 
-✓ Đã học
-
- Video tóm tắt (~1,6 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Từ tư duy "thoát khỏi cuộc đua giá" ở bài trước, dưới đây là 4 trụ cột cụ thể để xây định vị cho 1 gian hàng Shopee, và quy trình để bắt tay thực hiện.
 
 ## 4 trụ cột xây định vị thương hiệu

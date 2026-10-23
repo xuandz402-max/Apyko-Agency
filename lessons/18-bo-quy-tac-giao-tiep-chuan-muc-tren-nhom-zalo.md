@@ -1,10 +1,6 @@
 # Bộ quy tắc giao tiếp chuẩn mực trên nhóm Zalo
 
-# Bộ quy tắc giao tiếp chuẩn mực trên nhóm Zalo
-
-✓ Đã học
-
- Video tóm tắt (~1,2 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
+## Bộ quy tắc giao tiếp chuẩn mực trên nhóm Zalo
 
 Việc trao đổi trên nhóm Zalo làm việc không phải là hình thức nhắn tin thông thường — đây là hoạt động báo cáo tiến độ và chăm sóc khách hàng CHÍNH THỨC. Toàn bộ nhân sự bắt buộc áp dụng các tiêu chuẩn sau.
 

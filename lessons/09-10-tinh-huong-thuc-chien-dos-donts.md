@@ -2,10 +2,6 @@
 
 ## 10 Tình huống thực chiến — DOs & DON’Ts
 
-✓ Đã học
-
- Video tóm tắt (~40 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Bảng dưới đây là 10 tình huống thực chiến thường gặp nhất khi chăm sóc khách hàng — thuộc lòng cách xử lý CHUẨN MỰC trước khi làm việc trực tiếp với khách.
 
 | Tình huống | SAI (Cấm sử dụng) | CHUẨN MỰC (Cần áp dụng) |

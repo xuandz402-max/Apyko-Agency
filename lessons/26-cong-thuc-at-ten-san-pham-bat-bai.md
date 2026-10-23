@@ -1,6 +1,6 @@
 # Công thức đặt tên sản phẩm "bất bại"
 
-# Công thức đặt tên sản phẩm "bất bại"
+## Công thức đặt tên sản phẩm "bất bại"
 
 Tên sản phẩm là yếu tố quan trọng nhất quyết định việc bài đăng có xuất hiện khi khách hàng tìm kiếm hay không. Tuyệt đối không đặt tên theo cảm tính.
 

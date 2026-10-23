@@ -2,8 +2,6 @@
 
 ## 2 Kỹ thuật Set Voucher tăng AOV + Xây bậc thang khuyến mãi
 
- Video tóm tắt (~1,8 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Từ tư duy "voucher = đòn bẩy AOV" ở bài trước, dưới đây là 2 kỹ thuật cụ thể để áp dụng, và cách xây cả hệ thống bậc thang khuyến mãi cho 1 gian hàng.
 
 ## Kỹ thuật 1: Voucher toàn shop theo ngưỡng đơn hàng (mồi nhử AOV)

@@ -2,10 +2,6 @@
 
 ## Các chỉ số bắt buộc phải thuộc lòng
 
-✓ Đã học
-
- Video tóm tắt (~40 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Trước khi chạy quảng cáo, phải thuộc lòng 4 chỉ số nền tảng sau — đây là ngôn ngữ chung để đọc hiệu quả một chiến dịch:
 
 | Chỉ số | Ý nghĩa |

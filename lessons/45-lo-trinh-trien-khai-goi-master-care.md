@@ -1,14 +1,12 @@
 # Lộ trình Triển khai Gói Master Care
 
-# Lộ trình Triển khai Gói Master Care
+## Lộ trình Triển khai Gói Master Care
 
 Quản trị và xây hệ thống
 
 Mốc triển khai và việc nhân sự cần làm ở từng gói Master Care (1/3/6 tháng) — từ ngày nhận shop tới báo cáo tổng kết, để hiểu rõ vai trò của mình cần làm gì với từng gói dịch vụ.
 
 ## Gói Master 1 Tháng — Lộ trình 30 ngày
-
- Video tóm tắt (~1 phút 50 giây) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
 
 →
 
@@ -20,7 +18,7 @@ Vận hành gian hàng cam kết doanh số · Áp dụng từ tháng 6/2026.
 
 Ngày 1 – 7
 
-#### Setup Gian hàng và Triển khai
+### Setup Gian hàng và Triển khai
 
 Lập hoặc tiếp quản shop Shopee, setup 50 sản phẩm chuẩn SEO, khởi chạy GMV Max và khuyến mãi. Ngày 1-7 có 2 lộ trình khác nhau tùy gian hàng mới hay đã có sẵn — xem chi tiết bên dưới.
 
@@ -30,7 +28,7 @@ Khách nhận: Gian hàng hoàn chỉnh + kế hoạch bán hàng đã duyệt
 
 Ngày 8
 
-#### Báo cáo Tuần đầu
+### Báo cáo Tuần đầu
 
 Tổng kết kết quả tuần đầu, đề xuất giải pháp tối ưu, thống nhất kế hoạch 3 tuần tới.
 
@@ -40,7 +38,7 @@ Khách nhận: Báo cáo tuần đầu kèm định hướng tối ưu 3 tuần 
 
 Ngày 9 – 30
 
-#### Tối ưu và Scale Chiến lược
+### Tối ưu và Scale Chiến lược
 
 Tối ưu GMV Max hàng ngày, điều chỉnh giá/Voucher/Flash Sale theo hiệu quả, review chiến lược hàng tuần.
 
@@ -50,7 +48,7 @@ Khách nhận: Tỷ lệ chuyển đổi 2–5%, doanh thu tăng trưởng rõ r
 
 Ngày 30
 
-#### Báo cáo Tổng kết Tháng
+### Báo cáo Tổng kết Tháng
 
 Phân tích kết quả 30 ngày, đo lường hiệu quả từng kênh, đề xuất phương án giai đoạn tới.
 
@@ -135,7 +133,7 @@ Hoàn phí cứng nếu không đạt KPI: đạt dưới 70% hoàn 20% · đạ
 
 Ngày 1 – 7
 
-#### Setup gian hàng và triển khai
+### Setup gian hàng và triển khai
 
 Setup theo kế hoạch (2 trường hợp gian hàng mới/có sẵn — cùng cách chia lộ trình như gói 1 tháng), đăng 100 sản phẩm chuẩn SEO, hỗ trợ đăng Shopee Video và khởi chạy GMV Max.
 
@@ -145,7 +143,7 @@ Khách nhận: gian hàng hoàn thiện, kế hoạch tháng 1 + KPI cam kết �
 
 Ngày 8 – 29
 
-#### Theo sát và tối ưu hàng tuần
+### Theo sát và tối ưu hàng tuần
 
 Tối ưu GMV Max hằng ngày, phân tích chiến lược chuyên sâu hàng tuần, cập nhật chiến lược theo thay đổi của sàn, báo cáo tuần.
 
@@ -155,7 +153,7 @@ Khách nhận: 3 báo cáo tuần kèm phân tích chiến lược chuyên sâu
 
 Ngày 30
 
-#### Báo cáo tổng kết tháng 1
+### Báo cáo tổng kết tháng 1
 
 Đối chiếu tiến độ KPI và lập kế hoạch triển khai tháng 2 gửi khách duyệt.
 
@@ -167,7 +165,7 @@ Khách nhận: báo cáo tổng kết tháng 1 + kế hoạch tháng 2 đã th�
 
 Ngày 31 – 45
 
-#### Mở rộng GMV Max & thiết kế ảnh tối ưu
+### Mở rộng GMV Max & thiết kế ảnh tối ưu
 
 Tăng ngân sách chiến dịch hiệu quả cao, mở rộng nhóm sản phẩm quảng cáo, thiết kế tối đa 50 ảnh test tỉ lệ chuyển đổi, thiết kế 3 banner tháng 2, đẩy ngân sách khung giờ cao điểm.
 
@@ -177,7 +175,7 @@ Khách nhận: doanh thu tăng so với tháng 1, bộ ảnh chuyển đổi t�
 
 Ngày 46 – 59
 
-#### Tối ưu chuyển đổi & marketing nội sàn
+### Tối ưu chuyển đổi & marketing nội sàn
 
 Phân tích tỷ lệ chuyển đổi (CR) và đề xuất tối ưu, đẩy mạnh voucher/flashsale/banner sale, tăng cường chat CSKH giữ điểm phản hồi cao.
 
@@ -187,7 +185,7 @@ Khách nhận: tỷ lệ chuyển đổi cải thiện rõ rệt, tỷ lệ ph�
 
 Ngày 60
 
-#### Báo cáo tổng kết tháng 2
+### Báo cáo tổng kết tháng 2
 
 So sánh với tháng 1, đánh giá tiến độ KPI, dự báo khả năng đạt mục tiêu cuối kỳ, lập kế hoạch bứt phá tháng 3.
 
@@ -199,7 +197,7 @@ Khách nhận: báo cáo tổng kết tháng 2 + dự báo khả năng đạt KP
 
 Ngày 61 – 75
 
-#### Đẩy mạnh ngày sale lớn & combo đặc biệt
+### Đẩy mạnh ngày sale lớn & combo đặc biệt
 
 Lên kế hoạch chi tiết ngày sale lớn nhất tháng, tung combo/deal đặc biệt, tăng ngân sách GMV Max gấp 2-3 lần trong sale, thiết kế ảnh/banner theo chủ đề sale.
 
@@ -209,7 +207,7 @@ Khách nhận: đỉnh doanh thu tháng đạt vào ngày sale lớn
 
 Ngày 76 – 89
 
-#### Scale tối đa & chuẩn bị đối chiếu KPI
+### Scale tối đa & chuẩn bị đối chiếu KPI
 
 Scale chiến dịch hiệu quả cao đến mức ngân sách tối đa hợp lý, chuẩn hóa vận hành ổn định, chuẩn bị data cho đối chiếu KPI.
 
@@ -219,7 +217,7 @@ Khách nhận: shop ổn định ở mức doanh thu cao, data sẵn sàng đố
 
 Ngày 90
 
-#### Đối chiếu KPI cam kết & hoàn tiền
+### Đối chiếu KPI cam kết & hoàn tiền
 
 Tổng hợp doanh thu 90 ngày, đối chiếu KPI với hợp đồng — nếu đạt dưới 90% chủ động hoàn 10-20% phí cứng. Đề xuất kế hoạch quý tiếp theo.
 
@@ -268,7 +266,7 @@ Khi shop đạt 500tr/tháng, được miễn phí nhân bản và phát triển
 
 Ngày 1 – 7
 
-#### Setup gian hàng và triển khai
+### Setup gian hàng và triển khai
 
 Setup theo kế hoạch (2 trường hợp gian hàng mới/có sẵn — cùng cách chia lộ trình như gói 1 tháng), đăng 150 sản phẩm chuẩn SEO, nâng cấp Shop Mall miễn phí, hỗ trợ Shopee Video và khởi chạy GMV Max.
 
@@ -278,7 +276,7 @@ Khách nhận: gian hàng hoàn thiện đạt chuẩn Shop Mall, kế hoạch t
 
 Ngày 8 – 29
 
-#### Theo sát và tối ưu hàng tuần
+### Theo sát và tối ưu hàng tuần
 
 Tối ưu GMV Max hằng ngày, phân tích chiến lược chuyên sâu hàng tuần, cập nhật chiến lược theo thay đổi của sàn, báo cáo tuần.
 
@@ -288,7 +286,7 @@ Khách nhận: 3 báo cáo tuần kèm phân tích chiến lược chuyên sâu
 
 Ngày 30
 
-#### Báo cáo tổng kết tháng 1
+### Báo cáo tổng kết tháng 1
 
 Đối chiếu tiến độ KPI và lập kế hoạch triển khai tháng 2 gửi khách duyệt.
 
@@ -300,7 +298,7 @@ Khách nhận: báo cáo tổng kết tháng 1 + kế hoạch tháng 2 đã th�
 
 Ngày 31 – 60
 
-#### Mở rộng GMV Max & thiết kế ảnh tối ưu
+### Mở rộng GMV Max & thiết kế ảnh tối ưu
 
 Tăng ngân sách chiến dịch hiệu quả cao, thiết kế tối đa 75 ảnh test tỉ lệ chuyển đổi, thiết kế 3 banner theo lịch sale, đẩy ngân sách khung giờ cao điểm, báo cáo cuối tháng 2 và lập kế hoạch tháng 3.
 
@@ -310,7 +308,7 @@ Khách nhận: doanh thu tăng so với tháng 1, bộ ảnh chuyển đổi t�
 
 Ngày 61 – 90
 
-#### Đẩy ngày sale lớn & đối chiếu KPI giữa kỳ
+### Đẩy ngày sale lớn & đối chiếu KPI giữa kỳ
 
 Lên kế hoạch chi tiết ngày sale lớn nhất tháng 3, tung combo/deal đặc biệt, thiết kế ảnh/banner theo chủ đề sale, báo cáo tổng kết quý 1 (90 ngày) và đối chiếu KPI cam kết giữa kỳ.
 
@@ -322,7 +320,7 @@ Khách nhận: đỉnh doanh thu quý 1, báo cáo đối chiếu KPI giữa k�
 
 Ngày 91 – 120
 
-#### Đa dạng hóa sản phẩm & kích hoạt gian hàng vệ tinh
+### Đa dạng hóa sản phẩm & kích hoạt gian hàng vệ tinh
 
 Đề xuất bổ sung sản phẩm mới, test ngành hàng phụ/combo bán chéo, mở rộng chiến dịch GMV Max với nhóm sản phẩm mới, kích hoạt gian hàng vệ tinh miễn phí nếu shop đạt 500tr/tháng.
 
@@ -332,7 +330,7 @@ Khách nhận: bộ sản phẩm đa dạng hơn, 1 gian hàng vệ tinh miễn 
 
 Ngày 121 – 150
 
-#### Duy trì doanh số & tối ưu chi phí vận hành
+### Duy trì doanh số & tối ưu chi phí vận hành
 
 Duy trì doanh số ổn định ở mức cao đã đạt được, tối ưu CIR (chi phí quảng cáo trên doanh thu), đẩy mạnh ngày sale lớn tháng 5, báo cáo cuối tháng và lập kế hoạch tháng 6.
 
@@ -342,7 +340,7 @@ Khách nhận: shop duy trì doanh số cao với chi phí tối ưu hơn
 
 Ngày 151 – 180
 
-#### Tổng kết 180 ngày & đối chiếu KPI cuối kỳ
+### Tổng kết 180 ngày & đối chiếu KPI cuối kỳ
 
 Tổng hợp doanh thu 180 ngày, phân tích kết quả từng quý, đối chiếu KPI cam kết cuối kỳ — nếu đạt dưới 90% chủ động hoàn 10-20% phí cứng, đề xuất kế hoạch 6 tháng tiếp theo.
 

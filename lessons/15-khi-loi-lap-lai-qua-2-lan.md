@@ -2,10 +2,6 @@
 
 ## Khi lỗi lặp lại quá 2 lần — từ "xin lỗi" sang "khắc phục gốc rễ"
 
-✓ Đã học
-
- Video tóm tắt (~1 phút) — vừa nghe vừa đọc, hoặc chỉ đọc bên dưới nếu không tiện bật tiếng.
-
 Cùng 1 lỗi xảy ra nhiều lần có mức độ nguy hiểm khác hẳn lỗi xảy ra 1 lần — vì mỗi lần lặp lại, sức chịu đựng của khách hàng giảm đi rõ rệt:
 
 Lần 1

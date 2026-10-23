@@ -377,9 +377,10 @@ input.input-invalid { border-color: #DC2626; box-shadow: 0 0 0 1px #DC2626; }
 /* Tone trắng đen đồng bộ app cho ảnh nội dung (Affiliate + bài học Uni) — ảnh gốc trên đĩa giữ nguyên màu */
 
 /* ---------- tiktok onboard ---------- */
-/* Huy hiệu trạng thái 46 đầu việc onboarding: nền nhuốm nhẹ theo theme navy/mint. */
-.tt-status { display: inline-block; padding: 2px 10px; border-radius: 999px;
-  font-size: 12px; font-weight: 700; white-space: nowrap; }
+/* Bản thoáng (user chốt 23/10): khoảng cách rộng, nhãn mục đứng riêng 1 dòng
+   viết hoa đậm, tiêu đề việc đậm rõ — tránh chữ dồn sát nhau. */
+.tt-status { display: inline-block; padding: 3px 12px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 700; white-space: nowrap; }
 .tt-st-new { background: #E7EEF3; color: #5F7484; }
 .tt-st-doing { background: #E3ECF7; color: #1D4ED8; }
 .tt-st-review { background: #FEF3C7; color: #92400E; }
@@ -388,28 +389,44 @@ input.input-invalid { border-color: #DC2626; box-shadow: 0 0 0 1px #DC2626; }
 .tt-st-na { background: #EDEDED; color: #6B7280; }
 
 /* Lộ trình 5 giai đoạn: thẻ bấm được để lọc theo giai đoạn. */
-.tt-phases { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
-.tt-phase-card { flex: 1 1 150px; background: var(--card); border: 1px solid var(--line);
-  border-radius: var(--radius); padding: 12px 14px; box-shadow: var(--shadow); color: var(--ink); }
+.tt-phases { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.tt-phase-card { flex: 1 1 160px; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); color: var(--ink); }
 .tt-phase-card:hover { border-color: var(--mint); text-decoration: none; }
 .tt-phase-card.active { border-color: var(--mint); background: #E7F4EC; }
-.tt-phase-name { font-weight: 800; font-size: 14px; color: var(--brand-dark); }
-.tt-phase-count { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.tt-phase-name { font-weight: 800; font-size: 15px; color: var(--brand-dark); }
+.tt-phase-count { font-size: 13.5px; color: var(--muted); margin-top: 4px; }
 
-/* Từng đầu việc: thẻ <details> gọn như thẻ checklist. */
+/* Tiêu đề nhóm giai đoạn trong danh sách: to, đậm, có gạch nhấn mint. */
+.tt-group { font-size: 20px; font-weight: 800; color: var(--brand-dark);
+  margin: 34px 0 14px; padding-bottom: 8px; border-bottom: 3px solid var(--mint);
+  display: inline-block; }
+.tt-group:first-of-type { margin-top: 10px; }
+
+/* Từng đầu việc: thẻ <details> thoáng. */
 .tt-item { border: 1px solid var(--line); border-radius: var(--radius);
-  background: var(--card); padding: 10px 14px; margin-bottom: 10px; }
-.tt-item summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  cursor: pointer; list-style: none; }
+  background: var(--card); padding: 16px 20px; margin-bottom: 14px; }
+.tt-item summary { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  cursor: pointer; list-style: none; row-gap: 8px; }
 .tt-item summary::-webkit-details-marker { display: none; }
-.tt-code { font-weight: 800; color: var(--brand-dark); white-space: nowrap; }
-.tt-title { flex: 1 1 240px; font-weight: 700; }
-.tt-meta { font-size: 13px; color: var(--muted); white-space: nowrap; }
-.tt-body { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
-.tt-field { margin-bottom: 8px; font-size: 14px; }
-.tt-field .tt-label { font-weight: 700; color: var(--brand-dark); }
-.tt-phase-intro { background: var(--brand-soft); border-radius: 12px;
-  padding: 10px 14px; margin-bottom: 12px; font-size: 13.5px; }
-.tt-phase-intro p { margin: 4px 0; }
-.tt-form label { display: flex; flex-direction: column; gap: 4px;
-  font-size: 12px; font-weight: 600; color: var(--muted); }
+.tt-code { font-weight: 800; font-size: 13px; color: var(--brand-dark); white-space: nowrap;
+  background: var(--brand-soft); padding: 4px 9px; border-radius: 6px; }
+.tt-title { flex: 1 1 260px; font-weight: 800; font-size: 16px; color: var(--brand-dark);
+  line-height: 1.45; }
+.tt-meta { font-size: 13.5px; color: var(--muted); white-space: nowrap; }
+.tt-body { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 18px;
+  line-height: 1.65; }
+.tt-field { margin-bottom: 20px; }
+.tt-field:last-child { margin-bottom: 4px; }
+.tt-label { display: block; font-size: 12px; font-weight: 800; letter-spacing: 0.6px;
+  text-transform: uppercase; color: #2E7D52; margin-bottom: 5px; }
+.tt-text { font-size: 15px; color: var(--ink); }
+.tt-phase-intro { background: var(--brand-soft); border-left: 4px solid var(--mint);
+  border-radius: 0 12px 12px 0; padding: 16px 20px; margin-bottom: 18px;
+  font-size: 14.5px; line-height: 1.65; }
+.tt-phase-intro p { margin: 0 0 10px; }
+.tt-phase-intro p:last-child { margin-bottom: 0; }
+.tt-phase-intro strong { color: var(--brand-dark); }
+.tt-form { border-top: 1px dashed var(--line); margin-top: 22px; padding-top: 18px; }
+.tt-form label { display: flex; flex-direction: column; gap: 5px;
+  font-size: 12.5px; font-weight: 700; color: var(--brand-dark); }

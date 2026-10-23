@@ -93,7 +93,7 @@
 <p class="sync-note">Đang hiển thị {{ shown }} việc. Bấm vào từng việc để xem chi tiết{% if can_edit %} và cập nhật tiến độ{% endif %}.</p>
 
 {% for g in groups %}
-<h2 class="cl-group">{{ g.phase.order }}. {{ g.phase.name }}</h2>
+<h2 class="tt-group">{{ g.phase.order }}. {{ g.phase.name }}</h2>
 <div class="tt-phase-intro">
   {% if g.phase.understand %}<p><strong>Bạn cần hiểu:</strong> {{ g.phase.understand }}</p>{% endif %}
   {% if g.phase.practice %}<p><strong>Thực hành / đầu ra:</strong> {{ g.phase.practice }}</p>{% endif %}
@@ -111,12 +111,12 @@
     {% if t.due_vn %}<span class="tt-meta">📅 Hạn: {{ t.due_vn }}</span>{% endif %}
   </summary>
   <div class="tt-body">
-    {% if t.goal %}<div class="tt-field"><span class="tt-label">Mục tiêu:</span> {{ t.goal }}</div>{% endif %}
-    {% if t.guide %}<div class="tt-field"><span class="tt-label">Cách thực hiện:</span> {{ t.guide }}</div>{% endif %}
-    {% if t.evidence %}<div class="tt-field"><span class="tt-label">Bằng chứng cần có:</span> {{ t.evidence }}</div>{% endif %}
-    {% if t.frequency %}<div class="tt-field"><span class="tt-label">Tần suất:</span> {{ t.frequency }}</div>{% endif %}
-    {% if t.owner_hint %}<div class="tt-field"><span class="tt-label">Chủ trì gợi ý:</span> {{ t.owner_hint }}</div>{% endif %}
-    {% if t.review_note %}<div class="tt-field"><span class="tt-label">Duyệt / lưu ý:</span> {{ t.review_note }}</div>{% endif %}
+    {% if t.goal %}<div class="tt-field"><span class="tt-label">Mục tiêu</span><div class="tt-text">{{ t.goal }}</div></div>{% endif %}
+    {% if t.guide %}<div class="tt-field"><span class="tt-label">Cách thực hiện</span><div class="tt-text">{{ t.guide }}</div></div>{% endif %}
+    {% if t.evidence %}<div class="tt-field"><span class="tt-label">Bằng chứng cần có</span><div class="tt-text">{{ t.evidence }}</div></div>{% endif %}
+    {% if t.frequency %}<div class="tt-field"><span class="tt-label">Tần suất</span><div class="tt-text">{{ t.frequency }}</div></div>{% endif %}
+    {% if t.owner_hint %}<div class="tt-field"><span class="tt-label">Chủ trì gợi ý</span><div class="tt-text">{{ t.owner_hint }}</div></div>{% endif %}
+    {% if t.review_note %}<div class="tt-field"><span class="tt-label">Duyệt / lưu ý</span><div class="tt-text">{{ t.review_note }}</div></div>{% endif %}
 
     {% if can_edit %}
     <form method="post" action="/tiktok-onboard/update" class="form-inline tt-form">
@@ -146,10 +146,10 @@
     </form>
     {% if p.updated_by %}<p class="sync-note">Cập nhật gần nhất: {{ p.updated_by }}{% if p.updated_at %} · {{ p.updated_at }}{% endif %}</p>{% endif %}
     {% else %}
-    <div class="tt-field"><span class="tt-label">Người phụ trách:</span> {{ p.assignee or "Chưa giao" }}</div>
-    {% if t.due_vn %}<div class="tt-field"><span class="tt-label">Hạn hoàn thành:</span> {{ t.due_vn }}</div>{% endif %}
-    {% if p.evidence %}<div class="tt-field"><span class="tt-label">Bằng chứng:</span> <a href="{{ p.evidence }}" target="_blank" rel="noopener">{{ p.evidence }}</a></div>{% endif %}
-    {% if p.note %}<div class="tt-field"><span class="tt-label">Ghi chú:</span> {{ p.note }}</div>{% endif %}
+    <div class="tt-field"><span class="tt-label">Người phụ trách</span><div class="tt-text">{{ p.assignee or "Chưa giao" }}</div></div>
+    {% if t.due_vn %}<div class="tt-field"><span class="tt-label">Hạn hoàn thành</span><div class="tt-text">{{ t.due_vn }}</div></div>{% endif %}
+    {% if p.evidence %}<div class="tt-field"><span class="tt-label">Bằng chứng</span><div class="tt-text"><a href="{{ p.evidence }}" target="_blank" rel="noopener">{{ p.evidence }}</a></div></div>{% endif %}
+    {% if p.note %}<div class="tt-field"><span class="tt-label">Ghi chú</span><div class="tt-text">{{ p.note }}</div></div>{% endif %}
     {% if p.updated_by %}<p class="sync-note">Cập nhật gần nhất: {{ p.updated_by }}{% if p.updated_at %} · {{ p.updated_at }}{% endif %}</p>{% endif %}
     {% endif %}
   </div>

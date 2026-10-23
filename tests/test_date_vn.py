@@ -23,11 +23,21 @@ def _assert_vn_date_page(html):
     assert 'placeholder="DD/MM/YYYY"' in html
 
 
+def _assert_range_picker_page(html):
+    """Trang đã chuyển sang bộ chọn khoảng kiểu Shopee Ads: không còn ô
+    ngày native, có panel lịch + preset của bộ chọn (data-rp / rp-preset)."""
+    assert 'type="date"' not in html
+    assert "data-rp" in html
+    assert "rp-preset" in html
+    assert "7 ngày qua" in html
+
+
 def test_ceo_page_uses_vn_date_inputs(client):
     create_owner(client)
     r = client.get("/ceo")
     assert r.status_code == 200
-    _assert_vn_date_page(r.text)
+    # Dashboard CEO không còn ô gõ ngày: chọn khoảng bằng lịch của bộ chọn
+    _assert_range_picker_page(r.text)
     assert "/static/date-vn.js" in r.text
 
 
@@ -40,6 +50,10 @@ def test_daily_page_uses_vn_date_inputs(client):
 
 def test_gmv_page_uses_vn_date_inputs(client):
     create_owner(client)
+    # Ô ngày VN nằm ở form nhập dòng — form chỉ hiện khi đã có sản phẩm
+    from app import database as db
+
+    db.gmv_create_product("SP DATE VN")
     r = client.get("/gmv")
     assert r.status_code == 200
     _assert_vn_date_page(r.text)
@@ -47,10 +61,14 @@ def test_gmv_page_uses_vn_date_inputs(client):
 
 def test_checklist_pages_use_vn_date_inputs(client):
     create_owner(client)
-    for url in ("/checklist", "/checklist/board", "/kpi"):
+    for url in ("/checklist", "/checklist/board"):
         r = client.get(url)
         assert r.status_code == 200, url
         _assert_vn_date_page(r.text)
+    # /kpi đã chuyển sang bộ chọn khoảng (lịch + preset), không còn ô gõ ngày
+    r = client.get("/kpi")
+    assert r.status_code == 200
+    _assert_range_picker_page(r.text)
 
 
 def test_checklist_admin_uses_vn_time_inputs(client):

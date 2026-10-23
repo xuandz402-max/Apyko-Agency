@@ -198,7 +198,12 @@ def _seed_two_weeks(client):
 def test_daily_page_week_totals_and_delta(client):
     create_owner(client)
     today, n = _seed_two_weeks(client)
-    r = client.get("/bao-cao?period=week")
+    d = _d(today)
+    monday = d - timedelta(days=d.weekday())
+    sunday = monday + timedelta(days=6)
+    # Khoảng xem = trọn tuần này (thứ Hai -> Chủ Nhật) để khoảng liền
+    # trước dài bằng nhau trùng đúng tuần trước đã seed.
+    r = client.get(f"/bao-cao?from={monday.isoformat()}&to={sunday.isoformat()}")
     assert r.status_code == 200
     html = r.text
     assert "Tổng theo kỳ" in html
@@ -207,29 +212,33 @@ def test_daily_page_week_totals_and_delta(client):
     assert expected in html
     assert "+100.0%" in html
     assert "delta-up" in html
-    # Báo cáo cũ 60 ngày không nằm trong danh sách kỳ tuần
+    # Báo cáo cũ 60 ngày không nằm trong danh sách của khoảng
     assert "7.777.000" not in html
     # Danh sách có ngày hôm nay dạng dd/mm/yyyy
-    d = _d(today)
     assert f"{d.day:02d}/{d.month:02d}/{d.year}" in html
 
 
-def test_daily_page_default_day_only_today(client):
+def test_daily_page_default_last30(client):
     create_owner(client)
     db, cl = _db(), _cl()
     today = cl.today_str()
     yesterday = (_d(today) - timedelta(days=1)).isoformat()
+    old = (_d(today) - timedelta(days=60)).isoformat()
     _report(db, today, 3_000_000, 900_000, 300_000)
     _report(db, yesterday, 9_999_000, 0, 0)
+    _report(db, old, 8_888_000, 0, 0)
     r = client.get("/bao-cao")
     assert r.status_code == 200
+    # Mặc định trang Báo cáo ngày = 30 ngày qua: hôm nay + hôm qua đều có
     assert "3.000.000đ" in r.text
-    assert "9.999.000" not in r.text  # mặc định kỳ Ngày: chỉ hôm nay
+    assert "9.999.000" in r.text
+    # Báo cáo 60 ngày trước nằm ngoài khoảng mặc định
+    assert "8.888.000" not in r.text
 
 
 def test_daily_page_empty_period_message(client):
     create_owner(client)
-    r = client.get("/bao-cao?period=custom&from=2020-01-01&to=2020-01-07")
+    r = client.get("/bao-cao?from=2020-01-01&to=2020-01-07")
     assert r.status_code == 200
     assert "Chưa có báo cáo nào trong kỳ này" in r.text
 
@@ -247,7 +256,10 @@ def test_gmv_page_period_compare(client):
     pid = db.gmv_create_product("SP KY")
     _gmv(db, pid, monday.isoformat(), 100, 50)  # kỳ này: 100 RM
     _gmv(db, pid, prev_monday.isoformat(), 50, 50)  # kỳ trước: 50 RM
-    r = client.get("/gmv?period=week")
+    # Khoảng xem = trọn tuần này (thứ Hai -> Chủ Nhật); khoảng liền trước
+    # dài bằng nhau chứa đúng thứ Hai tuần trước.
+    sunday = (monday + timedelta(days=6)).isoformat()
+    r = client.get(f"/gmv?from={monday.isoformat()}&to={sunday}")
     assert r.status_code == 200
     html = r.text
     assert "So sánh theo kỳ" in html
@@ -258,7 +270,7 @@ def test_gmv_page_period_compare(client):
 
 def test_gmv_page_period_no_entries(client):
     create_owner(client)
-    r = client.get("/gmv?period=month")
+    r = client.get("/gmv?from=2020-01-01&to=2020-01-31")
     assert r.status_code == 200
     assert "So sánh theo kỳ" in r.text
     assert "Chưa có dòng số liệu GMV nào trong kỳ này" in r.text
@@ -340,22 +352,26 @@ def test_board_range_stats_unit(client):
     assert prev["pct"] == 25.0
 
 
-# --- query param bậy: cả 3 trang đều 200 với mặc định day ------------------------
+# --- query param bậy: các trang đều 200 với khoảng mặc định ---------------------
 
 
-def test_bad_params_fall_back_to_day(client):
+def test_bad_params_fall_back_to_default_range(client):
     create_owner(client)
+    # /bao-cao + /gmv: param from/to bậy -> preset mặc định của trang
     r = client.get("/bao-cao?period=xyz&from=abc&to=def")
     assert r.status_code == 200
-    assert "Hôm nay" in r.text
+    assert "Tổng theo kỳ" in r.text
+    assert "rp-preset active" in r.text
 
     r = client.get("/gmv?period=nope&from=2026-13-99&to=x")
     assert r.status_code == 200
     assert "So sánh theo kỳ" in r.text
+    assert "rp-preset active" in r.text
 
+    # Bảng Leader giữ nguyên cơ chế kỳ riêng (không đổi ở đợt này)
     r = client.get("/checklist/board?period=q&from=bad&to=worse")
     assert r.status_code == 200
     assert "Tổng quan theo kỳ" in r.text
 
-    r = client.get(f"/bao-cao?period=custom&from={date.today().isoformat()}&to=2020-01-01")
-    assert r.status_code == 200  # to < from -> quay về day, không lỗi
+    r = client.get(f"/bao-cao?from={date.today().isoformat()}&to=2020-01-01")
+    assert r.status_code == 200  # to < from -> quay về mặc định, không lỗi

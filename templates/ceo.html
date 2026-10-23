@@ -1,68 +1,20 @@
 {% extends "base.html" %}
 {% set nav_active = "ceo" %}
+{% from "_period_bar.html" import range_picker %}
 {% block title %}Dashboard CEO · {{ app_name }}{% endblock %}
 {% block content %}
 <div class="page-head">
   <h1>👑 Dashboard CEO</h1>
-  <p class="muted">Tổng quan toàn hệ thống ngày {{ today[8:10] }}/{{ today[5:7] }}/{{ today[0:4] }} — số thật từ Báo cáo ngày, GMV Max Shopee và Daily Checklist.</p>
+  <p class="muted">Tổng quan toàn hệ thống theo khoảng ngày đã chọn — số thật từ Báo cáo ngày, GMV Max Shopee và Daily Checklist.</p>
   <p class="ceo-clock" id="ceoClock">🕒 {{ now_text }} (giờ Việt Nam)</p>
 </div>
 
 {% set dlabel = "hôm nay" if is_today else view_date[8:10] ~ "/" ~ view_date[5:7] %}
-<form method="get" action="/ceo" class="form-inline per-custom">
-  <label>Xem ngày
-    <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="date" value="{{ view_date }}" class="input date-vn">
-  </label>
-  {% if period in ("day", "week", "month") %}
-  <input type="hidden" name="period" value="{{ period }}">
-  {% endif %}
-  <div class="form-actions">
-    <button type="submit" class="btn btn-primary btn-sm">Xem</button>
-    {% if not is_today %}<a href="{{ back_today_url }}" class="btn btn-ghost btn-sm">Về hôm nay</a>{% endif %}
-  </div>
-</form>
-<div class="row-actions">
-  <span class="muted">Xem nhanh:</span>
-  {% for p in presets %}
-  <a href="/ceo?vfrom={{ p.vfrom }}&vto={{ p.vto }}" class="btn btn-sm {% if p.active %}btn-primary{% else %}btn-ghost{% endif %}">{{ p.label }}</a>
-  {% endfor %}
+<div class="card">
+  <div class="card-head"><h2>🗓️ Khoảng ngày đang xem</h2></div>
+  {{ range_picker("/ceo", rng) }}
+  <p class="muted per-note">Đang xem: <strong>{{ rng.label_cur }}</strong>{% if rng.preset != "custom" %} ({{ rng.preset_label }}){% endif %} · so với khoảng liền trước <strong>{{ rng.label_prev }}</strong> — 5 thẻ dưới đây là TỔNG của cả khoảng. Số tăng hiện màu xanh lá ▲, giảm hiện màu đỏ ▼; khoảng trước = 0 hoặc thiếu dữ liệu thì không hiện %.</p>
 </div>
-<form method="get" action="/ceo" class="form-inline per-custom">
-  <label>Xem khoảng — Từ ngày
-    <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="vfrom" value="{{ view_range.start if view_range else '' }}" class="input date-vn">
-  </label>
-  <label>Đến ngày
-    <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="vto" value="{{ view_range.end if view_range else '' }}" class="input date-vn">
-  </label>
-  {% if period in ("day", "week", "month") %}
-  <input type="hidden" name="period" value="{{ period }}">
-  {% endif %}
-  <div class="form-actions">
-    <button type="submit" class="btn btn-primary btn-sm">Xem khoảng</button>
-  </div>
-</form>
-{% if view_range %}
-<p class="muted">📅 Đang xem khoảng <strong>{{ view_range.label }}</strong> — 4 thẻ đầu dưới đây là TỔNG của cả khoảng. <a href="{{ back_today_url }}" class="btn btn-ghost btn-sm">Về hôm nay</a></p>
-{% elif not is_today %}
-<p class="muted">📅 Đang xem ngày <strong>{{ view_date[8:10] }}/{{ view_date[5:7] }}/{{ view_date[0:4] }}</strong> — toàn bộ số liệu dưới đây là của ngày này.</p>
-{% endif %}
-
-{% macro metric_card(label, metric, kind) %}
-  <div class="stat-card">
-    <div class="stat-label">{{ label }}</div>
-    {% if metric.cur is not none %}
-    <div class="stat-value">{% if kind == "money" %}{{ "{:,.0f}".format(metric.cur) }}₫{% else %}{{ metric.cur }}{% endif %}</div>
-    {% if metric.delta_pct is not none %}
-    <div class="{% if metric.delta_pct >= 0 %}delta-up{% else %}delta-down{% endif %}">{% if metric.delta_pct >= 0 %}▲{% else %}▼{% endif %} {{ "%+.1f"|format(metric.delta_pct) }}% so với kỳ trước</div>
-    {% else %}
-    <div class="muted">— (chưa so sánh được)</div>
-    {% endif %}
-    {% else %}
-    <div class="stat-value">—</div>
-    <div class="muted">Chưa có dữ liệu kỳ này</div>
-    {% endif %}
-  </div>
-{% endmacro %}
 
 {% macro range_card(label, metric, kind) %}
   <div class="stat-card">
@@ -70,18 +22,17 @@
     {% if metric.cur is not none %}
     <div class="stat-value">{% if kind == "money" %}{{ "{:,.0f}".format(metric.cur) }}₫{% else %}{{ metric.cur }}{% endif %}</div>
     {% if metric.delta_pct is not none %}
-    <div class="{% if metric.delta_pct >= 0 %}delta-up{% else %}delta-down{% endif %}">{% if metric.delta_pct >= 0 %}▲{% else %}▼{% endif %} {{ "%+.1f"|format(metric.delta_pct) }}% so với khoảng liền trước ({{ range_cards.prev_label }})</div>
+    <div class="{% if metric.delta_pct >= 0 %}delta-up{% else %}delta-down{% endif %}">{% if metric.delta_pct >= 0 %}▲{% else %}▼{% endif %} {{ "%+.1f"|format(metric.delta_pct) }}% so với khoảng liền trước ({{ rng.label_prev }})</div>
     {% else %}
     <div class="muted">— (chưa so sánh được)</div>
     {% endif %}
     {% else %}
-    <div class="stat-value">—</div>
+    <div class="stat-value">No Data</div>
     <div class="muted">Chưa có dữ liệu trong khoảng</div>
     {% endif %}
   </div>
 {% endmacro %}
 
-{% if view_range %}
 <div class="stats">
   {{ range_card("Doanh thu trong khoảng", range_cards.metrics.revenue, "money") }}
   {{ range_card("Chi phí ads trong khoảng", range_cards.metrics.ads_cost, "money") }}
@@ -91,87 +42,6 @@
     <div class="stat-label">Checklist trong khoảng</div>
     <div class="stat-value">{{ range_cards.checklist.done }}/{{ range_cards.checklist.tasks }} xong</div>
     <div class="muted">{{ range_cards.checklist.pct }}% hoàn thành{% if range_cards.checklist.overdue %} · <span class="text-red"><strong>{{ range_cards.checklist.overdue }} quá hạn</strong></span>{% endif %}</div>
-  </div>
-</div>
-{% else %}
-<div class="stats">
-  <div class="stat-card">
-    <div class="stat-label">Doanh thu {{ dlabel }}</div>
-    {% if ov.has_report_today %}
-    <div class="stat-value">{{ "{:,.0f}".format(ov.revenue_today.total_rev) }}₫</div>
-    {% if ov.rev_change_pct is not none %}
-    <div class="{% if ov.rev_change_pct >= 0 %}text-green{% else %}text-red{% endif %}">{{ "%+.1f"|format(ov.rev_change_pct) }}% {% if ov.rev_prev_fallback %}so với ngày có số gần nhất ({{ ov.rev_prev_date[8:10] }}/{{ ov.rev_prev_date[5:7] }}){% elif is_today %}so với hôm qua{% else %}so với ngày liền trước{% endif %}</div>
-    {% else %}
-    <div class="muted">Chưa có ngày nào trước đó để so sánh</div>
-    {% endif %}
-    {% else %}
-    <div class="stat-value">No Data</div>
-    <div class="muted"><a href="/bao-cao" class="link">Nhập Báo cáo ngày →</a></div>
-    {% endif %}
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Chi phí ads {{ dlabel }}</div>
-    {% if ov.has_report_today %}
-    <div class="stat-value">{{ "{:,.0f}".format(ov.revenue_today.ads_cost) }}₫</div>
-    <div class="muted">ROAS {{ ov.revenue_today.roas if ov.revenue_today.roas is not none else "—" }}</div>
-    {% else %}
-    <div class="stat-value">No Data</div>
-    <div class="muted">Chưa có Báo cáo ngày {{ dlabel }}</div>
-    {% endif %}
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">GMV quảng cáo {{ dlabel }} (VNĐ)</div>
-    {% if ov.gmv_today.entry_count %}
-    <div class="stat-value">{{ "{:,.0f}".format(ov.gmv_today.revenue_vnd) }}₫</div>
-    <div class="muted">Chi phí {{ "{:,.0f}".format(ov.gmv_today.ad_cost_vnd) }}₫ · ROAS {{ ov.gmv_today.roas if ov.gmv_today.roas is not none else "—" }}</div>
-    {% else %}
-    <div class="stat-value">—</div>
-    <div class="muted">Chưa có dữ liệu GMV {{ dlabel }}</div>
-    {% endif %}
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Checklist {{ dlabel }}</div>
-    <div class="stat-value">{{ ov.checklist_today.done }}/{{ ov.checklist_today.tasks }} xong</div>
-    <div class="muted">{{ ov.checklist_today.pct }}% hoàn thành{% if ov.checklist_today.overdue %} · <span class="text-red"><strong>{{ ov.checklist_today.overdue }} quá hạn</strong></span>{% endif %}</div>
-  </div>
-</div>
-{% endif %}
-
-<div class="card">
-  <div class="card-head">
-    <h2>📈 So sánh theo kỳ</h2>
-    <div class="row-actions">
-      <a href="/ceo?period=day{{ date_qs }}" class="btn btn-sm {% if period == 'day' %}btn-primary{% else %}btn-ghost{% endif %}">Ngày</a>
-      <a href="/ceo?period=week{{ date_qs }}" class="btn btn-sm {% if period == 'week' %}btn-primary{% else %}btn-ghost{% endif %}">Tuần</a>
-      <a href="/ceo?period=month{{ date_qs }}" class="btn btn-sm {% if period == 'month' %}btn-primary{% else %}btn-ghost{% endif %}">Tháng</a>
-      <a href="/ceo?period=custom&from={{ custom.from }}&to={{ custom.to }}&cfrom={{ custom.cfrom }}&cto={{ custom.cto }}{{ date_qs }}" class="btn btn-sm {% if period == 'custom' %}btn-primary{% else %}btn-ghost{% endif %}">Tự chọn</a>
-    </div>
-  </div>
-  <form method="get" action="/ceo" class="form-inline per-custom">
-    <input type="hidden" name="period" value="custom">
-    {% if not is_today %}<input type="hidden" name="date" value="{{ view_date }}">{% endif %}
-    <label>Kỳ xem — Từ ngày
-      <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="from" value="{{ custom.from }}" class="input date-vn">
-    </label>
-    <label>Kỳ xem — Đến ngày
-      <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="to" value="{{ custom.to }}" class="input date-vn">
-    </label>
-    <label>Kỳ so sánh — Từ ngày
-      <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="cfrom" value="{{ custom.cfrom }}" class="input date-vn">
-    </label>
-    <label>Kỳ so sánh — Đến ngày
-      <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="cto" value="{{ custom.cto }}" class="input date-vn">
-    </label>
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary btn-sm">Áp dụng</button>
-    </div>
-  </form>
-  <p class="muted">{{ cmp.cur_name }}: <strong>{{ cmp.cur_label }}</strong> · so với <strong>{{ cmp.prev_label }}</strong> {{ cmp.prev_name }}. Số tăng hiện màu xanh lá ▲, giảm hiện màu đỏ ▼; kỳ trước = 0 hoặc thiếu dữ liệu thì không hiện %.</p>
-  <div class="stats">
-    {{ metric_card("Doanh thu (" ~ cmp.cur_name|lower ~ ")", cmp.metrics.revenue, "money") }}
-    {{ metric_card("Chi phí quảng cáo (" ~ cmp.cur_name|lower ~ ")", cmp.metrics.ads_cost, "money") }}
-    {{ metric_card("ROAS (" ~ cmp.cur_name|lower ~ ")", cmp.metrics.roas, "roas") }}
-    {{ metric_card("GMV quảng cáo VNĐ (" ~ cmp.cur_name|lower ~ ")", cmp.metrics.gmv_vnd, "money") }}
   </div>
 </div>
 

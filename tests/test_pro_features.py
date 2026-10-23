@@ -174,7 +174,7 @@ def test_backup_forbidden_for_staff_and_menu_hidden(client):
 # ------------------------------ KPI nhân viên ---------------------------------
 
 CUR_FROM, CUR_TO = "2026-10-05", "2026-10-06"
-KPI_QS = f"period=custom&from={CUR_FROM}&to={CUR_TO}"
+KPI_QS = f"from={CUR_FROM}&to={CUR_TO}"
 
 
 def _complete(db, date_str, user_id, count):

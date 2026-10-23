@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% set nav_active = "daily" %}
-{% from "_period_bar.html" import period_bar, per_metric_card %}
+{% from "_period_bar.html" import range_picker, per_metric_card %}
 {% block title %}Báo cáo ngày · {{ app_name }}{% endblock %}
 {% block content %}
 <div class="page-head">
@@ -11,7 +11,8 @@
 
 <div class="card">
   <div class="card-head"><h2>🗓️ Tổng theo kỳ</h2></div>
-  {{ period_bar("/bao-cao", per_info) }}
+  {{ range_picker("/bao-cao", rng) }}
+  <p class="muted per-note">Đang xem: <strong>{{ rng.label_cur }}</strong>{% if rng.preset != "custom" %} ({{ rng.preset_label }}){% endif %} · so với khoảng liền trước <strong>{{ rng.label_prev }}</strong>. Danh sách bên dưới chỉ gồm các ngày trong khoảng này.</p>
   {% if daily_cmp.has_data %}
   <div class="stats">
     {{ per_metric_card("Tổng doanh thu", daily_cmp.revenue, "money") }}

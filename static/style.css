@@ -357,6 +357,52 @@ button { border-radius: 999px; }
 .per-custom { align-items: flex-end; }
 .per-note { margin: 6px 0 12px; }
 
+/* ---------- Bộ chọn khoảng ngày kiểu Shopee Ads (CEO / GMV / KPI / Báo cáo ngày) ---------- */
+.rp { position: relative; display: inline-block; }
+.rp-btn { border: 1px solid var(--line); background: var(--card); border-radius: 999px;
+  padding: 7px 14px; font-weight: 700; color: var(--brand-dark); cursor: pointer; }
+.rp-btn:hover { border-color: var(--mint); }
+.rp-preset-name { color: var(--mint); font-weight: 700; }
+.rp-caret { color: var(--muted); font-size: 12px; }
+.rp-panel { position: absolute; left: 0; top: calc(100% + 8px); z-index: 50;
+  display: flex; gap: 0; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: 0 12px 32px rgba(16, 41, 60, 0.18);
+  padding: 14px; max-width: 94vw; }
+.rp-panel[hidden] { display: none; }
+.rp-presets { display: flex; flex-direction: column; gap: 2px; min-width: 132px;
+  border-right: 1px solid var(--line); padding-right: 12px; margin-right: 14px; }
+.rp-presets-title { font-size: 12px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+.rp-preset { padding: 7px 10px; border-radius: 999px; color: var(--ink); font-weight: 600; }
+.rp-preset:hover { background: var(--brand-soft); text-decoration: none; }
+.rp-preset.active { background: var(--mint); color: #fff; }
+.rp-main { display: flex; flex-direction: column; gap: 10px; }
+.rp-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.rp-hint { font-size: 12px; }
+.rp-cals { display: flex; gap: 20px; }
+.rp-cal { min-width: 238px; }
+.rp-cal-title { font-weight: 800; color: var(--brand-dark); text-align: center; margin-bottom: 6px; }
+.rp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.rp-week { margin-bottom: 2px; }
+.rp-week span { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); padding: 2px 0; }
+.rp-day { border: none; background: transparent; border-radius: 999px; height: 32px;
+  font-size: 13px; cursor: pointer; color: var(--ink); padding: 0; }
+.rp-day:hover { background: var(--brand-soft); }
+.rp-day.rp-in { background: var(--brand-soft); border-radius: 6px; }
+.rp-day.rp-end { background: var(--mint); color: #fff; font-weight: 800; border-radius: 999px; }
+.rp-day.rp-disabled { color: var(--line); cursor: default; }
+.rp-day.rp-disabled:hover { background: transparent; }
+.rp-foot { display: flex; justify-content: space-between; align-items: center; gap: 14px;
+  border-top: 1px solid var(--line); padding-top: 10px; }
+.rp-chosen { font-size: 13px; font-weight: 600; color: var(--brand-dark); }
+.rp-foot-btns { display: flex; gap: 8px; }
+@media (max-width: 760px) {
+  .rp-panel { flex-direction: column; }
+  .rp-presets { flex-direction: row; flex-wrap: wrap; border-right: none;
+    border-bottom: 1px solid var(--line); padding: 0 0 10px; margin: 0 0 10px; }
+  .rp-cals { flex-direction: column; }
+}
+
 /* Mẫu trả lời CSKH */
 .cskh-src { width: 100%; }
 

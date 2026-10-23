@@ -60,3 +60,185 @@
   {% endif %}
 </div>
 {% endmacro %}
+
+{# Bộ chọn khoảng ngày kiểu Shopee Ads — DÙNG CHUNG cho Dashboard CEO /
+   GMV Max / KPI / Báo cáo ngày (thay cho thanh kỳ Ngày/Tuần/Tháng cũ).
+
+   Cách dùng:
+     {% from "_period_bar.html" import range_picker %}
+     {{ range_picker("/ceo", rng) }}
+     {{ range_picker("/gmv", rng, "&product_id=3") }}
+
+   - per_base: đường dẫn trang.
+   - rng: dict từ app.rangeview.resolve_range (cur_start, cur_end,
+     preset, preset_label, label_cur, presets, today...).
+   - per_extra: chuỗi query phụ phải GIỮ khi chuyển khoảng, đã có dấu
+     & ở đầu (VD "&product_id=3"); trang không có param phụ thì bỏ trống.
+
+   Nút hiển thị khoảng hiện tại "DD/MM - DD/MM/YYYY" (+ nhãn preset khi
+   trùng). Bấm nút mở panel: cột trái = preset (Hôm nay / Hôm qua /
+   7 / 30 / 90 ngày qua, bấm là chuyển ngay); phải = 2 tháng lịch cạnh
+   nhau — bấm 1 ngày = ngày bắt đầu, bấm ngày nữa = ngày kết thúc, bấm
+   ngày sớm hơn = chọn lại từ đầu; ngày tương lai bị khóa. "Áp dụng"
+   chuyển trang với ?from&to. Đóng bằng nút Đóng / phím Escape / bấm
+   ra ngoài. Mọi điều hướng là GET thuần, không phụ thuộc thư viện. #}
+
+{% macro range_picker(per_base, rng, per_extra="") %}
+<div class="rp" data-rp data-base="{{ per_base }}" data-extra="{{ per_extra }}"
+     data-from="{{ rng.cur_start }}" data-to="{{ rng.cur_end }}" data-today="{{ rng.today }}">
+  <button type="button" class="btn btn-ghost rp-btn" data-rp-toggle aria-haspopup="true" title="Chọn khoảng ngày">
+    📅 <span class="rp-range">{{ rng.label_cur }}</span>{% if rng.preset != "custom" %} <span class="rp-preset-name">· {{ rng.preset_label }}</span>{% endif %} <span class="rp-caret">▾</span>
+  </button>
+  <div class="rp-panel" data-rp-panel hidden>
+    <div class="rp-presets">
+      <div class="rp-presets-title">Chọn nhanh</div>
+      {% for p in rng.presets %}
+      <a href="{{ per_base }}?from={{ p.from }}&to={{ p.to }}{{ per_extra }}" class="rp-preset{% if p.active %} active{% endif %}">{{ p.label }}</a>
+      {% endfor %}
+    </div>
+    <div class="rp-main">
+      <div class="rp-nav">
+        <button type="button" class="btn btn-ghost btn-sm" data-rp-prev>‹ Tháng trước</button>
+        <span class="muted rp-hint">Bấm ngày bắt đầu, rồi bấm ngày kết thúc</span>
+        <button type="button" class="btn btn-ghost btn-sm" data-rp-next>Tháng sau ›</button>
+      </div>
+      <div class="rp-cals">
+        <div class="rp-cal" data-rp-cal="0"></div>
+        <div class="rp-cal" data-rp-cal="1"></div>
+      </div>
+      <div class="rp-foot">
+        <span class="rp-chosen" data-rp-chosen></span>
+        <span class="rp-foot-btns">
+          <button type="button" class="btn btn-ghost btn-sm" data-rp-close>Đóng</button>
+          <button type="button" class="btn btn-primary btn-sm" data-rp-apply>Áp dụng</button>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  if (window.__rpLoaded) return;
+  window.__rpLoaded = true;
+
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function isoOf(d) {
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+  function parseISO(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
+    if (!m) return null;
+    return new Date(+m[1], +m[2] - 1, +m[3]);
+  }
+  function fmtVN(iso) {
+    return iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4);
+  }
+  function monthStart(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+  function addMonths(d, n) { return new Date(d.getFullYear(), d.getMonth() + n, 1); }
+
+  document.querySelectorAll("[data-rp]").forEach(function (root) {
+    var base = root.getAttribute("data-base");
+    var extra = root.getAttribute("data-extra") || "";
+    var today = root.getAttribute("data-today");
+    var toggle = root.querySelector("[data-rp-toggle]");
+    var panel = root.querySelector("[data-rp-panel]");
+    var chosenEl = root.querySelector("[data-rp-chosen]");
+    var selStart = root.getAttribute("data-from");
+    var selEnd = root.getAttribute("data-to");
+    var viewMonth = monthStart(parseISO(selStart) || parseISO(today) || new Date());
+
+    function closePanel() { panel.hidden = true; }
+    function openPanel() {
+      document.querySelectorAll("[data-rp-panel]").forEach(function (p) { p.hidden = true; });
+      panel.hidden = false;
+      render();
+    }
+    toggle.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      if (panel.hidden) openPanel(); else closePanel();
+    });
+    panel.addEventListener("click", function (ev) { ev.stopPropagation(); });
+    root.querySelector("[data-rp-close]").addEventListener("click", closePanel);
+    root.querySelector("[data-rp-apply]").addEventListener("click", function () {
+      if (!selStart) return;
+      var end = selEnd || selStart;
+      window.location = base + "?from=" + selStart + "&to=" + end + extra;
+    });
+    root.querySelector("[data-rp-prev]").addEventListener("click", function () {
+      viewMonth = addMonths(viewMonth, -1);
+      render();
+    });
+    root.querySelector("[data-rp-next]").addEventListener("click", function () {
+      var limit = monthStart(parseISO(today) || new Date());
+      if (addMonths(viewMonth, 1) <= limit) {
+        viewMonth = addMonths(viewMonth, 1);
+        render();
+      }
+    });
+
+    function chosenText() {
+      if (!selStart) return "Chưa chọn ngày nào.";
+      if (!selEnd || selEnd === selStart) {
+        return "Từ " + fmtVN(selStart) + " — bấm thêm ngày kết thúc (hoặc Áp dụng để xem 1 ngày).";
+      }
+      var n = Math.round((parseISO(selEnd) - parseISO(selStart)) / 86400000) + 1;
+      return "Đã chọn: " + fmtVN(selStart) + " - " + fmtVN(selEnd) + " (" + n + " ngày)";
+    }
+
+    function renderCal(el, monthDate) {
+      var y = monthDate.getFullYear(), m = monthDate.getMonth();
+      var first = new Date(y, m, 1);
+      var offset = (first.getDay() + 6) % 7; // tuần bắt đầu Thứ Hai
+      var daysIn = new Date(y, m + 1, 0).getDate();
+      var html = '<div class="rp-cal-title">Tháng ' + (m + 1) + "/" + y + "</div>";
+      html += '<div class="rp-grid rp-week">';
+      ["T2", "T3", "T4", "T5", "T6", "T7", "CN"].forEach(function (w) {
+        html += "<span>" + w + "</span>";
+      });
+      html += '</div><div class="rp-grid">';
+      for (var i = 0; i < offset; i++) html += "<span></span>";
+      for (var d = 1; d <= daysIn; d++) {
+        var iso = isoOf(new Date(y, m, d));
+        var cls = "rp-day";
+        if (iso > today) cls += " rp-disabled";
+        if (selStart && selEnd && iso >= selStart && iso <= selEnd) cls += " rp-in";
+        if (iso === selStart || (selEnd && iso === selEnd)) cls += " rp-end";
+        html += '<button type="button" class="' + cls + '" data-rp-day="' + iso + '"' +
+          (iso > today ? " disabled" : "") + ">" + d + "</button>";
+      }
+      html += "</div>";
+      el.innerHTML = html;
+    }
+
+    function render() {
+      renderCal(root.querySelector('[data-rp-cal="0"]'), viewMonth);
+      renderCal(root.querySelector('[data-rp-cal="1"]'), addMonths(viewMonth, 1));
+      chosenEl.textContent = chosenText();
+    }
+
+    panel.addEventListener("click", function (ev) {
+      var t = ev.target;
+      var day = t.getAttribute && t.getAttribute("data-rp-day");
+      if (!day || day > today) return;
+      if (!selStart || (selStart && selEnd)) {
+        selStart = day; selEnd = null;
+      } else if (day >= selStart) {
+        selEnd = day;
+      } else {
+        selStart = day; selEnd = null;
+      }
+      render();
+    });
+  });
+
+  document.addEventListener("click", function () {
+    document.querySelectorAll("[data-rp-panel]").forEach(function (p) { p.hidden = true; });
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") {
+      document.querySelectorAll("[data-rp-panel]").forEach(function (p) { p.hidden = true; });
+    }
+  });
+})();
+</script>
+{% endmacro %}

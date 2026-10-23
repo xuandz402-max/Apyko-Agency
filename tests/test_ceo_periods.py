@@ -1,4 +1,5 @@
-"""Dashboard CEO — so sánh theo kỳ (ngày/tuần/tháng) + biểu đồ doanh thu 30 ngày."""
+"""Dashboard CEO — so sánh theo kỳ (hàm thuần) + bộ chọn khoảng ngày kiểu
+Shopee Ads ở route /ceo (?from&to, mặc định 7 ngày qua)."""
 
 from datetime import datetime, timedelta
 
@@ -295,11 +296,12 @@ def _seed_up(client):
 
 def test_ceo_route_default_day_with_delta_up(client):
     create_owner(client)
-    _seed_up(client)
-    r = client.get("/ceo")
+    today = _seed_up(client)
+    # Khoảng 1 ngày (from=to=hôm nay) -> so với hôm qua: +20.0%
+    r = client.get(f"/ceo?from={today}&to={today}")
     assert r.status_code == 200
     html = r.text
-    assert "So sánh theo kỳ" in html
+    assert "Doanh thu trong khoảng" in html
     assert "delta-up" in html
     assert "+20.0%" in html
     # Đồng hồ giờ Việt Nam (khối biểu đồ 30 ngày đã bỏ theo yêu cầu tối giản)
@@ -315,25 +317,33 @@ def test_ceo_route_delta_down_class(client):
     today = cl.today_str()
     _report(db, today, 2_000_000, 400_000, 200_000)
     _report(db, ceo._shift(today, -1), 2_500_000, 500_000, 250_000)
-    r = client.get("/ceo")
+    r = client.get(f"/ceo?from={today}&to={today}")
     assert r.status_code == 200
     assert "delta-down" in r.text
     assert "-20.0%" in r.text
 
 
-def test_ceo_route_period_switch(client):
+def test_ceo_route_range_switch(client):
     create_owner(client)
+    cl, ceo = _cl(), _ceo()
+    today = cl.today_str()
     _seed_up(client)
-    r = client.get("/ceo?period=week")
+    # Khoảng trùng preset 7 ngày qua -> preset đó active trên bộ chọn
+    f7 = ceo._shift(today, -6)
+    r = client.get(f"/ceo?from={f7}&to={today}")
     assert r.status_code == 200
-    assert "Tuần này" in r.text
-    r = client.get("/ceo?period=month")
+    assert "7 ngày qua" in r.text
+    assert "rp-preset active" in r.text
+    # Khoảng trùng preset 30 ngày qua
+    f30 = ceo._shift(today, -29)
+    r = client.get(f"/ceo?from={f30}&to={today}")
     assert r.status_code == 200
-    assert "Tháng này" in r.text
-    # period bậy → mặc định day
-    r = client.get("/ceo?period=quy")
+    assert "30 ngày qua" in r.text
+    assert "rp-preset active" in r.text
+    # Param ngày bậy -> mặc định 7 ngày qua, không lỗi
+    r = client.get("/ceo?from=abc&to=def")
     assert r.status_code == 200
-    assert "Hôm nay:" in r.text
+    assert "rp-preset active" in r.text
 
 
 def test_ceo_route_period_forbidden_for_plain_staff(client):
@@ -341,8 +351,8 @@ def test_ceo_route_period_forbidden_for_plain_staff(client):
     code = create_staff(client, "nv_period", perms=("can_view_products",))
     logout(client)
     activate(client, "nv_period", code)
-    assert client.get("/ceo?period=week").status_code == 403
-    assert client.get("/ceo?period=month").status_code == 403
+    assert client.get("/ceo").status_code == 403
+    assert client.get("/ceo?from=2026-10-01&to=2026-10-07").status_code == 403
 
 
 def test_ceo_route_period_ok_for_leader(client):
@@ -352,9 +362,9 @@ def test_ceo_route_period_ok_for_leader(client):
     )
     logout(client)
     activate(client, "nv_lead2", code)
-    r = client.get("/ceo?period=week")
+    r = client.get("/ceo?from=2026-10-01&to=2026-10-07")
     assert r.status_code == 200
-    assert "Tuần này" in r.text
+    assert "Dashboard CEO" in r.text
 
 
 def test_period_compare_day_fallback_to_latest_data_day(client):
@@ -453,89 +463,74 @@ def test_ceo_route_custom_compare(client):
     create_owner(client)
     db = _db()
     _report(db, "2026-10-20", 5574, 1200, 500)
-    _report(db, "2026-09-20", 5400, 1000, 200)
-    r = client.get(
-        "/ceo?period=custom&from=2026-10-20&to=2026-10-20"
-        "&cfrom=2026-09-20&cto=2026-09-20"
-    )
+    _report(db, "2026-10-19", 5400, 1000, 200)
+    # Bộ chọn khoảng mới: khoảng so sánh LUÔN là khoảng liền trước dài
+    # bằng nhau (ở đây là chính ngày 19/10) — không còn ô chọn kỳ so
+    # sánh riêng như chế độ Tự chọn cũ.
+    r = client.get("/ceo?from=2026-10-20&to=2026-10-20")
     assert r.status_code == 200
-    assert "Kỳ đã chọn" in r.text
-    assert "kỳ so sánh đã chọn" in r.text
     assert "+3.2%" in r.text
-    # 4 ô date được điền sẵn đúng giá trị đã chọn
-    assert 'name="from" value="2026-10-20"' in r.text
-    assert 'name="cfrom" value="2026-09-20"' in r.text
+    assert "20/10/2026" in r.text  # nhãn khoảng trên nút chọn
+    assert "19/10/2026" in r.text  # nhãn khoảng liền trước
 
 
-def test_ceo_route_custom_default_prev(client):
+def test_ceo_route_range_default_prev(client):
     create_owner(client)
     db = _db()
     _report(db, "2026-10-20", 6000, 1200, 500)
     _report(db, "2026-10-16", 5000, 1000, 200)
-    # Không truyền cfrom/cto -> kỳ so sánh mặc định = 15/10-17/10 (liền trước, dài bằng)
-    r = client.get("/ceo?period=custom&from=2026-10-18&to=2026-10-20")
+    # Khoảng xem 18/10-20/10 -> so sánh = 15/10-17/10 (liền trước, dài bằng)
+    r = client.get("/ceo?from=2026-10-18&to=2026-10-20")
     assert r.status_code == 200
-    assert "Kỳ đã chọn" in r.text
     assert "+20.0%" in r.text
-    assert 'name="cfrom" value="2026-10-15"' in r.text
-    assert 'name="cto" value="2026-10-17"' in r.text
+    assert "15/10 - 17/10/2026" in r.text  # nhãn khoảng liền trước
 
 
-def test_ceo_route_custom_invalid_falls_back_to_day(client):
+def test_ceo_route_range_invalid_falls_back_to_default(client):
     create_owner(client)
-    _seed_up(client)
+    _seed_up(client)  # hôm nay 3tr + hôm qua 2.5tr -> mặc định 7 ngày qua tổng 5,500,000
     # to < from
-    r = client.get("/ceo?period=custom&from=2026-10-20&to=2026-10-10")
+    r = client.get("/ceo?from=2026-10-20&to=2026-10-10")
     assert r.status_code == 200
-    assert "Hôm nay:" in r.text
+    assert "5,500,000" in r.text
     # ngày sai định dạng
-    r = client.get("/ceo?period=custom&from=abc&to=2026-10-10")
+    r = client.get("/ceo?from=abc&to=2026-10-10")
     assert r.status_code == 200
-    assert "Hôm nay:" in r.text
+    assert "5,500,000" in r.text
     # khoảng dài hơn 366 ngày
-    r = client.get("/ceo?period=custom&from=2024-01-01&to=2026-10-10")
+    r = client.get("/ceo?from=2024-01-01&to=2026-10-10")
     assert r.status_code == 200
-    assert "Hôm nay:" in r.text
-    # kỳ so sánh đảo (cto < cfrom)
-    r = client.get(
-        "/ceo?period=custom&from=2026-10-20&to=2026-10-20"
-        "&cfrom=2026-09-20&cto=2026-09-19"
-    )
-    assert r.status_code == 200
-    assert "Hôm nay:" in r.text
+    assert "5,500,000" in r.text
 
 
-# --- chọn ngày xem ------------------------------------------------------------
+# --- xem 1 ngày quá khứ = khoảng from=to -------------------------------------
 
 
 def test_ceo_route_view_past_date(client):
     create_owner(client)
     db = _db()
     _report(db, "2026-09-20", 5400, 1000, 200)
-    r = client.get("/ceo?date=2026-09-20")
+    # Xem 1 ngày quá khứ = khoảng from=to=ngày đó (bộ chọn mới không còn
+    # ô ?date= riêng; bảng 7 ngày neo tại ngày cuối khoảng = 20/09).
+    r = client.get("/ceo?from=2026-09-20&to=2026-09-20")
     assert r.status_code == 200
     html = r.text
-    assert "Đang xem ngày" in html
-    assert "20/09/2026" in html
+    assert "20/09/2026" in html  # nhãn khoảng trên nút chọn
     assert "5,400" in html  # doanh thu của đúng ngày 20/09
-    assert "Doanh thu 20/09" in html  # nhãn thẻ theo ngày xem
-    assert "Doanh thu hôm nay" not in html
-    assert "Về hôm nay" in html
-    # Link chuyển kỳ giữ nguyên ngày đang xem
-    assert "period=week&amp;date=2026-09-20" in html
+    assert "Doanh thu trong khoảng" in html
 
 
-def test_ceo_route_future_or_bad_date_uses_today(client):
+def test_ceo_route_future_or_bad_range_no_crash(client):
     create_owner(client)
     _seed_up(client)
-    r = client.get("/ceo?date=2999-01-01")  # tương lai -> hôm nay
+    # Khoảng ở tương lai: không có dữ liệu -> thẻ hiện "No Data", không crash
+    r = client.get("/ceo?from=2999-01-01&to=2999-01-07")
     assert r.status_code == 200
-    assert "Đang xem ngày" not in r.text
-    assert "Doanh thu hôm nay" in r.text
-    r = client.get("/ceo?date=20-09-2026")  # sai định dạng -> hôm nay
+    assert "No Data" in r.text
+    # Sai định dạng -> mặc định 7 ngày qua (tổng 3tr + 2.5tr)
+    r = client.get("/ceo?from=20-09-2026&to=x")
     assert r.status_code == 200
-    assert "Đang xem ngày" not in r.text
-    assert "Doanh thu hôm nay" in r.text
+    assert "5,500,000" in r.text
 
 
 def test_ceo_route_date_custom_forbidden_for_plain_staff(client):
@@ -543,14 +538,11 @@ def test_ceo_route_date_custom_forbidden_for_plain_staff(client):
     code = create_staff(client, "nv_date", perms=("can_view_products",))
     logout(client)
     activate(client, "nv_date", code)
-    assert client.get("/ceo?date=2026-09-20").status_code == 403
-    assert (
-        client.get("/ceo?period=custom&from=2026-10-01&to=2026-10-20").status_code
-        == 403
-    )
+    assert client.get("/ceo?from=2026-09-20&to=2026-09-20").status_code == 403
+    assert client.get("/ceo?from=2026-10-01&to=2026-10-20").status_code == 403
 
 
-# --- xem theo khoảng tự do (range mode) ---------------------------------------
+# --- xem theo khoảng (range mode -> nay là cách xem duy nhất) ------------------
 
 
 def test_range_headline_totals_and_delta(client):
@@ -592,31 +584,26 @@ def test_ceo_route_range_mode(client):
     db = _db()
     _report(db, "2026-09-20", 5400, 1000, 200)
     _report(db, "2026-10-20", 5574, 1200, 500)
-    r = client.get("/ceo?vfrom=2026-09-01&vto=2026-10-31")
+    r = client.get("/ceo?from=2026-09-01&to=2026-10-31")
     assert r.status_code == 200
     html = r.text
-    assert "Đang xem khoảng" in html
-    assert "01/09" in html  # nhãn khoảng bắt đầu 01/09 (cuối khoảng có thể bị kẹp về hôm nay)
+    assert "01/09 - 31/10/2026" in html  # nhãn khoảng trên nút chọn
     assert "Doanh thu trong khoảng" in html
     assert "Chi phí ads trong khoảng" in html
     assert "Checklist trong khoảng" in html
     assert "10,974" in html  # tổng doanh thu cả khoảng: 5.400 + 5.574
-    # Form Xem khoảng điền sẵn khoảng đang xem
-    assert 'name="vfrom" value="2026-09-01"' in html
 
 
-def test_ceo_route_range_future_clamped(client):
+def test_ceo_route_range_future_end_still_counts_today(client):
     create_owner(client)
     db, cl, ceo = _db(), _cl(), _ceo()
     today = cl.today_str()
     _report(db, today, 1_234_000, 100_000, 50_000)
-    r = client.get(f"/ceo?vfrom={ceo._shift(today, -9)}&vto=2999-01-01")
+    # Ngày kết thúc ở tương lai gần (khoảng vẫn <= 366 ngày): phần tương
+    # lai chưa có số, tổng vẫn gồm đúng dữ liệu đã nhập tới hôm nay.
+    r = client.get(f"/ceo?from={ceo._shift(today, -9)}&to={ceo._shift(today, 30)}")
     assert r.status_code == 200
-    html = r.text
-    assert "Đang xem khoảng" in html
-    # Ngày cuối khoảng bị kẹp về hôm nay (nhãn kết thúc bằng ngày hôm nay)
-    assert f"{today[8:10]}/{today[5:7]}/{today[0:4]}" in html
-    assert "1,234,000" in html
+    assert "1,234,000" in r.text
 
 
 def test_ceo_route_range_invalid_falls_back(client):
@@ -624,16 +611,17 @@ def test_ceo_route_range_invalid_falls_back(client):
     cl, ceo = _cl(), _ceo()
     today = cl.today_str()
     urls = [
-        "/ceo?vfrom=2026-10-31&vto=2026-09-01",  # vto < vfrom
-        "/ceo?vfrom=abc&vto=2026-09-01",  # sai định dạng
-        "/ceo?vfrom=2026-09-01",  # thiếu vto
-        f"/ceo?vfrom={ceo._shift(today, -400)}&vto={today}",  # dài > 366 ngày
+        "/ceo?from=2026-10-31&to=2026-09-01",  # to < from
+        "/ceo?from=abc&to=2026-09-01",  # sai định dạng
+        "/ceo?from=2026-09-01",  # thiếu to
+        f"/ceo?from={ceo._shift(today, -400)}&to={today}",  # dài > 366 ngày
     ]
     for url in urls:
         r = client.get(url)
         assert r.status_code == 200, url
-        assert "Đang xem khoảng" not in r.text, url
-        assert "Doanh thu hôm nay" in r.text, url
+        # Rơi về mặc định 7 ngày qua: preset last7 active trên bộ chọn
+        assert "rp-preset active" in r.text, url
+        assert "Doanh thu trong khoảng" in r.text, url
 
 
 def test_ceo_route_range_forbidden_for_plain_staff(client):
@@ -641,7 +629,7 @@ def test_ceo_route_range_forbidden_for_plain_staff(client):
     code = create_staff(client, "nv_range", perms=("can_view_products",))
     logout(client)
     activate(client, "nv_range", code)
-    assert client.get("/ceo?vfrom=2026-09-01&vto=2026-10-31").status_code == 403
+    assert client.get("/ceo?from=2026-09-01&to=2026-10-31").status_code == 403
 
 
 # --- nút chọn nhanh (preset) ---------------------------------------------------
@@ -654,16 +642,17 @@ def test_ceo_route_presets_present(client):
     r = client.get("/ceo")
     assert r.status_code == 200
     html = r.text
-    # 4 link preset với đúng ngày tính theo HÔM NAY thật (href dùng & thô)
-    assert f"/ceo?vfrom={today}&vto={today}" in html  # Hôm nay
+    # 5 link preset với đúng ngày tính theo HÔM NAY thật
+    assert f"/ceo?from={today}&to={today}" in html  # Hôm nay
     y = ceo._shift(today, -1)
-    assert f"/ceo?vfrom={y}&vto={y}" in html  # Hôm qua
-    assert f"/ceo?vfrom={ceo._shift(today, -6)}&vto={today}" in html  # 7 ngày qua
-    assert f"/ceo?vfrom={ceo._shift(today, -29)}&vto={today}" in html  # 30 ngày qua
-    for label in ("Hôm nay", "Hôm qua", "7 ngày qua", "30 ngày qua"):
+    assert f"/ceo?from={y}&to={y}" in html  # Hôm qua
+    assert f"/ceo?from={ceo._shift(today, -6)}&to={today}" in html  # 7 ngày qua
+    assert f"/ceo?from={ceo._shift(today, -29)}&to={today}" in html  # 30 ngày qua
+    assert f"/ceo?from={ceo._shift(today, -89)}&to={today}" in html  # 90 ngày qua
+    for label in ("Hôm nay", "Hôm qua", "7 ngày qua", "30 ngày qua", "90 ngày qua"):
         assert label in html
-    # Chưa chọn khoảng nào -> không preset nào active (nút chính có btn-primary)
-    assert "Đang xem khoảng" not in html
+    # Mặc định không có param -> preset 7 ngày qua đang active
+    assert "rp-preset active" in html
 
 
 def test_ceo_route_preset_last7_totals(client):
@@ -674,13 +663,11 @@ def test_ceo_route_preset_last7_totals(client):
     _report(db, ceo._shift(today, -3), 2_000_000, 200_000, 100_000)
     _report(db, ceo._shift(today, -10), 9_000_000, 900_000, 100_000)  # ngoài 7 ngày
     f7 = ceo._shift(today, -6)
-    r = client.get(f"/ceo?vfrom={f7}&vto={today}")
+    r = client.get(f"/ceo?from={f7}&to={today}")
     assert r.status_code == 200
     html = r.text
-    assert "Đang xem khoảng" in html
     assert "Doanh thu trong khoảng" in html
     assert "3,000,000" in html  # chỉ cộng 2 ngày trong 7 ngày qua
-    # Nút preset "7 ngày qua" đang active
-    assert (
-        f'href="/ceo?vfrom={f7}&vto={today}" class="btn btn-sm btn-primary"' in html
-    )
+    # Preset "7 ngày qua" đang active trên bộ chọn
+    assert "rp-preset active" in html
+    assert f'href="/ceo?from={f7}&to={today}"' in html

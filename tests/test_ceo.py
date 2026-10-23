@@ -137,11 +137,11 @@ def test_ceo_page_with_data(client):
             (items[1]["id"],),
         )
 
-    r = client.get("/ceo")
+    r = client.get(f"/ceo?from={today}&to={today}")
     assert r.status_code == 200
     html = r.text
 
-    # Thẻ doanh thu + % thay đổi
+    # Thẻ doanh thu + % thay đổi (khoảng 1 ngày hôm nay vs hôm qua)
     assert "3,000,000₫" in html
     assert "+20.0%" in html
     assert "2,500,000₫" in html  # xuất hiện ở bảng 7 ngày

@@ -36,6 +36,7 @@ from . import (
     lessons,
     periods,
     pricing,
+    rangeview,
     tiktok,
 )
 from . import database as db
@@ -388,47 +389,11 @@ def _ceo_can_view(user: dict) -> bool:
     )
 
 
-def _ceo_custom_ranges(date_from, date_to, cfrom, cto):
-    """Validate tham số Tự chọn của /ceo -> ((cur), (prev)) hoặc None.
-
-    - Kỳ xem bắt buộc: đúng định dạng YYYY-MM-DD, to >= from, dài <= 366
-      ngày; sai bất kỳ điều nào -> None (route quay về kỳ Ngày).
-    - Kỳ so sánh: thiếu cả 2 ô (hoặc chỉ điền 1 ô) -> mặc định là khoảng
-      dài bằng kỳ xem nằm ngay trước kỳ xem (ceo.default_prev_range).
-      Điền đủ 2 ô nhưng sai định dạng / cto < cfrom / dài > 366 ngày ->
-      None (quay về kỳ Ngày).
-    """
-    cur_from = periods._parse_iso(date_from)
-    cur_to = periods._parse_iso(date_to)
-    if cur_from is None or cur_to is None or cur_to < cur_from:
-        return None
-    if (cur_to - cur_from).days + 1 > 366:
-        return None
-    cur = (cur_from.isoformat(), cur_to.isoformat())
-    if not cfrom and not cto:
-        return cur, ceo.default_prev_range(cur)
-    if bool(cfrom) != bool(cto):  # chỉ điền 1 trong 2 ô -> dùng mặc định
-        return cur, ceo.default_prev_range(cur)
-    prev_from = periods._parse_iso(cfrom)
-    prev_to = periods._parse_iso(cto)
-    if prev_from is None or prev_to is None or prev_to < prev_from:
-        return None
-    if (prev_to - prev_from).days + 1 > 366:
-        return None
-    return cur, (prev_from.isoformat(), prev_to.isoformat())
-
-
 @router.get("/ceo", response_class=HTMLResponse)
 def page_ceo(
     request: Request,
-    period: str = "day",
-    date: str | None = None,
     date_from: str | None = Query(default=None, alias="from"),
     date_to: str | None = Query(default=None, alias="to"),
-    cfrom: str | None = None,
-    cto: str | None = None,
-    vfrom: str | None = None,
-    vto: str | None = None,
 ):
     user, redir = auth.page_guard(request)
     if redir:
@@ -437,85 +402,18 @@ def page_ceo(
         raise HTTPException(
             status_code=403, detail="Chỉ chủ sở hữu / Leader / Quản trị được xem."
         )
-    # ----- ngày xem: mặc định hôm nay; ngày hợp lệ trong quá khứ thì xem
-    # theo ngày đó; sai định dạng hoặc tương lai -> hôm nay -----
+    # ----- khoảng xem kiểu Shopee Ads (?from&to, mặc định 7 ngày qua):
+    # 4 thẻ chính + thẻ checklist là TỔNG của cả khoảng, so với khoảng
+    # liền trước dài bằng nhau (rangeview + ceo.range_headline). Các khối
+    # theo ngày (cảnh báo, nhân viên, doanh thu 7 ngày) neo tại ngày CUỐI
+    # khoảng, kẹp không vượt quá hôm nay thật -----
     real_today = checklist.today_str()
-    view_date = real_today
-    picked = periods._parse_iso(date)
-    if picked is not None and picked.isoformat() <= real_today:
-        view_date = picked.isoformat()
+    rng = rangeview.resolve_range(
+        {"from": date_from, "to": date_to}, real_today
+    )
+    view_date = min(rng["cur_end"], real_today)
     is_today = view_date == real_today
-
-    # ----- xem theo khoảng tự do (?vfrom=&vto=): cả 2 phải đúng định
-    # dạng, vto >= vfrom, dài <= 366 ngày; vto ở tương lai -> kẹp về
-    # hôm nay (kẹp xong mà vfrom > vto thì bỏ khoảng). Sai -> bỏ khoảng,
-    # về chế độ xem ngày như cũ. Hợp lệ -> 4 thẻ chính hiện TỔNG cả
-    # khoảng và toàn trang neo tại ngày cuối khoảng (vto) -----
-    view_range = None
-    range_cards = None
-    vf = periods._parse_iso(vfrom)
-    vt = periods._parse_iso(vto)
-    if vf is not None and vt is not None and vt >= vf:
-        vt = min(vt, periods._parse_iso(real_today))
-        if vt >= vf and (vt - vf).days + 1 <= 366:
-            v_range = (vf.isoformat(), vt.isoformat())
-            view_range = {
-                "start": v_range[0],
-                "end": v_range[1],
-                # Nhãn "DD/MM - DD/MM/YYYY" (năm lấy của ngày cuối khoảng)
-                "label": f"{ceo._range_label(*v_range)}/{v_range[1][0:4]}",
-            }
-            view_date = v_range[1]
-            is_today = view_date == real_today
-            range_cards = ceo.cached_range_headline(*v_range)
-
-    # ----- nút chọn nhanh (preset): luôn tính theo HÔM NAY thật, không
-    # theo ngày đang xem; active khi khoảng đang xem trùng đúng preset --
-    presets = []
-    for key, label, back_from, back_to in (
-        ("today", "Hôm nay", 0, 0),
-        ("yesterday", "Hôm qua", 1, 1),
-        ("last7", "7 ngày qua", 6, 0),
-        ("last30", "30 ngày qua", 29, 0),
-    ):
-        p_from = ceo._shift(real_today, -back_from)
-        p_to = ceo._shift(real_today, -back_to)
-        presets.append(
-            {
-                "key": key,
-                "label": label,
-                "vfrom": p_from,
-                "vto": p_to,
-                "active": bool(
-                    view_range
-                    and view_range["start"] == p_from
-                    and view_range["end"] == p_to
-                ),
-            }
-        )
-
-    # ----- so sánh theo kỳ: day/week/month neo tại ngày xem, hoặc Tự chọn
-    # với 2 khoảng tuyệt đối (kỳ xem + kỳ so sánh do người dùng điền) -----
-    cmp_data = None
-    custom = {"from": view_date, "to": view_date}
-    custom["cfrom"], custom["cto"] = ceo.default_prev_range((view_date, view_date))
-    if period == "custom":
-        ranges = _ceo_custom_ranges(date_from, date_to, cfrom, cto)
-        if ranges is not None:
-            cur_range, prev_range = ranges
-            cmp_data = ceo.cached_period_compare_custom(cur_range, prev_range)
-            custom = {
-                "from": cur_range[0],
-                "to": cur_range[1],
-                "cfrom": prev_range[0],
-                "cto": prev_range[1],
-            }
-        else:
-            period = "day"
-    if cmp_data is None:
-        if period not in ceo.PERIODS:
-            period = "day"
-        cmp_data = ceo.cached_period_compare(view_date, period)
+    range_cards = ceo.cached_range_headline(rng["cur_start"], rng["cur_end"])
 
     now = checklist.now_vn()
     weekday_names = [
@@ -540,17 +438,8 @@ def page_ceo(
             today=view_date,
             view_date=view_date,
             is_today=is_today,
-            date_qs="" if is_today else f"&date={view_date}",
-            back_today_url=(
-                "/ceo" if period == "custom" else f"/ceo?period={period}"
-            ),
-            period=period,
-            cmp=cmp_data,
-            custom=custom,
-            view_range=view_range,
+            rng=rng,
             range_cards=range_cards,
-            presets=presets,
-            rev_series=ceo.cached_revenue_series(view_date),
             now_text=now_text,
         ),
     )
@@ -1422,7 +1311,6 @@ def page_gmv(
     product_id: int | None = None,
     product: str | None = None,
     days: int | None = None,
-    period: str | None = None,
     date_from: str | None = Query(default=None, alias="from"),
     date_to: str | None = Query(default=None, alias="to"),
 ):
@@ -1478,12 +1366,13 @@ def page_gmv(
         for t in totals
     ]
 
-    # --- dải so sánh theo kỳ (độc lập với ?days/?product của biểu đồ) ---
-    per_info = periods.resolve_period(
-        {"period": period, "from": date_from, "to": date_to}, today
+    # --- dải so sánh theo khoảng (bộ chọn kiểu Shopee Ads: ?from&to,
+    # mặc định 7 ngày qua; độc lập với ?days/?product của biểu đồ cũ) ---
+    rng = rangeview.resolve_range(
+        {"from": date_from, "to": date_to}, today
     )
-    gmv_cur = gmv_charts.range_totals(per_info["cur_start"], per_info["cur_end"])
-    gmv_prev = gmv_charts.range_totals(per_info["prev_start"], per_info["prev_end"])
+    gmv_cur = gmv_charts.range_totals(rng["cur_start"], rng["cur_end"])
+    gmv_prev = gmv_charts.range_totals(rng["prev_start"], rng["prev_end"])
     gmv_cmp = {
         "gmv_vnd": _per_metric(gmv_cur["gmv_vnd"], gmv_prev["gmv_vnd"]),
         "cost_vnd": _per_metric(gmv_cur["cost_vnd"], gmv_prev["cost_vnd"]),
@@ -1491,13 +1380,8 @@ def page_gmv(
         "entries": gmv_cur["entries"],
         "has_data": gmv_cur["entries"] > 0,
     }
-    # Param phụ của biểu đồ phải giữ nguyên khi người dùng chuyển kỳ.
-    chart_scope = product if chart_product_id is not None else "all"
-    per_extra = f"&product={chart_scope}&days={chart_days}"
-    per_hidden = [("product", chart_scope), ("days", str(chart_days))]
-    if active is not None:
-        per_extra += f"&product_id={active['id']}"
-        per_hidden.append(("product_id", str(active["id"])))
+    # Sản phẩm đang xem (tab) phải giữ nguyên khi người dùng đổi khoảng.
+    per_extra = f"&product_id={active['id']}" if active is not None else ""
 
     return templates.TemplateResponse(
         "gmv.html",
@@ -1516,9 +1400,8 @@ def page_gmv(
             chart_totals=totals_view,
             gmv_alerts=gmv_charts.gmv_alerts(today),
             roas_warn=gmv_charts.ROAS_WARN,
-            per_info=per_info,
+            rng=rng,
             per_extra=per_extra,
-            per_hidden=per_hidden,
             gmv_cmp=gmv_cmp,
         ),
     )
@@ -1641,25 +1524,26 @@ def _daily_enrich(entry: dict) -> dict:
 @router.get("/bao-cao", response_class=HTMLResponse)
 def page_daily(
     request: Request,
-    period: str | None = None,
     date_from: str | None = Query(default=None, alias="from"),
     date_to: str | None = Query(default=None, alias="to"),
 ):
     user, redir = auth.page_guard(request, "can_view_daily")
     if redir:
         return redir
-    per_info = periods.resolve_period(
-        {"period": period, "from": date_from, "to": date_to},
+    # Bộ chọn khoảng kiểu Shopee Ads: mặc định 30 ngày qua cho trang này.
+    rng = rangeview.resolve_range(
+        {"from": date_from, "to": date_to},
         checklist.today_str(),
+        default="last30",
     )
     all_reports = db.daily_list()
     scoped = [
         r
         for r in all_reports
-        if per_info["cur_start"] <= r["date"] <= per_info["cur_end"]
+        if rng["cur_start"] <= r["date"] <= rng["cur_end"]
     ]
-    cur_tot = period_totals(all_reports, per_info["cur_start"], per_info["cur_end"])
-    prev_tot = period_totals(all_reports, per_info["prev_start"], per_info["prev_end"])
+    cur_tot = period_totals(all_reports, rng["cur_start"], rng["cur_end"])
+    prev_tot = period_totals(all_reports, rng["prev_start"], rng["prev_end"])
     daily_cmp = {
         "revenue": _per_metric(cur_tot["revenue"], prev_tot["revenue"]),
         "ads_cost": _per_metric(cur_tot["ads_cost"], prev_tot["ads_cost"]),
@@ -1675,7 +1559,7 @@ def page_daily(
             reports=[_daily_enrich(r) for r in scoped],
             can_edit=bool(user.get("can_add_edit_products")),
             can_delete=bool(user.get("can_delete_products")),
-            per_info=per_info,
+            rng=rng,
             daily_cmp=daily_cmp,
         ),
     )
@@ -2962,26 +2846,26 @@ def page_backup_restore(request: Request, name: str):
 # ------------------------------ KPI nhân viên ---------------------------------
 
 
-def _kpi_compute(date, period, date_from, date_to):
-    """Số liệu KPI cho kỳ đang chọn + kỳ liền trước (dùng chung trang + CSV).
+def _kpi_compute(date_from, date_to):
+    """Số liệu KPI cho khoảng đang chọn + khoảng liền trước (dùng chung
+    trang + CSV).
 
-    Trả (per_info, rows, team, per_extra, per_hidden). rows đã xếp hạng:
+    Khoảng lấy từ bộ chọn kiểu Shopee Ads (?from&to, mặc định 7 ngày
+    qua — app.rangeview). Trả (rng, rows, team). rows đã xếp hạng:
     % hoàn thành giảm dần, hòa thì ít quá hạn hơn đứng trên. Delta là
-    ĐIỂM % (hiệu 2 tỷ lệ) như Bảng Leader; chỉ tính khi cả 2 kỳ đều có
-    việc thực tế của nhân viên đó.
+    ĐIỂM % (hiệu 2 tỷ lệ) như Bảng Leader; chỉ tính khi cả 2 khoảng đều
+    có việc thực tế của nhân viên đó.
     """
-    anchor = _cl_valid_date(date) or checklist.today_str()
-    per_info = periods.resolve_period(
-        {"period": period, "from": date_from, "to": date_to}, anchor
+    rng = rangeview.resolve_range(
+        {"from": date_from, "to": date_to}, checklist.today_str()
     )
-    per_info = periods.cap_period(per_info, max_days=31)
     users_list = db.list_users()
     now = checklist.now_vn()
     cur = checklist.board_range_stats(
-        per_info["cur_start"], per_info["cur_end"], now=now, users=users_list
+        rng["cur_start"], rng["cur_end"], now=now, users=users_list
     )
     prev = checklist.board_range_stats(
-        per_info["prev_start"], per_info["prev_end"], now=now, users=users_list
+        rng["prev_start"], rng["prev_end"], now=now, users=users_list
     )
     prev_by_id = {b["user_id"]: b for b in prev["per_user"]}
     rows = []
@@ -3016,16 +2900,12 @@ def _kpi_compute(date, period, date_from, date_to):
         "prev_pct": prev["pct"],
         "delta": team_delta,
     }
-    per_extra = f"&date={anchor}"
-    per_hidden = [("date", anchor)]
-    return per_info, rows, team, per_extra, per_hidden
+    return rng, rows, team
 
 
 @router.get("/kpi", response_class=HTMLResponse)
 def page_kpi(
     request: Request,
-    date: str | None = None,
-    period: str | None = None,
     date_from: str | None = Query(default=None, alias="from"),
     date_to: str | None = Query(default=None, alias="to"),
 ):
@@ -3034,19 +2914,15 @@ def page_kpi(
         return redir
     if not _cl_is_leader(user):
         raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
-    per_info, rows, team, per_extra, per_hidden = _kpi_compute(
-        date, period, date_from, date_to
-    )
+    rng, rows, team = _kpi_compute(date_from, date_to)
     return templates.TemplateResponse(
         "kpi.html",
         _ctx(
             request,
             user,
-            per_info=per_info,
+            rng=rng,
             rows=rows,
             team=team,
-            per_extra=per_extra,
-            per_hidden=per_hidden,
         ),
     )
 
@@ -3054,8 +2930,6 @@ def page_kpi(
 @router.get("/kpi/export")
 def page_kpi_export(
     request: Request,
-    date: str | None = None,
-    period: str | None = None,
     date_from: str | None = Query(default=None, alias="from"),
     date_to: str | None = Query(default=None, alias="to"),
 ):
@@ -3064,9 +2938,7 @@ def page_kpi_export(
         return redir
     if not _cl_is_leader(user):
         raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
-    per_info, rows, team, _extra, _hidden = _kpi_compute(
-        date, period, date_from, date_to
-    )
+    rng, rows, team = _kpi_compute(date_from, date_to)
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow(
@@ -3102,7 +2974,7 @@ def page_kpi_export(
     )
     payload = buf.getvalue().encode("utf-8-sig")
     filename = (
-        f"kpi_{per_info['cur_start']}_{per_info['cur_end']}_"
+        f"kpi_{rng['cur_start']}_{rng['cur_end']}_"
         + datetime.now().strftime("%Y%m%d_%H%M%S")
         + ".csv"
     )

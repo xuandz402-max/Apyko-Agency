@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% set nav_active = "gmv" %}
-{% from "_period_bar.html" import period_bar, per_metric_card %}
+{% from "_period_bar.html" import range_picker, per_metric_card %}
 {% block main_class %}main-wide{% endblock %}
 {% block title %}GMV Max Shopee · {{ app_name }}{% endblock %}
 {% block content %}
@@ -14,7 +14,8 @@
   <div class="card-head">
     <h2>📈 So sánh theo kỳ</h2>
   </div>
-  {{ period_bar("/gmv", per_info, per_extra, per_hidden) }}
+  {{ range_picker("/gmv", rng, per_extra) }}
+  <p class="muted per-note">Đang xem: <strong>{{ rng.label_cur }}</strong>{% if rng.preset != "custom" %} ({{ rng.preset_label }}){% endif %} · so với khoảng liền trước <strong>{{ rng.label_prev }}</strong>.</p>
   <div class="stats">
     {{ per_metric_card("GMV (VNĐ)", gmv_cmp.gmv_vnd, "money") }}
     {{ per_metric_card("Chi phí QC (VNĐ)", gmv_cmp.cost_vnd, "money") }}

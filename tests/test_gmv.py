@@ -176,7 +176,7 @@ def test_fail_closed_no_login(client):
 def test_view_only_cannot_write(client):
     create_owner(client)
     prod = _make_product(client, "XÀ BÔNG NGHỆ")
-    code = create_staff(client, "nv_gmv", perms=("can_view_products",))
+    code = create_staff(client, "nv_gmv", perms=("can_view_gmv",))
     logout(client)
     activate(client, "nv_gmv", code)
 
@@ -190,7 +190,7 @@ def test_view_only_cannot_write(client):
 
 def test_delete_needs_delete_perm(client):
     create_owner(client)
-    code = create_staff(client, "nv_sua", perms=("can_view_products", "can_add_edit_products"))
+    code = create_staff(client, "nv_sua", perms=("can_view_gmv", "can_add_edit_products"))
     logout(client)
     activate(client, "nv_sua", code)
     logout(client)

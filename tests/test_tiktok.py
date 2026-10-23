@@ -215,7 +215,7 @@ def test_update_na_without_note_rejected(client):
 
 def test_view_and_write_permissions(client):
     create_owner(client)
-    code_view = create_staff(client, "nv_tt_view", perms=("can_view_products",))
+    code_view = create_staff(client, "nv_tt_view", perms=("can_view_tiktok",))
     code_no_view = create_staff(client, "nv_tt_no_view", perms=())
     # Chỉ xem: xem được trang, POST cập nhật bị 403
     logout(client)

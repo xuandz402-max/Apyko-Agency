@@ -69,6 +69,13 @@ def _bootstrap_owner_from_env() -> None:
             "can_add_edit_products": 1,
             "can_delete_products": 1,
             "can_view_uni": 1,
+            "can_view_daily": 1,
+            "can_view_pricing": 1,
+            "can_view_gmv": 1,
+            "can_view_affiliate": 1,
+            "can_view_tiktok": 1,
+            "can_view_cskh": 1,
+            "can_view_accounts": 1,
         }
     )
     log.warning("Đã tạo tài khoản chủ sở hữu '%s' từ biến môi trường.", config.OWNER_USERNAME)

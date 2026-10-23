@@ -254,7 +254,9 @@ ITEM_PAYLOAD = {
 def staff_no_edit(client):
     """Nhân sự chỉ xem (không thêm/sửa/xóa sản phẩm), đã kích hoạt + đăng nhập."""
     create_owner(client)
-    code = create_staff(client, "nv_xem", perms=("can_view_products", "can_view_uni"))
+    code = create_staff(
+        client, "nv_xem", perms=("can_view_products", "can_view_uni", "can_view_pricing")
+    )
     logout(client)
     activate(client, "nv_xem", code)
     return client
@@ -358,9 +360,10 @@ def test_categories_api(client):
 
 
 def test_pricing_page_sidebar_visible_without_product_perm(client):
-    """Nhân sự không có quyền sản phẩm vẫn thấy + mở được Định giá."""
+    """Nhân sự không có quyền sản phẩm vẫn thấy + mở được Định giá
+    (Định giá có quyền xem riêng can_view_pricing, không mượn quyền SP)."""
     create_owner(client)
-    code = create_staff(client, "nv_uni", perms=("can_view_uni",))
+    code = create_staff(client, "nv_uni", perms=("can_view_uni", "can_view_pricing"))
     logout(client)
     activate(client, "nv_uni", code)
     r = client.get("/dinh-gia")

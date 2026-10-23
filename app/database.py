@@ -55,6 +55,13 @@ USER_COLUMNS = [
     "can_add_edit_products",
     "can_delete_products",
     "can_view_uni",
+    "can_view_daily",
+    "can_view_pricing",
+    "can_view_gmv",
+    "can_view_affiliate",
+    "can_view_tiktok",
+    "can_view_cskh",
+    "can_view_accounts",
     "can_checklist_leader",
     "can_checklist_admin",
     "created_at",
@@ -99,6 +106,13 @@ CREATE TABLE IF NOT EXISTS users (
     can_add_edit_products INTEGER NOT NULL DEFAULT 0,
     can_delete_products INTEGER NOT NULL DEFAULT 0,
     can_view_uni INTEGER NOT NULL DEFAULT 1,
+    can_view_daily INTEGER NOT NULL DEFAULT 0,
+    can_view_pricing INTEGER NOT NULL DEFAULT 0,
+    can_view_gmv INTEGER NOT NULL DEFAULT 0,
+    can_view_affiliate INTEGER NOT NULL DEFAULT 0,
+    can_view_tiktok INTEGER NOT NULL DEFAULT 0,
+    can_view_cskh INTEGER NOT NULL DEFAULT 1,
+    can_view_accounts INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -293,12 +307,32 @@ CREATE TABLE IF NOT EXISTS vault_accounts (
 );
 """
 
-# Migration cộng thêm cho các DB đã tồn tại trước module Daily Checklist:
-# 2 cột quyền mới trên bảng users (ALTER TABLE chạy khi cột còn thiếu).
+# Migration cộng thêm cho các DB đã tồn tại trước các module sau này:
+# cột quyền mới trên bảng users (ALTER TABLE chạy khi cột còn thiếu).
 _USER_MIGRATION_COLUMNS = [
     ("can_checklist_leader", "INTEGER NOT NULL DEFAULT 0"),
     ("can_checklist_admin", "INTEGER NOT NULL DEFAULT 0"),
+    # Quyền xem RIÊNG từng mục sidebar (tách khỏi can_view_products).
+    ("can_view_daily", "INTEGER NOT NULL DEFAULT 0"),
+    ("can_view_pricing", "INTEGER NOT NULL DEFAULT 0"),
+    ("can_view_gmv", "INTEGER NOT NULL DEFAULT 0"),
+    ("can_view_affiliate", "INTEGER NOT NULL DEFAULT 0"),
+    ("can_view_tiktok", "INTEGER NOT NULL DEFAULT 0"),
+    ("can_view_cskh", "INTEGER NOT NULL DEFAULT 1"),
+    ("can_view_accounts", "INTEGER NOT NULL DEFAULT 0"),
 ]
+
+# Các quyền xem module vừa tách: khi cột lần đầu được thêm vào DB cũ, giá trị
+# khởi tạo = quyền xem SẢN PHẨM hiện tại của từng user (không ai mất quyền
+# đang có). Riêng can_view_cskh và can_view_pricing vốn mở cho mọi user đã
+# đăng nhập -> luôn 1.
+_VIEW_FLAGS_FROM_PRODUCTS = (
+    "can_view_daily",
+    "can_view_gmv",
+    "can_view_affiliate",
+    "can_view_tiktok",
+    "can_view_accounts",
+)
 
 
 def _utcnow() -> str:
@@ -495,12 +529,26 @@ def get_conn() -> "sqlite3.Connection | _TursoConnection":
 
 
 def _migrate_users_columns(conn) -> None:
-    """Thêm cột quyền checklist vào bảng users của DB cũ (idempotent)."""
+    """Thêm cột quyền còn thiếu vào bảng users của DB cũ (idempotent).
+
+    Cột quyền xem module nào VỪA được thêm sẽ được backfill ngay để không
+    user hiện hữu nào mất quyền đang có (xem _VIEW_FLAGS_FROM_PRODUCTS).
+    """
     rows = conn.execute("PRAGMA table_info(users)").fetchall()
     existing = {r["name"] for r in rows}
+    added = []
     for col, ddl in _USER_MIGRATION_COLUMNS:
         if col not in existing:
             conn.execute(f"ALTER TABLE users ADD COLUMN {col} {ddl}")
+            added.append(col)
+    for col in added:
+        if col in ("can_view_cskh", "can_view_pricing"):
+            conn.execute(f"UPDATE users SET {col} = 1")
+        elif col in _VIEW_FLAGS_FROM_PRODUCTS:
+            conn.execute(
+                f"UPDATE users SET {col} = "
+                "CASE WHEN is_owner = 1 THEN 1 ELSE COALESCE(can_view_products, 0) END"
+            )
 
 
 def init_db() -> None:

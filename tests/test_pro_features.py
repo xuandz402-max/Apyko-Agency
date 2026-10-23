@@ -293,9 +293,13 @@ def test_cskh_permissions(client):
     create_owner(client)
     db = _db()
     seed_id = db.cskh_list()[0]["id"]
-    code_view = create_staff(client, "nv_xem", perms=("can_view_products",))
+    code_view = create_staff(
+        client, "nv_xem", perms=("can_view_products", "can_view_cskh")
+    )
     code_edit = create_staff(
-        client, "nv_sua", perms=("can_view_products", "can_add_edit_products")
+        client,
+        "nv_sua",
+        perms=("can_view_products", "can_add_edit_products", "can_view_cskh"),
     )
     # Nhân viên chỉ xem: xem được trang nhưng thêm/xóa đều 403
     logout(client)

@@ -218,7 +218,7 @@ def test_fail_closed_no_login(client):
 def test_view_only_cannot_write(client):
     create_owner(client)
     client.post("/api/daily", json=_report())
-    code = create_staff(client, "nv_daily", perms=("can_view_products",))
+    code = create_staff(client, "nv_daily", perms=("can_view_daily",))
     logout(client)
     activate(client, "nv_daily", code)
 
@@ -232,7 +232,7 @@ def test_view_only_cannot_write(client):
 
 def test_delete_needs_delete_perm(client):
     create_owner(client)
-    code = create_staff(client, "nv_sua2", perms=("can_view_products", "can_add_edit_products"))
+    code = create_staff(client, "nv_sua2", perms=("can_view_daily", "can_add_edit_products"))
     logout(client)
     activate(client, "nv_sua2", code)
 

@@ -32,16 +32,22 @@
       {% endif %}
       <a href="/analysis" class="nav-item{% if nav_active == 'analysis' %} active{% endif %}">📈 Phân tích</a>
       {% endif %}
-      {% if user %}
+      {% if user and user.can_view_pricing %}
       <a href="/dinh-gia" class="nav-item{% if nav_active == 'pricing' %} active{% endif %}">🏷️ Định giá sản phẩm</a>
       {% endif %}
-      {% if user and user.can_view_products %}
+      {% if user and user.can_view_gmv %}
       <a href="/gmv" class="nav-item{% if nav_active == 'gmv' %} active{% endif %}">📣 GMV Max Shopee</a>
+      {% endif %}
+      {% if user and user.can_view_affiliate %}
       <a href="/affiliate" class="nav-item{% if nav_active == 'affiliate' %} active{% endif %}">🔗 Affiliate</a>
+      {% endif %}
+      {% if user and user.can_view_tiktok %}
       <a href="/tiktok-onboard" class="nav-item{% if nav_active == 'tiktok_onboard' %} active{% endif %}"><img src="/static/tiktok-icon.png" alt="" class="nav-ico"> TikTok Onboard</a>
+      {% endif %}
+      {% if user and user.can_view_daily %}
       <a href="/bao-cao" class="nav-item{% if nav_active == 'daily' %} active{% endif %}">📊 Báo cáo ngày</a>
       {% endif %}
-      {% if user %}
+      {% if user and user.can_view_cskh %}
       <a href="/cskh" class="nav-item{% if nav_active == 'cskh' %} active{% endif %}">💬 Mẫu CSKH</a>
       {% endif %}
       {% if user %}
@@ -58,7 +64,7 @@
       {% if user and user.can_view_uni %}
       <a href="/uni" class="nav-item{% if nav_active == 'uni' %} active{% endif %}">🎓 Apyko Uni</a>
       {% endif %}
-      {% if user and (user.is_owner or user.can_view_products) %}
+      {% if user and (user.is_owner or user.can_view_accounts) %}
       <a href="/accounts?tab=shop" class="nav-item{% if nav_active == 'accounts' %} active{% endif %}">👥 Quản lý tài khoản</a>
       {% endif %}
       {% if user and user.is_owner %}

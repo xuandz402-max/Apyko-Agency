@@ -42,6 +42,9 @@ from . import database as db
 from .auth import (
     ApiCanDeleteProducts,
     ApiCanEditProducts,
+    ApiCanViewDaily,
+    ApiCanViewGmv,
+    ApiCanViewPricing,
     ApiCanViewProducts,
     ApiCanViewUni,
     ApiOwner,
@@ -222,6 +225,13 @@ async def page_setup_create(request: Request):
             "can_add_edit_products": 1,
             "can_delete_products": 1,
             "can_view_uni": 1,
+            "can_view_daily": 1,
+            "can_view_pricing": 1,
+            "can_view_gmv": 1,
+            "can_view_affiliate": 1,
+            "can_view_tiktok": 1,
+            "can_view_cskh": 1,
+            "can_view_accounts": 1,
         }
     )
     resp = RedirectResponse(url="/", status_code=303)
@@ -730,10 +740,17 @@ async def page_uni_learn(lesson_id: str, request: Request):
 
 
 _PERM_FIELDS = [
-    ("can_view_products", "Xem sản phẩm"),
-    ("can_add_edit_products", "Thêm / sửa sản phẩm"),
-    ("can_delete_products", "Xóa sản phẩm"),
+    ("can_view_daily", "Xem Báo cáo ngày"),
+    ("can_view_products", "Xem Sản phẩm"),
+    ("can_view_pricing", "Xem Định giá sản phẩm"),
+    ("can_view_gmv", "Xem GMV Max Shopee"),
+    ("can_view_affiliate", "Xem Affiliate"),
+    ("can_view_tiktok", "Xem TikTok Onboard"),
     ("can_view_uni", "Xem Apyko Uni"),
+    ("can_view_cskh", "Xem Mẫu CSKH"),
+    ("can_view_accounts", "Xem Quản lý tài khoản (kho)"),
+    ("can_add_edit_products", "Thêm / sửa dữ liệu"),
+    ("can_delete_products", "Xóa dữ liệu"),
     ("can_checklist_leader", "Leader checklist"),
     ("can_checklist_admin", "Quản trị checklist"),
 ]
@@ -887,7 +904,7 @@ def page_accounts(
             raise HTTPException(status_code=403, detail="Chỉ chủ sở hữu được thực hiện.")
         ctx["users"] = db.list_users()
         return templates.TemplateResponse("accounts.html", _ctx(request, user, **ctx))
-    if not (is_owner or user.get("can_view_products")):
+    if not (is_owner or user.get("can_view_accounts")):
         raise HTTPException(status_code=403, detail="Tài khoản không có quyền này.")
     if tab in ("shop", "noi-bo"):
         category = "shop" if tab == "shop" else "noi_bo"
@@ -959,12 +976,7 @@ async def page_accounts_create(request: Request):
             "is_active": 0,
             "must_activate": 1,
             "activation_code": code,
-            "can_view_products": 1 if form.get("can_view_products") else 0,
-            "can_add_edit_products": 1 if form.get("can_add_edit_products") else 0,
-            "can_delete_products": 1 if form.get("can_delete_products") else 0,
-            "can_view_uni": 1 if form.get("can_view_uni") else 0,
-            "can_checklist_leader": 1 if form.get("can_checklist_leader") else 0,
-            "can_checklist_admin": 1 if form.get("can_checklist_admin") else 0,
+            **{field: 1 if form.get(field) else 0 for field, _label in _PERM_FIELDS},
         }
     )
     return RedirectResponse(url=f"/accounts?new_user={username}&new_code={code}", status_code=303)
@@ -1025,14 +1037,7 @@ async def page_accounts_perms(user_id: int, request: Request):
     form = await request.form()
     db.update_user(
         user_id,
-        {
-            "can_view_products": 1 if form.get("can_view_products") else 0,
-            "can_add_edit_products": 1 if form.get("can_add_edit_products") else 0,
-            "can_delete_products": 1 if form.get("can_delete_products") else 0,
-            "can_view_uni": 1 if form.get("can_view_uni") else 0,
-            "can_checklist_leader": 1 if form.get("can_checklist_leader") else 0,
-            "can_checklist_admin": 1 if form.get("can_checklist_admin") else 0,
-        },
+        {field: 1 if form.get(field) else 0 for field, _label in _PERM_FIELDS},
     )
     return RedirectResponse(url="/accounts", status_code=303)
 
@@ -1399,7 +1404,7 @@ def page_gmv(
     date_from: str | None = Query(default=None, alias="from"),
     date_to: str | None = Query(default=None, alias="to"),
 ):
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard(request, "can_view_gmv")
     if redir:
         return redir
     _cl_safety_net(checklist.today_str())
@@ -1498,7 +1503,7 @@ def page_gmv(
 
 
 @router.get("/api/gmv/products")
-def api_gmv_list_products(user: dict = ApiCanViewProducts):
+def api_gmv_list_products(user: dict = ApiCanViewGmv):
     return {"products": db.gmv_list_products()}
 
 
@@ -1544,7 +1549,7 @@ def api_gmv_delete_product(product_id: int, user: dict = ApiCanDeleteProducts):
 
 
 @router.get("/api/gmv/products/{product_id}/entries")
-def api_gmv_list_entries(product_id: int, user: dict = ApiCanViewProducts):
+def api_gmv_list_entries(product_id: int, user: dict = ApiCanViewGmv):
     product = db.gmv_get_product(product_id)
     if product is None:
         return JSONResponse({"detail": "Không tìm thấy sản phẩm"}, status_code=404)
@@ -1618,7 +1623,7 @@ def page_daily(
     date_from: str | None = Query(default=None, alias="from"),
     date_to: str | None = Query(default=None, alias="to"),
 ):
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard(request, "can_view_daily")
     if redir:
         return redir
     per_info = periods.resolve_period(
@@ -1655,12 +1660,12 @@ def page_daily(
 
 
 @router.get("/api/daily")
-def api_daily_list(user: dict = ApiCanViewProducts):
+def api_daily_list(user: dict = ApiCanViewDaily):
     return {"reports": [_daily_enrich(r) for r in db.daily_list()]}
 
 
 @router.get("/api/daily/{report_date}")
-def api_daily_get(report_date: str, user: dict = ApiCanViewProducts):
+def api_daily_get(report_date: str, user: dict = ApiCanViewDaily):
     entry = db.daily_get(report_date)
     if entry is None:
         return JSONResponse({"detail": "Không tìm thấy báo cáo ngày này"}, status_code=404)
@@ -2631,8 +2636,8 @@ def _pricing_defaults() -> dict:
 
 @router.get("/dinh-gia", response_class=HTMLResponse)
 def page_pricing(request: Request):
-    # Xem: chỉ cần đăng nhập (không kèm quyền riêng) như checklist/thông báo.
-    user, redir = auth.page_guard(request)
+    # Xem: quyền riêng can_view_pricing (tách khỏi quyền Sản phẩm).
+    user, redir = auth.page_guard(request, "can_view_pricing")
     if redir:
         return redir
     return templates.TemplateResponse(
@@ -2648,7 +2653,7 @@ def page_pricing(request: Request):
 
 
 @router.get("/api/pricing/categories")
-def api_pricing_categories(q: str = "", user: dict = ApiUser):
+def api_pricing_categories(q: str = "", user: dict = ApiCanViewPricing):
     results = pricing.search_categories(q, limit=20)
     return {
         "categories": [
@@ -2666,7 +2671,7 @@ def api_pricing_categories(q: str = "", user: dict = ApiUser):
 
 
 @router.get("/api/pricing/items")
-def api_pricing_list_items(user: dict = ApiUser):
+def api_pricing_list_items(user: dict = ApiCanViewPricing):
     items = [_pricing_enrich(it) for it in db.pricing_item_list()]
     return {"items": items, "total": len(items)}
 
@@ -2707,7 +2712,7 @@ def api_pricing_delete_item(item_id: int, user: dict = ApiCanDeleteProducts):
 
 
 @router.post("/api/pricing/reverse")
-async def api_pricing_reverse(request: Request, user: dict = ApiUser):
+async def api_pricing_reverse(request: Request, user: dict = ApiCanViewPricing):
     """Tính NGƯỢC: giá vốn + % biên lãi mong muốn -> giá bán cần đặt."""
     body, err = await _gmv_json_body(request)
     if err:
@@ -2753,7 +2758,7 @@ async def api_pricing_reverse(request: Request, user: dict = ApiUser):
 
 
 @router.get("/api/pricing/settings")
-def api_pricing_get_settings(user: dict = ApiUser):
+def api_pricing_get_settings(user: dict = ApiCanViewPricing):
     return {"settings": pricing.settings_to_user_view(db.pricing_setting_get_all())}
 
 
@@ -2806,7 +2811,7 @@ _PRICING_EXPORT_FIELDS = [
 
 
 @router.get("/api/pricing/export")
-def api_pricing_export(user: dict = ApiUser):
+def api_pricing_export(user: dict = ApiCanViewPricing):
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=_PRICING_EXPORT_FIELDS)
     writer.writeheader()
@@ -3084,7 +3089,7 @@ def page_cskh(
     err: str | None = None,
     msg: str | None = None,
 ):
-    user, redir = auth.page_guard(request)
+    user, redir = auth.page_guard(request, "can_view_cskh")
     if redir:
         return redir
     items = db.cskh_list(q)
@@ -3200,7 +3205,7 @@ def page_affiliate(
     err: str | None = None,
     msg: str | None = None,
 ):
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard(request, "can_view_affiliate")
     if redir:
         return redir
     tab = tab if tab in ("theo-doi", "noi-dung") else "theo-doi"
@@ -3253,7 +3258,7 @@ def page_affiliate_export(
     q: str | None = None,
     platform: str | None = None,
 ):
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard(request, "can_view_affiliate")
     if redir:
         return redir
     platform = platform if platform in affiliate.PLATFORMS else None
@@ -3367,7 +3372,7 @@ def page_tiktok_onboard(
     err: str | None = None,
     msg: str | None = None,
 ):
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard(request, "can_view_tiktok")
     if redir:
         return redir
     tab = tab if tab in ("danh-sach", "lich-su") else "danh-sach"

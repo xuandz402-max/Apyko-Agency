@@ -281,14 +281,14 @@ def gmv_alerts(today) -> list:
 def _alert_recipients() -> list:
     """Người nhận cảnh báo GMV: owner + user đang bật có quyền xem GMV.
 
-    Module GMV dùng chung quyền xem Sản phẩm (can_view_products — chính là
-    quyền gác trang /gmv), nên người nhận là owner và mọi tài khoản đang
-    hoạt động có can_view_products.
+    Module GMV có quyền xem riêng (can_view_gmv — chính là quyền gác trang
+    /gmv), nên người nhận là owner và mọi tài khoản đang hoạt động có
+    can_view_gmv.
     """
     return [
         u
         for u in db.list_users()
-        if u.get("is_active") and (u.get("is_owner") or u.get("can_view_products"))
+        if u.get("is_active") and (u.get("is_owner") or u.get("can_view_gmv"))
     ]
 
 

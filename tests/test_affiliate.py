@@ -162,7 +162,7 @@ def test_affiliate_forbidden_without_view_perm_and_menu_hidden(client):
     assert client.get("/affiliate").status_code == 403
     assert client.get("/affiliate/export").status_code == 403
     # Menu Affiliate bị ẩn ở trang nhân viên này vẫn vào được
-    r = client.get("/cskh")
+    r = client.get("/checklist")
     assert r.status_code == 200
     assert 'href="/affiliate"' not in r.text
 
@@ -178,9 +178,9 @@ def test_affiliate_write_permissions(client):
     create_owner(client)
     db = _db()
     item_id = db.affiliate_upsert(_payload(), "owner")
-    code_view = create_staff(client, "nv_xem", perms=("can_view_products",))
+    code_view = create_staff(client, "nv_xem", perms=("can_view_affiliate",))
     code_edit = create_staff(
-        client, "nv_sua", perms=("can_view_products", "can_add_edit_products")
+        client, "nv_sua", perms=("can_view_affiliate", "can_add_edit_products")
     )
     # Chỉ xem: xem được, thêm/sửa/xóa đều 403
     logout(client)

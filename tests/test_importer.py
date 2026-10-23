@@ -389,7 +389,9 @@ def test_web_gmv_garbage_file_vietnamese_error(client):
 
 def test_web_import_card_hidden_and_post_403_for_view_only_staff(client):
     create_owner(client)
-    code = create_staff(client, "nv_xem", perms=("can_view_products",))
+    code = create_staff(
+        client, "nv_xem", perms=("can_view_products", "can_view_gmv", "can_view_daily")
+    )
     logout(client)
     activate(client, "nv_xem", code)
     page = client.get("/gmv")

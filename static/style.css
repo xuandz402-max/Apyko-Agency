@@ -434,3 +434,9 @@ input.input-invalid { border-color: #DC2626; box-shadow: 0 0 0 1px #DC2626; }
 /* Icon logo TikTok (ảnh tĩnh tự vẽ theo nhận diện TikTok) ở sidebar + tiêu đề trang */
 .nav-ico { width: 18px; height: 18px; vertical-align: -4px; margin-right: 7px; border-radius: 4px; }
 .tt-logo { width: 30px; height: 30px; vertical-align: -7px; border-radius: 7px; }
+
+/* ---------- kho tài khoản (vault) ---------- */
+/* Ô chứa text chép nhanh: để ngoài màn hình nhưng vẫn select/copy được. */
+.va-src { position: absolute; left: -9999px; top: 0; width: 1px; height: 1px;
+  opacity: 0; border: 0; padding: 0; }
+.va-actions { position: relative; }

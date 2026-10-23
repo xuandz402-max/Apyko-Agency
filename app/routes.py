@@ -743,24 +743,184 @@ def _valid_username(username: str) -> bool:
     return bool(re.fullmatch(r"[A-Za-z0-9_.-]{3,32}", username or ""))
 
 
+# --- Kho tài khoản (vault): tab khach / noi-bo / ban-giao của /accounts ---
+# /accounts KHÔNG có ?tab= giữ nguyên hành vi cũ (đăng nhập & phân quyền,
+# chỉ chủ sở hữu) — các tab kho phải gọi đích danh. Mật khẩu tài khoản nội
+# bộ chỉ render cho chủ sở hữu / người có quyền sửa; người xem thường
+# không thấy giá trị mật khẩu ở bất cứ đâu trong HTML.
+
+_VAULT_KINDS = ["Ngân hàng", "Shopee", "TikTok Shop", "Facebook", "Email", "Zalo", "Khác"]
+_VAULT_TABS = ("khach", "noi-bo", "ban-giao", "dang-nhap")
+
+
+def _vault_actor(user: dict) -> str:
+    return (user.get("display_name") or user.get("username") or "").strip()
+
+
+def _vault_tab_of(category: str) -> str:
+    return "khach" if category == "khach" else "noi-bo"
+
+
+def _vault_khach_copy_text(it: dict) -> str:
+    """Text chép nhanh của 1 tài khoản khách (đúng định dạng gửi khách)."""
+    lines = [
+        f"Ngân hàng: {it.get('bank_name') or ''}",
+        f"Số tài khoản: {it.get('account_number') or ''}",
+        f"Chủ tài khoản: {it.get('account_holder') or ''}",
+    ]
+    if (it.get("note") or "").strip():
+        lines.append(f"Ghi chú: {it['note']}")
+    return "\n".join(lines)
+
+
+def _vault_noibo_copy_text(it: dict) -> str:
+    """Text chép nhanh đăng nhập + mật khẩu (chỉ tạo cho người có quyền xem)."""
+    return (
+        f"Tài khoản: {it.get('username') or ''}\n"
+        f"Mật khẩu: {it.get('password') or ''}"
+    )
+
+
+def _vn_today_str() -> str:
+    """Ngày hôm nay theo giờ Việt Nam, dạng DD/MM/YYYY."""
+    from zoneinfo import ZoneInfo
+
+    return datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")).strftime("%d/%m/%Y")
+
+
+def _build_handover_text(
+    assignee: str, internal: list, customers: list, can_see_pw: bool
+) -> str:
+    """Bản bàn giao tài khoản cho 1 nhân sự — text thuần để chép 1 lần.
+
+    Dòng nào không có dữ liệu thì bỏ qua; mục nào trống thì bỏ cả mục.
+    Người không có quyền xem mật khẩu nhận dòng thay thế cố định.
+    """
+    lines = [
+        "THÔNG TIN BÀN GIAO TÀI KHOẢN",
+        f"Nhân sự: {assignee}",
+        f"Ngày: {_vn_today_str()}",
+    ]
+    if internal:
+        lines += ["", "A. TÀI KHOẢN NỘI BỘ"]
+        for i, it in enumerate(internal, 1):
+            lines.append(f"{i}. [{it.get('kind') or 'Khác'}] {it.get('label') or ''}")
+            if (it.get("username") or "").strip():
+                lines.append(f"   Đăng nhập: {it['username']}")
+            if (it.get("password") or "").strip():
+                pw = it["password"] if can_see_pw else "(liên hệ quản lý để nhận)"
+                lines.append(f"   Mật khẩu: {pw}")
+            if (it.get("url") or "").strip():
+                lines.append(f"   Link: {it['url']}")
+            if (it.get("note") or "").strip():
+                lines.append(f"   Ghi chú: {it['note']}")
+    if customers:
+        lines += ["", "B. TÀI KHOẢN KHÁCH PHỤ TRÁCH"]
+        for i, it in enumerate(customers, 1):
+            lines.append(f"{i}. {it.get('label') or ''}")
+            parts = []
+            if (it.get("bank_name") or "").strip():
+                parts.append(f"Ngân hàng: {it['bank_name']}")
+            if (it.get("account_number") or "").strip():
+                parts.append(f"STK: {it['account_number']}")
+            if (it.get("account_holder") or "").strip():
+                parts.append(f"Chủ TK: {it['account_holder']}")
+            if parts:
+                lines.append("   " + " · ".join(parts))
+            if (it.get("note") or "").strip():
+                lines.append(f"   Ghi chú: {it['note']}")
+    return "\n".join(lines)
+
+
+def _accounts_base_ctx(user: dict, tab: str) -> dict:
+    """Context mặc định của trang /accounts cho mọi tab (đủ biến cho template)."""
+    is_owner = bool(user.get("is_owner"))
+    can_edit = bool(user.get("can_add_edit_products"))
+    return {
+        "tab": tab,
+        "q": "",
+        "err": None,
+        "msg": None,
+        "error": None,
+        "users": [],
+        "perm_fields": _PERM_FIELDS,
+        "new_code": "",
+        "new_user": "",
+        "items": [],
+        "edit_item": None,
+        "kinds": _VAULT_KINDS,
+        "assignees": [],
+        "assignee": "",
+        "internal_items": [],
+        "customer_items": [],
+        "handover_text": "",
+        "can_edit": can_edit,
+        "can_delete": bool(user.get("can_delete_products")),
+        "can_see_pw": is_owner or can_edit,
+    }
+
+
 @router.get("/accounts", response_class=HTMLResponse)
-def page_accounts(request: Request, new_code: str | None = None, new_user: str | None = None):
+def page_accounts(
+    request: Request,
+    tab: str | None = None,
+    q: str | None = None,
+    assignee: str | None = None,
+    edit: int | None = None,
+    new_code: str | None = None,
+    new_user: str | None = None,
+    err: str | None = None,
+    msg: str | None = None,
+):
     user, redir = auth.page_guard(request)
     if redir:
         return redir
-    if not user.get("is_owner"):
-        raise HTTPException(status_code=403, detail="Chỉ chủ sở hữu được thực hiện.")
-    return templates.TemplateResponse(
-        "accounts.html",
-        _ctx(
-            request,
-            user,
-            users=db.list_users(),
-            perm_fields=_PERM_FIELDS,
-            new_code=new_code or "",
-            new_user=new_user or "",
-        ),
-    )
+    if tab not in _VAULT_TABS:
+        tab = "dang-nhap"
+    ctx = _accounts_base_ctx(user, tab)
+    ctx.update(q=q or "", err=err, msg=msg, new_code=new_code or "", new_user=new_user or "")
+    is_owner = bool(user.get("is_owner"))
+    if tab == "dang-nhap":
+        if not is_owner:
+            raise HTTPException(status_code=403, detail="Chỉ chủ sở hữu được thực hiện.")
+        ctx["users"] = db.list_users()
+        return templates.TemplateResponse("accounts.html", _ctx(request, user, **ctx))
+    if not (is_owner or user.get("can_view_products")):
+        raise HTTPException(status_code=403, detail="Tài khoản không có quyền này.")
+    if tab in ("khach", "noi-bo"):
+        category = "khach" if tab == "khach" else "noi_bo"
+        items = db.vault_list(category, q)
+        for it in items:
+            if category == "khach":
+                it["copy_text"] = _vault_khach_copy_text(it)
+            elif ctx["can_see_pw"]:
+                it["has_password"] = bool((it.get("password") or "").strip())
+                it["copy_text"] = _vault_noibo_copy_text(it)
+            else:
+                # Người xem thường: mật khẩu không được xuất hiện trong HTML,
+                # template chỉ biết tài khoản CÓ mật khẩu hay không để hiện •••.
+                it["has_password"] = bool((it.get("password") or "").strip())
+                it["password"] = ""
+                it["copy_text"] = ""
+        ctx["items"] = items
+        if edit:
+            item = db.vault_get(edit)
+            if item is not None and item["category"] == category:
+                ctx["edit_item"] = item
+    else:  # ban-giao
+        names = db.vault_assignees()
+        ctx["assignees"] = names
+        chosen = (assignee or "").strip()
+        if chosen and chosen in names:
+            internal = db.vault_list("noi_bo", assignee=chosen)
+            customers = db.vault_list("khach", assignee=chosen)
+            ctx["assignee"] = chosen
+            ctx["internal_items"] = internal
+            ctx["customer_items"] = customers
+            ctx["handover_text"] = _build_handover_text(
+                chosen, internal, customers, ctx["can_see_pw"]
+            )
+    return templates.TemplateResponse("accounts.html", _ctx(request, user, **ctx))
 
 
 @router.post("/accounts/create")
@@ -779,10 +939,11 @@ async def page_accounts_create(request: Request):
     elif db.get_user_by_username(username):
         error = "Tên đăng nhập đã tồn tại."
     if error:
-        users = db.list_users()
+        ctx = _accounts_base_ctx(user, "dang-nhap")
+        ctx.update(users=db.list_users(), error=error)
         return templates.TemplateResponse(
             "accounts.html",
-            _ctx(request, user, users=users, perm_fields=_PERM_FIELDS, error=error),
+            _ctx(request, user, **ctx),
             status_code=422,
         )
     code = auth.new_activation_code()
@@ -885,6 +1046,98 @@ async def page_accounts_delete(user_id: int, request: Request):
         raise HTTPException(status_code=404)
     db.delete_user(user_id)
     return RedirectResponse(url="/accounts", status_code=303)
+
+
+# ------------------------------ kho tài khoản: thao tác ------------------------------
+
+
+def _vault_payload(form, category: str) -> dict:
+    """Đọc form thêm/sửa tài khoản kho; `khach` luôn là tài khoản ngân hàng."""
+
+    def _f(name: str) -> str:
+        return (form.get(name) or "").strip()
+
+    if category == "khach":
+        kind = "Ngân hàng"
+    else:
+        kind = _f("kind")
+        if kind not in _VAULT_KINDS:
+            kind = "Khác"
+    return {
+        "category": category,
+        "kind": kind,
+        "label": _f("label"),
+        "bank_name": _f("bank_name"),
+        "account_number": _f("account_number"),
+        "account_holder": _f("account_holder"),
+        "username": _f("username"),
+        "password": _f("password"),
+        "url": _f("url"),
+        "assignee": _f("assignee"),
+        "note": _f("note"),
+    }
+
+
+@router.post("/accounts/vault/create")
+async def page_vault_create(request: Request):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    form = await request.form()
+    category = form.get("category")
+    if category not in ("khach", "noi_bo"):
+        category = "khach"
+    tab = _vault_tab_of(category)
+    data = _vault_payload(form, category)
+    if not data["label"]:
+        return RedirectResponse(
+            url=f"/accounts?tab={tab}&err=" + quote("Thiếu tên / nhãn tài khoản."),
+            status_code=303,
+        )
+    db.vault_create(data, _vault_actor(user))
+    return RedirectResponse(
+        url=f"/accounts?tab={tab}&msg=" + quote("Đã thêm tài khoản vào kho."),
+        status_code=303,
+    )
+
+
+@router.post("/accounts/vault/{item_id}/update")
+async def page_vault_update(request: Request, item_id: int):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    item = db.vault_get(item_id)
+    if item is None:
+        raise HTTPException(status_code=404)
+    form = await request.form()
+    data = _vault_payload(form, item["category"])
+    tab = _vault_tab_of(item["category"])
+    if not data["label"]:
+        return RedirectResponse(
+            url=f"/accounts?tab={tab}&edit={item_id}&err="
+            + quote("Thiếu tên / nhãn tài khoản."),
+            status_code=303,
+        )
+    db.vault_update(item_id, data, _vault_actor(user))
+    return RedirectResponse(
+        url=f"/accounts?tab={tab}&msg=" + quote("Đã lưu thay đổi."), status_code=303
+    )
+
+
+@router.post("/accounts/vault/{item_id}/delete")
+def page_vault_delete(request: Request, item_id: int):
+    user, redir = auth.page_guard(request, "can_delete_products")
+    if redir:
+        return redir
+    item = db.vault_get(item_id)
+    if item is None:
+        raise HTTPException(status_code=404)
+    tab = _vault_tab_of(item["category"])
+    db.vault_delete(item_id)
+    return RedirectResponse(
+        url=f"/accounts?tab={tab}&msg=" + quote("Đã xóa tài khoản khỏi kho."),
+        status_code=303,
+    )
 
 
 # ------------------------------ JSON API ----------------------------------

@@ -273,6 +273,24 @@ CREATE TABLE IF NOT EXISTS tt_history (
     changed_at TEXT NOT NULL,
     note TEXT NOT NULL DEFAULT ''
 );
+CREATE TABLE IF NOT EXISTS vault_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL DEFAULT 'khach',
+    kind TEXT NOT NULL DEFAULT 'Ngân hàng',
+    label TEXT NOT NULL DEFAULT '',
+    bank_name TEXT NOT NULL DEFAULT '',
+    account_number TEXT NOT NULL DEFAULT '',
+    account_holder TEXT NOT NULL DEFAULT '',
+    username TEXT NOT NULL DEFAULT '',
+    password TEXT NOT NULL DEFAULT '',
+    url TEXT NOT NULL DEFAULT '',
+    assignee TEXT NOT NULL DEFAULT '',
+    note TEXT NOT NULL DEFAULT '',
+    created_by TEXT DEFAULT '',
+    updated_by TEXT DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
 # Migration cộng thêm cho các DB đã tồn tại trước module Daily Checklist:
@@ -1662,3 +1680,128 @@ def tt_history_list(limit: int = 100) -> list:
             "SELECT * FROM tt_history ORDER BY id DESC LIMIT ?", (limit,)
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+# ------------------------------ kho tài khoản (vault) ------------------------------
+# Trang Quản lý tài khoản: tài khoản NHẬN của khách (category='khach', luôn
+# là tài khoản ngân hàng) + tài khoản NỘI BỘ công ty (category='noi_bo':
+# ngân hàng + đăng nhập các nền tảng). Cột password là bí mật: routes chỉ
+# render giá trị cho chủ sở hữu / người có quyền sửa (xem app/routes.py).
+
+VAULT_COLUMNS = [
+    "id",
+    "category",
+    "kind",
+    "label",
+    "bank_name",
+    "account_number",
+    "account_holder",
+    "username",
+    "password",
+    "url",
+    "assignee",
+    "note",
+    "created_by",
+    "updated_by",
+    "created_at",
+    "updated_at",
+]
+
+_VAULT_SEARCH_FIELDS = ("label", "account_holder", "account_number", "username", "assignee")
+
+
+def vault_list(
+    category: str | None = None,
+    q: str | None = None,
+    assignee: str | None = None,
+) -> list:
+    """Danh sách tài khoản kho; lọc theo nhóm, người phụ trách và từ khóa.
+
+    `q` khớp trên nhãn / chủ tài khoản / số tài khoản / tên đăng nhập /
+    người phụ trách (LIKE, không phân biệt qua ESCAPE ký tự đặc biệt).
+    """
+    clauses: list[str] = []
+    params: list = []
+    if category:
+        clauses.append("category = ?")
+        params.append(category)
+    if assignee is not None:
+        clauses.append("assignee = ?")
+        params.append(assignee)
+    if q and q.strip():
+        like = "%" + q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+        clauses.append(
+            "("
+            + " OR ".join(f"{f} LIKE ? ESCAPE '\\'" for f in _VAULT_SEARCH_FIELDS)
+            + ")"
+        )
+        params.extend([like] * len(_VAULT_SEARCH_FIELDS))
+    sql = "SELECT * FROM vault_accounts"
+    if clauses:
+        sql += " WHERE " + " AND ".join(clauses)
+    sql += " ORDER BY label ASC, id ASC"
+    with get_conn() as conn:
+        rows = conn.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+def vault_get(item_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM vault_accounts WHERE id = ?", (item_id,)
+        ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def vault_create(d: dict, created_by: str = "") -> int:
+    """Thêm 1 tài khoản vào kho. Trả về id mới."""
+    data = {k: v for k, v in d.items() if k in VAULT_COLUMNS and k != "id"}
+    now = _utcnow()
+    data.setdefault("category", "khach")
+    data.setdefault("kind", "Ngân hàng")
+    data["created_by"] = created_by
+    data["updated_by"] = created_by
+    data["created_at"] = now
+    data["updated_at"] = now
+    cols = list(data.keys())
+    placeholders = ", ".join("?" for _ in cols)
+    with get_conn() as conn:
+        cur = conn.execute(
+            f"INSERT INTO vault_accounts ({', '.join(cols)}) VALUES ({placeholders})",
+            [data[c] for c in cols],
+        )
+        return cur.lastrowid
+
+
+def vault_update(item_id: int, d: dict, updated_by: str = "") -> bool:
+    """Cập nhật 1 tài khoản trong kho. Trả True nếu có dòng được sửa."""
+    data = {
+        k: v
+        for k, v in d.items()
+        if k in VAULT_COLUMNS and k not in ("id", "created_at", "created_by")
+    }
+    data["updated_by"] = updated_by
+    data["updated_at"] = _utcnow()
+    with get_conn() as conn:
+        cur = conn.execute(
+            f"UPDATE vault_accounts SET {', '.join(f'{k} = ?' for k in data)}"
+            " WHERE id = ?",
+            [*data.values(), item_id],
+        )
+        return cur.rowcount > 0
+
+
+def vault_delete(item_id: int) -> bool:
+    with get_conn() as conn:
+        cur = conn.execute("DELETE FROM vault_accounts WHERE id = ?", (item_id,))
+        return cur.rowcount > 0
+
+
+def vault_assignees() -> list:
+    """Tên người phụ trách khác nhau (không rỗng) trên cả 2 nhóm tài khoản."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT assignee FROM vault_accounts"
+            " WHERE assignee <> '' ORDER BY assignee ASC"
+        ).fetchall()
+    return [r["assignee"] for r in rows]

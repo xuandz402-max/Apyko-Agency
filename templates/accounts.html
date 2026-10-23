@@ -4,8 +4,266 @@
 {% block content %}
 <div class="page-head">
   <h1>👥 Quản lý tài khoản</h1>
-  <p class="muted">Chỉ chủ sở hữu thấy trang này. Tạo tài khoản cho nhân sự → gửi mã kích hoạt → họ tự đặt mật khẩu.</p>
+  <p class="muted">Kho tài khoản nhận của khách, tài khoản nội bộ của công ty, bàn giao cho từng nhân sự và quản lý đăng nhập / phân quyền.</p>
 </div>
+{% if err %}<div class="alert alert-error">{{ err }}</div>{% endif %}
+{% if msg %}<div class="alert alert-ok">{{ msg }}</div>{% endif %}
+
+<div class="tabs">
+  <a href="/accounts?tab=khach" class="tab{% if tab == 'khach' %} active{% endif %}">🏦 Tài khoản khách</a>
+  <a href="/accounts?tab=noi-bo" class="tab{% if tab == 'noi-bo' %} active{% endif %}">🔐 Tài khoản nội bộ</a>
+  <a href="/accounts?tab=ban-giao" class="tab{% if tab == 'ban-giao' %} active{% endif %}">📋 Bàn giao nhân sự</a>
+  {% if user.is_owner %}
+  <a href="/accounts?tab=dang-nhap" class="tab{% if tab == 'dang-nhap' %} active{% endif %}">👥 Đăng nhập &amp; phân quyền</a>
+  {% endif %}
+</div>
+
+{% if tab == 'khach' %}
+<div class="card">
+  <form method="get" action="/accounts" class="form-inline">
+    <input type="hidden" name="tab" value="khach">
+    <label>Tìm tài khoản khách
+      <input type="text" name="q" value="{{ q }}" class="input" placeholder="Tên khách, chủ tài khoản, số tài khoản, người phụ trách...">
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">🔎 Tìm</button>
+      {% if q %}<a href="/accounts?tab=khach" class="btn btn-ghost">Xóa lọc</a>{% endif %}
+    </div>
+  </form>
+</div>
+
+{% if can_edit %}
+<div class="card">
+  <div class="card-head"><h2>{% if edit_item %}✏️ Sửa tài khoản khách{% else %}➕ Thêm tài khoản khách{% endif %}</h2></div>
+  <form method="post" action="{% if edit_item %}/accounts/vault/{{ edit_item.id }}/update{% else %}/accounts/vault/create{% endif %}" class="form">
+    <input type="hidden" name="category" value="khach">
+    <div class="grid-2">
+      <label>Tên khách / mục đích *
+        <input name="label" required value="{{ edit_item.label if edit_item else '' }}" placeholder="VD: Khách sỉ — Anh Tuấn (tiền cọc)">
+      </label>
+      <label>Ngân hàng
+        <input name="bank_name" value="{{ edit_item.bank_name if edit_item else '' }}" placeholder="VD: Vietcombank">
+      </label>
+      <label>Số tài khoản
+        <input name="account_number" value="{{ edit_item.account_number if edit_item else '' }}" placeholder="VD: 0123456789">
+      </label>
+      <label>Chủ tài khoản
+        <input name="account_holder" value="{{ edit_item.account_holder if edit_item else '' }}" placeholder="VD: NGUYEN VAN TUAN">
+      </label>
+      <label>Người phụ trách
+        <input name="assignee" value="{{ edit_item.assignee if edit_item else '' }}" placeholder="Tên nhân sự phụ trách khách này">
+      </label>
+      <label>Ghi chú
+        <input name="note" value="{{ edit_item.note if edit_item else '' }}" placeholder="VD: Chỉ nhận tiền cọc đơn sỉ">
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Lưu thay đổi' if edit_item else 'Thêm vào kho' }}</button>
+      {% if edit_item %}<a href="/accounts?tab=khach" class="btn btn-ghost">Hủy sửa</a>{% endif %}
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<div class="card card-flat">
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Khách / Chủ TK</th><th>Ngân hàng</th><th>Số tài khoản</th><th>Người phụ trách</th><th>Ghi chú</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for it in items %}
+      <tr>
+        <td><strong>{{ it.label }}</strong>{% if it.account_holder %}<div class="muted small">{{ it.account_holder }}</div>{% endif %}</td>
+        <td>{{ it.bank_name }}</td>
+        <td>{{ it.account_number }}</td>
+        <td>{{ it.assignee }}</td>
+        <td class="small">{{ it.note }}</td>
+        <td>
+          <div class="row-actions va-actions">
+            <textarea class="va-src" readonly>{{ it.copy_text }}</textarea>
+            <button type="button" class="btn btn-primary btn-sm va-copy">📋 Chép</button>
+            {% if can_edit %}<a href="/accounts?tab=khach&edit={{ it.id }}" class="btn btn-ghost btn-sm">✏️ Sửa</a>{% endif %}
+            {% if can_delete %}
+            <form method="post" action="/accounts/vault/{{ it.id }}/delete" class="inline" onsubmit="return confirm('Xóa tài khoản {{ it.label }}?');">
+              <button type="submit" class="btn btn-danger btn-sm">🗑️ Xóa</button>
+            </form>
+            {% endif %}
+          </div>
+          {% if it.updated_by %}<div class="muted small">Cập nhật: {{ it.updated_by }}</div>{% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="muted">Chưa có tài khoản khách nào{% if q %} khớp với "{{ q }}"{% endif %}.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+{% elif tab == 'noi-bo' %}
+<div class="card">
+  <form method="get" action="/accounts" class="form-inline">
+    <input type="hidden" name="tab" value="noi-bo">
+    <label>Tìm tài khoản nội bộ
+      <input type="text" name="q" value="{{ q }}" class="input" placeholder="Tên tài khoản, tên đăng nhập, số tài khoản, người phụ trách...">
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">🔎 Tìm</button>
+      {% if q %}<a href="/accounts?tab=noi-bo" class="btn btn-ghost">Xóa lọc</a>{% endif %}
+    </div>
+  </form>
+</div>
+
+{% if can_edit %}
+<div class="card">
+  <div class="card-head"><h2>{% if edit_item %}✏️ Sửa tài khoản nội bộ{% else %}➕ Thêm tài khoản nội bộ{% endif %}</h2></div>
+  <form method="post" action="{% if edit_item %}/accounts/vault/{{ edit_item.id }}/update{% else %}/accounts/vault/create{% endif %}" class="form">
+    <input type="hidden" name="category" value="noi_bo">
+    <div class="grid-2">
+      <label>Loại tài khoản
+        <select name="kind">
+          {% for k in kinds %}
+          <option value="{{ k }}"{% if edit_item and edit_item.kind == k %} selected{% endif %}>{{ k }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Tên / nhãn *
+        <input name="label" required value="{{ edit_item.label if edit_item else '' }}" placeholder="VD: Shopee shop chính, TK nhận tiền công ty">
+      </label>
+      <label>Tên đăng nhập / email / SĐT
+        <input name="username" value="{{ edit_item.username if edit_item else '' }}" placeholder="VD: apyko.shop@gmail.com">
+      </label>
+      <label>Mật khẩu
+        <input name="password" value="{{ edit_item.password if edit_item else '' }}" autocomplete="off" placeholder="Mật khẩu đăng nhập">
+      </label>
+      <label>Link đăng nhập
+        <input name="url" value="{{ edit_item.url if edit_item else '' }}" placeholder="VD: https://seller.shopee.vn">
+      </label>
+      <label>Người phụ trách
+        <input name="assignee" value="{{ edit_item.assignee if edit_item else '' }}" placeholder="Tên nhân sự được giao tài khoản này">
+      </label>
+      <label>Ngân hàng (nếu là TK ngân hàng)
+        <input name="bank_name" value="{{ edit_item.bank_name if edit_item else '' }}" placeholder="VD: Techcombank">
+      </label>
+      <label>Số tài khoản (nếu là TK ngân hàng)
+        <input name="account_number" value="{{ edit_item.account_number if edit_item else '' }}" placeholder="VD: 1903xxxxxx">
+      </label>
+      <label>Chủ tài khoản (nếu là TK ngân hàng)
+        <input name="account_holder" value="{{ edit_item.account_holder if edit_item else '' }}" placeholder="VD: CONG TY APYKO">
+      </label>
+      <label>Ghi chú
+        <input name="note" value="{{ edit_item.note if edit_item else '' }}" placeholder="VD: Đã bật bảo mật 2 lớp">
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Lưu thay đổi' if edit_item else 'Thêm vào kho' }}</button>
+      {% if edit_item %}<a href="/accounts?tab=noi-bo" class="btn btn-ghost">Hủy sửa</a>{% endif %}
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<div class="card card-flat">
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Loại</th><th>Tên / nhãn</th><th>Đăng nhập</th><th>Mật khẩu</th><th>Link</th><th>Người phụ trách</th><th>Ghi chú</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for it in items %}
+      <tr>
+        <td><span class="badge badge-label">{{ it.kind }}</span></td>
+        <td><strong>{{ it.label }}</strong></td>
+        <td>
+          {% if it.username %}<strong>{{ it.username }}</strong>{% endif %}
+          {% if it.account_number %}<div class="muted small">{{ it.bank_name }}{% if it.bank_name %} · {% endif %}{{ it.account_number }}</div>{% endif %}
+          {% if it.account_holder %}<div class="muted small">Chủ TK: {{ it.account_holder }}</div>{% endif %}
+        </td>
+        <td>
+          {% if it.has_password %}
+            {% if can_see_pw %}
+            <span class="va-pw-mask">••••••</span><span class="va-pw-val" hidden>{{ it.password }}</span>
+            <button type="button" class="btn btn-ghost btn-sm va-toggle">Hiện</button>
+            {% else %}••••••{% endif %}
+          {% else %}<span class="muted">—</span>{% endif %}
+        </td>
+        <td>{% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener">Mở link</a>{% endif %}</td>
+        <td>{{ it.assignee }}</td>
+        <td class="small">{{ it.note }}</td>
+        <td>
+          <div class="row-actions va-actions">
+            {% if can_see_pw %}
+            <textarea class="va-src" readonly>{{ it.copy_text }}</textarea>
+            <button type="button" class="btn btn-primary btn-sm va-copy">📋 Chép</button>
+            {% endif %}
+            {% if can_edit %}<a href="/accounts?tab=noi-bo&edit={{ it.id }}" class="btn btn-ghost btn-sm">✏️ Sửa</a>{% endif %}
+            {% if can_delete %}
+            <form method="post" action="/accounts/vault/{{ it.id }}/delete" class="inline" onsubmit="return confirm('Xóa tài khoản {{ it.label }}?');">
+              <button type="submit" class="btn btn-danger btn-sm">🗑️ Xóa</button>
+            </form>
+            {% endif %}
+          </div>
+          {% if it.updated_by %}<div class="muted small">Cập nhật: {{ it.updated_by }}</div>{% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="muted">Chưa có tài khoản nội bộ nào{% if q %} khớp với "{{ q }}"{% endif %}.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+{% elif tab == 'ban-giao' %}
+<div class="card">
+  <form method="get" action="/accounts" class="form-inline">
+    <input type="hidden" name="tab" value="ban-giao">
+    <label>Nhân sự nhận bàn giao
+      <select name="assignee" class="input">
+        <option value="">— Chọn nhân sự —</option>
+        {% for name in assignees %}
+        <option value="{{ name }}"{% if assignee == name %} selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Xem bàn giao</button>
+    </div>
+  </form>
+  {% if not assignees %}<p class="muted">Chưa có tài khoản nào được giao người phụ trách — hãy điền ô "Người phụ trách" khi thêm tài khoản khách / nội bộ.</p>{% endif %}
+</div>
+
+{% if assignee %}
+<div class="card">
+  <div class="card-head"><h2>📋 Bàn giao cho {{ assignee }}</h2></div>
+  <div class="va-actions">
+    <textarea class="va-src" readonly>{{ handover_text }}</textarea>
+    <button type="button" class="btn btn-primary va-copy">📋 Chép toàn bộ thông tin bàn giao</button>
+  </div>
+  <p class="muted small">Bản bàn giao đã định dạng sẵn để dán vào Zalo / tin nhắn gửi nhân sự.{% if not can_see_pw %} Vì tài khoản của bạn không có quyền xem mật khẩu, dòng mật khẩu được thay bằng "(liên hệ quản lý để nhận)".{% endif %}</p>
+</div>
+<div class="grid-2">
+  <div class="card card-flat">
+    <div class="card-head"><h2>🔐 Tài khoản nội bộ ({{ internal_items|length }})</h2></div>
+    <div class="table-wrap"><table class="table">
+      <tbody>
+      {% for it in internal_items %}
+        <tr><td><span class="badge badge-label">{{ it.kind }}</span> <strong>{{ it.label }}</strong>{% if it.username %}<div class="muted small">{{ it.username }}</div>{% endif %}</td></tr>
+      {% else %}
+        <tr><td class="muted">Không có tài khoản nội bộ nào được giao.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  <div class="card card-flat">
+    <div class="card-head"><h2>🏦 Tài khoản khách phụ trách ({{ customer_items|length }})</h2></div>
+    <div class="table-wrap"><table class="table">
+      <tbody>
+      {% for it in customer_items %}
+        <tr><td><strong>{{ it.label }}</strong>{% if it.bank_name or it.account_number %}<div class="muted small">{{ it.bank_name }}{% if it.bank_name and it.account_number %} · {% endif %}{{ it.account_number }}</div>{% endif %}</td></tr>
+      {% else %}
+        <tr><td class="muted">Không phụ trách tài khoản khách nào.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+{% endif %}
+
+{% else %}
 {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
 {% if new_code %}
 <div class="alert alert-ok">
@@ -87,4 +345,48 @@
     </tbody>
   </table></div>
 </div>
+{% endif %}
+
+<script>
+(function () {
+  function fallbackCopy(textarea) {
+    textarea.focus();
+    textarea.select();
+    try { document.execCommand('copy'); } catch (e) { /* bỏ qua */ }
+    if (window.getSelection) window.getSelection().removeAllRanges();
+  }
+  function markDone(btn) {
+    var old = btn.textContent;
+    btn.textContent = '✅ Đã chép';
+    setTimeout(function () { btn.textContent = old; }, 1500);
+  }
+  document.querySelectorAll('.va-copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var wrap = btn.closest('.va-actions');
+      var src = wrap ? wrap.querySelector('.va-src') : null;
+      if (!src) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(src.value).then(function () { markDone(btn); }, function () {
+          fallbackCopy(src); markDone(btn);
+        });
+      } else {
+        fallbackCopy(src); markDone(btn);
+      }
+    });
+  });
+  document.querySelectorAll('.va-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var cell = btn.closest('td');
+      if (!cell) return;
+      var mask = cell.querySelector('.va-pw-mask');
+      var val = cell.querySelector('.va-pw-val');
+      if (!mask || !val) return;
+      var showing = !val.hidden;
+      val.hidden = showing;
+      mask.hidden = !showing;
+      btn.textContent = showing ? 'Hiện' : 'Ẩn';
+    });
+  });
+})();
+</script>
 {% endblock %}

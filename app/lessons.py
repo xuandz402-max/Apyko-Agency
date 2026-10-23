@@ -110,29 +110,78 @@ def render_markdown(md: str) -> str:
         stripped = line.strip()
 
         if not stripped:
+            # Danh sách "lỏng" (các mục cách nhau bởi dòng trống) vẫn là MỘT
+            # danh sách: không đóng list nếu dòng có chữ tiếp theo là một mục
+            # list — nếu không, danh sách đánh số sẽ toàn hiện "1."
+            if list_stack:
+                j = i + 1
+                while j < len(lines) and not lines[j].strip():
+                    j += 1
+                if j < len(lines) and re.match(
+                    r"^(\s*)([-*]|\d+[.)])\s+", lines[j]
+                ):
+                    i += 1
+                    continue
             close_lists()
             i += 1
             continue
 
-        # Bảng: dòng header + dòng phân cách
-        if "|" in stripped and i + 1 < len(lines) and _is_table_sep(lines[i + 1]):
+        # Bảng: khối các dòng bắt đầu bằng "|" (có hoặc không có dòng phân cách).
+        # Dòng phân cách (nếu còn) bị bỏ qua, không in ra — trước đây thiếu nó
+        # là bảng vỡ thành chữ thô lộ dấu "|".
+        if stripped.startswith("|") and "|" in stripped[1:]:
             close_lists()
-            headers = [c.strip() for c in stripped.strip("|").split("|")]
-            out.append('<div class="md-table-wrap"><table class="md-table"><thead><tr>')
-            out.append("".join(f"<th>{_inline(h)}</th>" for h in headers))
-            out.append("</tr></thead><tbody>")
-            i += 2
-            while i < len(lines) and "|" in lines[i].strip():
-                cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
-                cells += [""] * (len(headers) - len(cells))
-                out.append(
-                    "<tr>"
-                    + "".join(f"<td>{_inline(c)}</td>" for c in cells[: len(headers)])
-                    + "</tr>"
+            block = []
+            j = i
+            while j < len(lines):
+                s = lines[j].strip()
+                if s.startswith("|"):
+                    if not _is_table_sep(lines[j]):
+                        block.append(s)
+                    j += 1
+                    continue
+                if not s:
+                    # Cho phép dòng trống chen giữa các dòng bảng (định dạng
+                    # xuất từ Google Docs) — chỉ tiếp tục nếu dòng có chữ
+                    # tiếp theo vẫn là dòng bảng.
+                    k = j + 1
+                    while k < len(lines) and not lines[k].strip():
+                        k += 1
+                    if k < len(lines) and lines[k].strip().startswith("|"):
+                        j += 1
+                        continue
+                break
+            if len(block) >= 2:
+                rows = [
+                    [c.strip() for c in r.strip("|").split("|")] for r in block
+                ]
+                ncols = max(len(r) for r in rows)
+                first = rows[0]
+                has_header = len(first) == ncols and all(
+                    c and not any(ch.isdigit() for ch in c) and len(c) <= 40
+                    for c in first
                 )
-                i += 1
-            out.append("</tbody></table></div>")
-            continue
+                out.append('<div class="md-table-wrap"><table class="md-table">')
+                start = 0
+                if has_header:
+                    out.append(
+                        "<thead><tr>"
+                        + "".join(f"<th>{_inline(h)}</th>" for h in first)
+                        + "</tr></thead>"
+                    )
+                    start = 1
+                out.append("<tbody>")
+                for r in rows[start:]:
+                    cells = (r + [""] * ncols)[:ncols]
+                    out.append(
+                        "<tr>"
+                        + "".join(f"<td>{_inline(c)}</td>" for c in cells)
+                        + "</tr>"
+                    )
+                out.append("</tbody></table></div>")
+                i = j
+                continue
+            # Chỉ 1 dòng ống đơn độc: rơi xuống xử lý đoạn văn như cũ
 
         # Tiêu đề
         m = re.match(r"^(#{1,4})\s+(.*)", stripped)

@@ -47,8 +47,8 @@ def test_owner_can_open_ceo_without_data(client):
     assert r.status_code == 200
     html = r.text
     assert "Dashboard CEO" in html
-    # Chưa nhập Báo cáo ngày hôm nay → thẻ hiển thị trạng thái, không crash
-    assert "Chưa nhập" in html
+    # Chưa nhập Báo cáo ngày hôm nay → thẻ hiển thị "No Data", không crash
+    assert "No Data" in html
     assert "Chưa nhập Báo cáo ngày hôm nay" in html
     # Bảng 7 ngày vẫn render đủ 7 dòng (thiếu dữ liệu → "—")
     assert "Doanh thu 7 ngày gần nhất" in html

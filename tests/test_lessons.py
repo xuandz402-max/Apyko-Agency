@@ -99,3 +99,27 @@ def test_lesson_56_cskh_content(client):
     assert '<img src="/static/lesson-images/cskh-thong-tin-don-hang.png"' in html
     # File ảnh tĩnh phục vụ được
     assert client.get("/static/lesson-images/cskh-thong-tin-don-hang.png").status_code == 200
+
+
+def test_render_table_without_separator():
+    md = "| Loại combo | Mục đích |\n| Lấy đánh giá | Gom đánh giá |\n| Lấy số bán | Tăng đơn |"
+    html = lessons.render_markdown(md)
+    assert '<table class="md-table">' in html
+    assert "<th>Loại combo</th>" in html
+    assert "<td>Lấy đánh giá</td>" in html
+    assert "|" not in html.replace('<div class="md-table-wrap">', "")
+
+
+def test_render_table_numeric_first_col_no_fake_header():
+    md = "| 1 | Xác định mục tiêu |\n| 2 | Chia bậc |"
+    html = lessons.render_markdown(md)
+    assert '<table class="md-table">' in html
+    assert "<thead>" not in html
+    assert "<td>1</td>" in html
+
+
+def test_render_loose_numbered_list_single_ol():
+    md = "1. Mục một\n\n1. Mục hai\n\n1. Mục ba"
+    html = lessons.render_markdown(md)
+    assert html.count("<ol>") == 1
+    assert html.count("<li>") == 3

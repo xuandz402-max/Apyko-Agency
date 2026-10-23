@@ -1,11 +1,14 @@
 {% extends "base.html" %}
+{% from "_platform_tabs.html" import platform_tabs %}
 {% set nav_active = "analysis" %}
 {% block title %}Đơn {{ rollup.order_id }} — {{ app_name }}{% endblock %}
 {% block content %}
+{{ platform_tabs('shopee') }}
+{% if msg %}<div class="alert alert-ok">{{ msg }}</div>{% endif %}
 <div class="page-head">
   <h1>Đơn {{ rollup.order_id }}</h1>
   <p class="muted">Shop: {{ shop }} · Ngày đặt: {{ rollup.order_dt or rollup.order_date }} · Trạng thái: {{ rollup.status }}
-  {% if rollup.flagged %} · <span class="badge badge-need">Cần kiểm tra tiền</span>{% endif %}</p>
+  {% if rollup.excluded %} · <span class="badge">Đã xác nhận loại trừ</span>{% elif rollup.flagged %} · <span class="badge badge-need">Cần kiểm tra tiền</span>{% endif %}</p>
 </div>
 
 <div class="tabs">
@@ -45,11 +48,19 @@
         {% elif rollup.recon == "review" %}Cần kiểm tra
         {% else %}Không áp dụng{% endif %}
       </div>
+      {% if rollup.tier %}
+      <div class="stat-note">Tầng đối soát: {{ rollup.tier }}{% if rollup.tier == 1 %} — khớp công thức gốc{% elif rollup.tier == 2 %} — khớp khi tính thêm AK, AQ (mức nới lỏng){% else %} — không khớp{% endif %}</div>
+      {% endif %}
       {% if has_finance and rollup.recon_diff is not none %}
-      <div class="stat-note">Lệch biến thể A: {{ "{:,.0f}".format(rollup.recon_diff).replace(",", ".") }}đ</div>
+      <div class="stat-note">Chênh lệch so với AT: {{ "{:,.0f}".format(rollup.recon_diff).replace(",", ".") }}đ</div>
       {% endif %}
     </div>
   </div>
+  {% if not rollup.cancelled and not rollup.excluded and rollup.recon != "ok" and can_import %}
+  <form method="post" action="/analysis/don-hang/don/{{ rollup.order_id }}/exclude?shop={{ shop|urlencode }}" onsubmit="return confirm('Xác nhận loại trừ đơn này khỏi hàng chờ đối soát? Đơn vẫn nằm ngoài KPI chính.');">
+    <button type="submit" class="btn btn-secondary btn-sm">Xác nhận loại trừ đơn này</button>
+  </form>
+  {% endif %}
   <p class="kpi-note">Vận chuyển: {{ rollup.carrier or "—" }} · Thanh toán: {{ rollup.payment_method or "—" }} · Tỉnh/Thành phố: {{ rollup.province or "—" }}{% if rollup.cancel_reason %} · Lý do hủy: {{ rollup.cancel_reason }}{% endif %}{% if rollup.return_status %} · Trả hàng/Hoàn tiền: {{ rollup.return_status }}{% endif %}</p>
 
   <div class="card-head"><h3>Dòng sản phẩm</h3></div>
@@ -77,7 +88,7 @@
     {% endfor %}
     </tbody>
   </table></div>
-  <p class="kpi-note">AC = {{ ac_label }}; AT = {{ at_label }} (số cấp đơn, hiển thị theo từng dòng như trong file xuất — tổng của đơn chỉ tính AT 1 lần). Giá trị sau voucher của dòng = AC × AA − AE − AG.</p>
+  <p class="kpi-note">AC = {{ ac_label }}; AT = {{ at_label }} (số cấp đơn, hiển thị theo từng dòng như trong file xuất — tổng của đơn chỉ tính AT 1 lần). Giá trị sau voucher của dòng trong bảng = AC × AA − AE − AG (số thô theo từng dòng).{% if rollup.ae_level == "order" %} AE được ghi cấp đơn — trừ 1 lần ở cấp đơn khi tính giá trị của đơn (không trừ lặp ở từng dòng).{% endif %}{% if rollup.ag_level == "order" %} AG được ghi cấp đơn — trừ 1 lần ở cấp đơn khi tính giá trị của đơn.{% endif %}{% if rollup.level_ambiguous %} Lưu ý: AE/AG của đơn này chưa rõ cấp dòng hay cấp đơn — cả 2 cách tính đều không khớp đối soát, hệ thống giữ nguyên số thô và gắn cờ kiểm tra.{% endif %}</p>
 </div>
 
 <div class="card">

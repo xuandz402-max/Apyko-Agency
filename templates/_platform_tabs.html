@@ -1,0 +1,10 @@
+{# Pill chuyển NỀN TẢNG trong mục Phân tích: Shopee (module Đơn hàng
+Shopee) · TikTok · Facebook · Zalo (chưa có nguồn dữ liệu). #}
+{% macro platform_tabs(active) %}
+<div class="tabs">
+  <a href="/analysis" class="tab{% if active == 'shopee' %} active{% endif %}">🛍️ Shopee</a>
+  <a href="/analysis?platform=tiktok" class="tab{% if active == 'tiktok' %} active{% endif %}">🎵 TikTok</a>
+  <a href="/analysis?platform=facebook" class="tab{% if active == 'facebook' %} active{% endif %}">📘 Facebook</a>
+  <a href="/analysis?platform=zalo" class="tab{% if active == 'zalo' %} active{% endif %}">💬 Zalo</a>
+</div>
+{% endmacro %}

@@ -1,42 +1,22 @@
 {% extends "base.html" %}
+{% from "_platform_tabs.html" import platform_tabs %}
 {% set nav_active = "analysis" %}
 {% block title %}Phân tích — {{ app_name }}{% endblock %}
 {% block content %}
 <div class="page-head">
   <h1>Phân tích</h1>
-  <p class="muted">Xếp hạng cơ hội theo điểm số</p>
+  <p class="muted">Số liệu theo từng nền tảng bán hàng</p>
 </div>
-<div class="tabs">
-  <a href="/analysis" class="tab active">📈 Phân tích sản phẩm</a>
-  {% if user and user.can_view_orders %}
-  <a href="/analysis/don-hang" class="tab">🛍️ Đơn hàng Shopee</a>
-  {% endif %}
+{{ platform_tabs(platform) }}
+{% if no_orders_right %}
+<div class="card">
+  <p>Bạn chưa có quyền xem Đơn hàng Shopee.</p>
+  <p class="muted">Sheet Shopee chứa phân tích đơn hàng Shopee (nạp file xuất từ Seller Centre). Hãy nhờ chủ shop cấp quyền “Xem Đơn hàng” trong mục Quản lý tài khoản để dùng phần này.</p>
 </div>
-<div class="stats">
-  {% for label, count in by_label.items() %}
-  <div class="stat-card">
-    <div class="stat-label">{{ label }}</div>
-    <div class="stat-value">{{ count }}</div>
-  </div>
-  {% endfor %}
+{% else %}
+<div class="card">
+  <p>Chưa có nguồn dữ liệu cho nền tảng này.</p>
+  <p class="muted">Sheet {{ platform_label }} sẽ được bổ sung khi có nguồn dữ liệu thật (file xuất từ nền tảng hoặc kết nối chính thức) — hiện chưa hiển thị số liệu nào để tránh nhầm lẫn.</p>
 </div>
-<div class="card card-flat">
-  <div class="table-wrap"><table class="table">
-    <thead><tr><th>#</th><th>Sản phẩm</th><th>Điểm</th><th>Nhãn</th><th>Lợi nhuận/đơn</th><th>Biên LN</th></tr></thead>
-    <tbody>
-    {% for a in rows %}
-      <tr>
-        <td>{{ loop.index }}</td>
-        <td><a href="/products/{{ a.product.id }}">{{ a.product.name }}</a></td>
-        <td>{% if a.score.score is none %}<span class="muted">—</span>{% else %}<span class="badge badge-score">{{ a.score.score }}</span>{% endif %}</td>
-        <td>{{ a.score.label }}</td>
-        <td class="{% if a.calc.profit >= 0 %}text-green{% else %}text-red{% endif %}">{{ "{:,.0f}".format(a.calc.profit) }}₫</td>
-        <td>{% if a.calc.margin is none %}<span class="muted">—</span>{% else %}{{ a.calc.margin }}%{% endif %}</td>
-      </tr>
-    {% else %}
-      <tr><td colspan="6" class="muted empty">Chưa có sản phẩm nào.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table></div>
-</div>
+{% endif %}
 {% endblock %}

@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% from "_platform_tabs.html" import platform_tabs %}
 {% set nav_active = "analysis" %}
 {% block title %}Xem trước file đơn Shopee · {{ app_name }}{% endblock %}
 {% block content %}
+{{ platform_tabs('shopee') }}
 <div class="page-head">
   <h1>👀 Xem trước — chưa ghi dữ liệu</h1>
   <p class="muted">File <strong>{{ filename }}</strong> · Shop: <strong>{{ shop }}</strong>. Kiểm tra kỹ rồi mới bấm Xác nhận nhập.</p>
@@ -53,6 +55,36 @@
     </tbody>
   </table></div>
   {% endif %}
+
+  <div class="card-head"><h3>Đối soát theo đơn (chạy trên dữ liệu sẽ nhập, gộp với dòng đã có)</h3></div>
+  <p class="kpi-note">Tầng 1: khớp công thức gốc AC × AA − AE − AG (theo cách ghi AE/AG phát hiện được). Tầng 2: khớp khi tính thêm AK × 100 + phí ship người mua trả AQ — mức kiểm tra nới lỏng hơn. Tầng 3: chưa khớp — đơn vẫn được nhập nhưng bị gắn cờ và giữ ngoài KPI tiền.{% if analysis.recon_rest %} Bảng dưới hiện {{ analysis.recon_rows|length }} đơn đầu (ưu tiên đơn có vấn đề) trong tổng {{ analysis.recon_total }} đơn; còn {{ analysis.recon_rest }} đơn không hiển thị.{% endif %}</p>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr>
+      <th>Mã đơn</th><th>Số dòng</th>
+      {% if has_finance %}<th>Tổng AC × AA (đ)</th><th>AE (đ)</th><th>AG (đ)</th><th>Giá trị theo công thức (đ)</th><th>AD (đ)</th><th>AT (đ)</th><th>Chênh lệch so với AT (đ)</th>{% endif %}
+      <th>Kết luận</th>
+    </tr></thead>
+    <tbody>
+    {% for r in analysis.recon_rows %}
+      <tr>
+        <td>{{ r.order_id }}</td>
+        <td>{{ r.n_lines if not r.quarantined else "—" }}</td>
+        {% if has_finance %}
+        <td>{{ "{:,.0f}".format(r.ac_total).replace(",", ".") if r.ac_total is not none else "—" }}</td>
+        <td>{% if r.ae_total is not none %}{{ "{:,.0f}".format(r.ae_total).replace(",", ".") }}{% if r.ae_level == "order" %} (cấp đơn){% endif %}{% else %}—{% endif %}</td>
+        <td>{% if r.ag_total is not none %}{{ "{:,.0f}".format(r.ag_total).replace(",", ".") }}{% if r.ag_level == "order" %} (cấp đơn){% endif %}{% else %}—{% endif %}</td>
+        <td>{{ "{:,.0f}".format(r.formula_value).replace(",", ".") if r.formula_value is not none else "—" }}</td>
+        <td>{{ "{:,.0f}".format(r.ad).replace(",", ".") if r.ad is not none else "—" }}</td>
+        <td>{{ "{:,.0f}".format(r.at).replace(",", ".") if r.at is not none else "—" }}</td>
+        <td>{{ "{:,.0f}".format(r.diff_at).replace(",", ".") if r.diff_at is not none else "—" }}</td>
+        {% endif %}
+        <td>{{ r.conclusion }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="10" class="muted empty">Không có đơn nào trong file.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
 
   <div class="card-head"><h3>Chi tiết theo dòng</h3></div>
   <div class="table-wrap"><table class="table table-compact">

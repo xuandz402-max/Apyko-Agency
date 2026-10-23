@@ -1,4 +1,4 @@
-"""Phân tích đơn hàng Shopee (/analysis/don-hang — mục trong Phân tích).
+"""Phân tích đơn hàng Shopee (/analysis/don-hang — sheet Shopee trong Phân tích).
 
 Neo số liệu lấy từ file mẫu thật tests/fixtures/demo_order.xlsx (bản sao
 Demo_Order.xlsx của Shopee, 12 dòng / 62 cột):
@@ -9,6 +9,14 @@ Demo_Order.xlsx của Shopee, 12 dòng / 62 cột):
 - Đối soát: 5/6 đơn đã giao khớp (3 biến thể A, 2 biến thể B). Đơn
   261019284CYC85 bị gắn cờ: dòng thứ hai của nó trong file gốc chính là
   dòng trống mã đơn đã bị cách ly, nên tổng dòng hợp lệ không khớp AT.
+
+Neo v2 (U1 phát hiện cấp AE/AG + U2 tách KPI chính / chưa đối soát),
+phạm vi ĐÃ GIAO:
+- KPI chính (chỉ 5 đơn đã đối soát): AT = 666.290đ, giá trị sau
+  voucher = 674.990đ.
+- Giữ ngoài KPI: đơn 261019284CYC85 — AT 310.840đ, giá trị 147.170đ.
+- Tầng đối soát trên toàn bộ đơn không hủy: tầng 1 = 3 đơn, tầng 2 =
+  3 đơn, tầng 3 = 1 đơn (261019284CYC85).
 """
 
 import csv
@@ -210,15 +218,27 @@ def test_anchor_totals_delivered_scope(client):
     rollups = _delivered_rollups()
     ov = _orders().overview_stats(rollups)
     assert ov["orders"] == 6
-    assert ov["at_total"] == 977130
-    assert ov["line_value"] == 822160
+    # U2: KPI chính chỉ tính 5 đơn đã đối soát khớp.
+    assert ov["main_orders"] == 5
+    assert ov["at_total"] == 666290
+    assert ov["line_value"] == 674990
+    # Đơn chưa đối soát bị giữ ngoài KPI, tách riêng rõ ràng.
+    assert ov["held_out"]["orders"] == 1
+    assert ov["held_out"]["order_ids"] == ["261019284CYC85"]
+    assert ov["held_out"]["at"] == 310840
+    assert ov["held_out"]["line_value"] == 147170
+    assert ov["excluded"]["orders"] == 0
     # Hiện trên giao diện khi lọc trạng thái Đã giao.
     r = client.get(
         f"/analysis/don-hang?tab=tong-quan&{RANGE}&status={quote('Đã giao')}"
     )
     assert r.status_code == 200
-    assert "977.130" in r.text
-    assert "822.160" in r.text
+    assert "666.290" in r.text  # AT của KPI chính
+    assert "674.990" in r.text  # giá trị sau voucher của KPI chính
+    assert "310.840" in r.text  # AT đang giữ ngoài KPI
+    assert "147.170" in r.text  # giá trị đang giữ ngoài KPI
+    assert "977.130" not in r.text  # tổng cũ (gồm cả đơn chưa đối soát)
+    assert "Chưa đối soát" in r.text
 
 
 def test_reconciliation_variants_and_flag(client):
@@ -249,7 +269,7 @@ def test_reimport_inserts_nothing(client):
     assert len(_db().orders_list_lines()) == 11
     assert len(_db().orders_existing_order_ids(SHOP)) == 11
     ov = _orders().overview_stats(_delivered_rollups())
-    assert ov["at_total"] == 977130  # doanh thu không tăng sau khi nạp lại
+    assert ov["at_total"] == 666290  # KPI chính không tăng sau khi nạp lại
 
 
 # ------------------------- đơn nhiều dòng (tự tạo) -------------------------
@@ -330,7 +350,9 @@ def test_section_requires_can_view_orders(client):
     activate(client, "nv1", code)
     r = client.get("/analysis")
     assert r.status_code == 200
-    assert "Đơn hàng Shopee" not in r.text  # không thấy mục chuyển mục
+    # Khung nền tảng hiện ra nhưng kèm ghi chú chưa có quyền xem đơn Shopee.
+    assert "chưa có quyền xem Đơn hàng Shopee" in r.text
+    assert "TikTok" in r.text and "Zalo" in r.text  # vẫn thấy các pill nền tảng
     r = client.get("/analysis/don-hang")
     assert r.status_code == 403
     r = client.get(f"/analysis/don-hang/don/261018VUCSNGU4?shop={quote(SHOP)}")
@@ -348,6 +370,8 @@ def test_finance_stripped_server_side(client):
     r = client.get(f"/analysis/don-hang?tab=tong-quan&{RANGE}")
     assert r.status_code == 200
     assert "977.130" not in r.text and "822.160" not in r.text
+    assert "666.290" not in r.text and "674.990" not in r.text  # KPI chính v2
+    assert "310.840" not in r.text  # khối giữ ngoài cũng bị che tiền
     assert "1.035.980" not in r.text  # tổng AT mọi trạng thái không hủy
     r = client.get(f"/analysis/don-hang?tab=gia&{RANGE}")
     assert r.status_code == 403  # tab tài chính bị chặn ở server
@@ -437,3 +461,232 @@ def test_batch_delete_removes_only_own_lines(client):
     assert r.status_code == 200
     assert _db().orders_list_lines() == []
     assert any(a["action"] == "delete_batch" for a in _db().orders_list_audit())
+
+
+# ------------------------- v2: phát hiện cấp AE/AG (U1) -------------------------
+
+_AC = "Tổng tiền người mua thanh toán trước khi trừ voucher shop và Shopee."
+_AD = "Tổng giá trị đơn hàng (VND)"
+_AE = "Mã giảm giá của Shop"
+_AG = "Mã giảm giá của Shopee"
+_AT = "Tiền khách thanh toán cuối cùng"
+
+
+def _import_rows(client, rows, filename="v2.csv"):
+    create_owner(client)
+    preview = _upload(client, _csv_bytes(rows), filename)
+    assert preview.status_code == 200
+    assert _confirm(client, preview).status_code == 200
+    lines = _db().orders_list_lines()
+    return {r["order_id"]: r for r in _orders().rollup_orders(lines)}, lines
+
+
+def test_order_level_ae_detected_and_subtracted_once(client):
+    # 3 dòng, AE = 10.000 LẶP GIỐNG HỆT ở mọi dòng: chỉ khi trừ AE
+    # đúng 1 lần ở cấp đơn mới khớp AT = 170.000.
+    rows = [
+        _row(**{"Mã đơn hàng": "ORD1", "Tên sản phẩm": "SP 1", _AC: "100000",
+                _AE: "10000", _AD: "170000", _AT: "170000"}),
+        _row(**{"Mã đơn hàng": "ORD1", "Tên sản phẩm": "SP 2", _AC: "50000",
+                _AE: "10000", _AD: "170000", _AT: "170000"}),
+        _row(**{"Mã đơn hàng": "ORD1", "Tên sản phẩm": "SP 3", _AC: "30000",
+                _AE: "10000", _AD: "170000", _AT: "170000"}),
+    ]
+    rollups, lines = _import_rows(client, rows)
+    r = rollups["ORD1"]
+    assert r["ae_level"] == "order"
+    assert r["line_value"] == 170000  # 180.000 - 10.000 (trừ 1 lần)
+    assert r["recon"] == "ok" and r["tier"] == 1
+    # Tab tài chính: voucher shop chỉ cộng AE 1 lần.
+    fin = _orders().finance_stats(lines, list(rollups.values()))
+    assert fin["voucher_shop"] == 10000
+    # Tab sản phẩm: voucher cấp đơn KHÔNG phân bổ xuống dòng — giá trị
+    # dòng giữ nguyên trước voucher cấp đơn (100k + 50k + 30k).
+    products = _orders().product_stats(lines, list(rollups.values()))
+    assert sum(p["line_value"] for p in products) == 180000
+
+
+def test_line_level_ae_detected(client):
+    # 2 dòng, AE KHÁC nhau từng dòng (3.000 + 7.000): trừ theo dòng
+    # mới khớp AT = 90.000.
+    rows = [
+        _row(**{"Mã đơn hàng": "ORD2", "Tên sản phẩm": "SP 1", _AC: "50000",
+                _AE: "3000", _AD: "90000", _AT: "90000"}),
+        _row(**{"Mã đơn hàng": "ORD2", "Tên sản phẩm": "SP 2", _AC: "50000",
+                _AE: "7000", _AD: "90000", _AT: "90000"}),
+    ]
+    rollups, _lines = _import_rows(client, rows)
+    r = rollups["ORD2"]
+    assert r["ae_level"] == "line"
+    assert r["line_value"] == 90000
+    assert r["recon"] == "ok" and r["tier"] == 1
+
+
+def test_contradictory_order_keeps_raw_and_tier3(client):
+    # Cả 2 cách hiểu AE (theo dòng: 70.000 / cấp đơn: 75.000) đều
+    # không khớp AT = 99.999 hay AD = 88.888 -> giữ số thô, gắn cờ.
+    rows = [
+        _row(**{"Mã đơn hàng": "ORD3", "Tên sản phẩm": "SP 1", _AC: "40000",
+                _AE: "5000", _AD: "88888", _AT: "99999"}),
+        _row(**{"Mã đơn hàng": "ORD3", "Tên sản phẩm": "SP 2", _AC: "40000",
+                _AE: "5000", _AD: "88888", _AT: "99999"}),
+    ]
+    rollups, _lines = _import_rows(client, rows)
+    r = rollups["ORD3"]
+    assert r["recon"] == "review" and r["flagged"]
+    assert r["tier"] == 3
+    assert r["line_value"] == 70000  # số thô theo dòng, không ép khớp
+    assert r["level_ambiguous"]
+
+
+# ------------------------- v2: tầng đối soát (U5) -------------------------
+
+
+def test_tier_counts_real_fixture(client):
+    _import_demo(client)
+    lines = _db().orders_list_lines()
+    rollups = _orders().rollup_orders(lines)
+    dq = _orders().data_quality(lines, rollups)
+    assert len(dq["tiers"][1]) == 3  # khớp công thức gốc
+    assert len(dq["tiers"][2]) == 3  # khớp nhờ AK x 100 + AQ
+    assert [r["order_id"] for r in dq["tiers"][3]] == ["261019284CYC85"]
+    # Trang Chất lượng dữ liệu hiện đủ 3 tầng + ghi rõ tầng 2 nới lỏng hơn.
+    r = client.get(f"/analysis/don-hang?tab=chat-luong&{RANGE}")
+    assert r.status_code == 200
+    assert "Khớp công thức gốc" in r.text
+    assert "Khớp khi tính thêm AK, AQ" in r.text
+    assert "Không khớp — cần kiểm tra" in r.text
+    assert "NỚI LỎNG HƠN" in r.text
+
+
+# ------------------------- v2: xác nhận loại trừ (U2) -------------------------
+
+
+def _annotate(rollups):
+    excl = _db().orders_list_exclusions()
+    for r in rollups:
+        r["excluded"] = (r["shop"], r["order_id"]) in excl
+    return rollups
+
+
+def test_exclude_confirm_flow(client):
+    _import_demo(client)
+    url = f"/analysis/don-hang/don/261019284CYC85/exclude?shop={quote(SHOP)}"
+    # Nhân viên chỉ có quyền xem: bị chặn 403.
+    login(client, "chushop", "matkhau123")
+    code = create_staff(
+        client, "nvex", perms=("can_view_products", "can_view_orders")
+    )
+    logout(client)
+    activate(client, "nvex", code)
+    assert client.post(url).status_code == 403
+    logout(client)
+    login(client, "chushop", "matkhau123")
+    # Chủ shop (có quyền nhập) xác nhận loại trừ được.
+    r = client.post(url)
+    assert r.status_code == 200
+    assert (SHOP, "261019284CYC85") in _db().orders_list_exclusions()
+    assert any(
+        a["action"] == "exclude_confirm" for a in _db().orders_list_audit()
+    )
+    # Đơn rời hàng chờ, sang nhóm đã loại trừ; KPI chính KHÔNG đổi.
+    lines = _db().orders_list_lines()
+    rollups = _annotate(_orders().rollup_orders(lines))
+    dq = _orders().data_quality(lines, rollups)
+    assert "261019284CYC85" not in [x["order_id"] for x in dq["pending"]]
+    assert "261019284CYC85" in [x["order_id"] for x in dq["excluded_orders"]]
+    ov = _orders().overview_stats(_annotate(_delivered_rollups()))
+    assert ov["at_total"] == 666290
+    assert ov["held_out"]["orders"] == 0
+    assert ov["excluded"]["orders"] == 1
+    assert ov["excluded"]["at"] == 310840
+    # Trang chi tiết hiện nhãn đã loại trừ.
+    r = client.get(f"/analysis/don-hang/don/261019284CYC85?shop={quote(SHOP)}")
+    assert "Đã xác nhận loại trừ" in r.text
+
+
+# ------------------------- v2: bảng chênh lệch xem trước (U3) -------------------------
+
+
+def test_preview_recon_diff_table(client):
+    create_owner(client)
+    preview = _upload(client, FIXTURE.read_bytes(), "demo_order.xlsx")
+    assert preview.status_code == 200
+    assert "Chênh lệch so với AT" in preview.text
+    assert "Kết luận" in preview.text
+    assert "Khớp công thức gốc" in preview.text
+    assert "Khớp khi tính thêm AK, AQ" in preview.text
+    assert "Chưa khớp — cần kiểm tra" in preview.text
+    assert "Dòng lỗi bị cách ly" in preview.text
+    # Đơn 261019284CYC85: giá trị 147.170 so với AT 310.840 -> lệch -163.670.
+    assert "-163.670" in preview.text
+    # Xem trước vẫn không ghi gì.
+    assert _db().orders_list_lines() == []
+
+
+# ------------------------- v2: lưu file gốc (U4) -------------------------
+
+
+def test_original_file_saved_download_and_hash_guard(client, tmp_path):
+    _import_demo(client)
+    batch = _db().orders_list_imports()[0]
+    assert batch["original_path"].startswith("order_uploads/")
+    orders_mod = _orders()
+    raw_saved = orders_mod.read_original_file(batch["original_path"])
+    assert raw_saved == FIXTURE.read_bytes()
+    # Chủ shop tải được đúng bytes gốc + ghi audit.
+    r = client.get(f"/analysis/don-hang/import/{batch['id']}/file")
+    assert r.status_code == 200
+    assert r.content == FIXTURE.read_bytes()
+    assert any(
+        a["action"] == "download_original" for a in _db().orders_list_audit()
+    )
+    # Trang Nhập dữ liệu có nút tải file gốc.
+    r = client.get(f"/analysis/don-hang?tab=nhap&{RANGE}")
+    assert "Tải file gốc" in r.text
+    # Nhân viên không có quyền nhập: 403.
+    login(client, "chushop", "matkhau123")
+    code = create_staff(
+        client, "nvfile", perms=("can_view_products", "can_view_orders")
+    )
+    logout(client)
+    activate(client, "nvfile", code)
+    r = client.get(f"/analysis/don-hang/import/{batch['id']}/file")
+    assert r.status_code == 403
+    logout(client)
+    login(client, "chushop", "matkhau123")
+    # File trên máy bị sửa khác hash đã lưu -> từ chối tải.
+    path = orders_mod.original_file_abspath(batch["original_path"])
+    with open(path, "wb") as fh:
+        fh.write(b"noi-dung-bi-sua")
+    r = client.get(f"/analysis/don-hang/import/{batch['id']}/file")
+    assert r.status_code == 409
+
+
+# ------------------------- nền tảng: Shopee / TikTok / Facebook / Zalo --------
+
+
+def test_platform_pills_and_placeholders(client):
+    create_owner(client)
+    # /analysis (chủ shop có quyền xem đơn) vào thẳng sheet Shopee.
+    r = client.get("/analysis")
+    assert r.status_code == 200
+    assert "🛍️ Shopee" in r.text
+    assert "🎵 TikTok" in r.text
+    assert "📘 Facebook" in r.text
+    assert "💬 Zalo" in r.text
+    assert "Phân tích sản phẩm" not in r.text  # mục cũ đã gỡ hẳn
+    # Các sheet chưa có nguồn dữ liệu: trạng thái trống trung thực.
+    for platform, label in (
+        ("tiktok", "TikTok"), ("facebook", "Facebook"), ("zalo", "Zalo")
+    ):
+        r = client.get(f"/analysis?platform={platform}")
+        assert r.status_code == 200
+        assert "Chưa có nguồn dữ liệu cho nền tảng này" in r.text
+        assert label in r.text
+        assert "Phân tích sản phẩm" not in r.text
+    # Trang đơn Shopee: pill Shopee đang active, đủ 4 nền tảng.
+    r = client.get(f"/analysis/don-hang?{RANGE}")
+    assert r.status_code == 200
+    assert "🛍️ Shopee" in r.text and "🎵 TikTok" in r.text
+    assert "Phân tích sản phẩm" not in r.text

@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% from "_platform_tabs.html" import platform_tabs %}
 {% set nav_active = "analysis" %}
 {% block title %}Đã nhập file đơn Shopee · {{ app_name }}{% endblock %}
 {% block content %}
+{{ platform_tabs('shopee') }}
 <div class="page-head">
   <h1>✅ Đã ghi dữ liệu từ file {{ filename }}</h1>
   <p class="muted">Shop: {{ shop }}</p>

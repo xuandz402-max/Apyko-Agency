@@ -10,6 +10,7 @@ import secrets
 import sqlite3
 import threading
 import time
+from collections import Counter
 from datetime import datetime
 from typing import Annotated
 from urllib.parse import quote
@@ -586,18 +587,51 @@ async def page_product_delete(product_id: int, request: Request):
     return RedirectResponse(url="/products?msg=deleted", status_code=303)
 
 
+_PLATFORMS = [
+    ("shopee", "Shopee"),
+    ("tiktok", "TikTok"),
+    ("facebook", "Facebook"),
+    ("zalo", "Zalo"),
+]
+
+
 @router.get("/analysis", response_class=HTMLResponse)
 def page_analysis(request: Request):
+    """Khung Phân tích theo NỀN TẢNG (Shopee / TikTok / Facebook /
+    Zalo). Sheet Shopee = module Đơn hàng Shopee: có quyền thì chuyển
+    thẳng vào /analysis/don-hang, chưa có quyền thì hiện khung kèm
+    ghi chú. Các nền tảng còn lại chưa có nguồn dữ liệu — hiện trạng
+    thái trống trung thực, không số liệu giả."""
     user, redir = auth.page_guard(request, "can_view_products")
     if redir:
         return redir
-    rows = db.list_products(sort="score", dir="desc")
-    by_label: dict[str, int] = {}
-    for a in rows:
-        label = a["score"]["label"]
-        by_label[label] = by_label.get(label, 0) + 1
+    platform = (request.query_params.get("platform") or "shopee").strip().lower()
+    if platform not in dict(_PLATFORMS):
+        platform = "shopee"
+    if platform == "shopee":
+        if user.get("can_view_orders"):
+            return RedirectResponse(url=_ORDERS_BASE, status_code=303)
+        return templates.TemplateResponse(
+            "analysis.html",
+            _ctx(
+                request,
+                user,
+                platform="shopee",
+                platform_label="Shopee",
+                platforms=_PLATFORMS,
+                no_orders_right=True,
+            ),
+        )
     return templates.TemplateResponse(
-        "analysis.html", _ctx(request, user, rows=rows, by_label=by_label)
+        "analysis.html",
+        _ctx(
+            request,
+            user,
+            platform=platform,
+            platform_label=dict(_PLATFORMS)[platform],
+            platforms=_PLATFORMS,
+            no_orders_right=False,
+        ),
     )
 
 
@@ -688,6 +722,7 @@ def page_analysis_orders(request: Request, tab: str = "tong-quan"):
     flt = _orders_filters(request)
     lines = _orders_lines(flt)
     rollups = orders.rollup_orders(lines)
+    _annotate_exclusions("", rollups)
     ctx: dict = {
         "tab": tab,
         "tabs": _ORDER_TABS,
@@ -709,10 +744,11 @@ def page_analysis_orders(request: Request, tab: str = "tong-quan"):
         if not has_finance:
             ov = {**ov, "line_value": None, "at_total": None, "trend": [
                 {**t, "at": None} for t in ov["trend"]
-            ]}
+            ], "held_out": {**ov["held_out"], "at": None, "line_value": None},
+                "excluded": {**ov["excluded"], "at": None, "line_value": None}}
         ctx["ov"] = ov
     elif tab == "san-pham":
-        stats = orders.product_stats(lines)
+        stats = orders.product_stats(lines, rollups)
         if not has_finance:
             stats = [{**s, "line_value": None} for s in stats]
         ctx["products"] = stats
@@ -800,6 +836,7 @@ def page_order_detail(request: Request, order_id: str):
     if not lines:
         raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng.")
     rollup = orders.rollup_order(order_id, lines)
+    _annotate_exclusions("", [rollup])
     has_finance = bool(user.get("can_view_order_finance"))
     lines = [{**ln, "line_value": orders.line_value(ln)} for ln in lines]
     if not has_finance:
@@ -817,6 +854,8 @@ def page_order_detail(request: Request, order_id: str):
             buyer_revealed=False,
             has_finance=has_finance,
             can_pii=bool(user.get("can_view_buyer_pii")),
+            can_import=bool(user.get("can_import_orders")),
+            msg=request.query_params.get("msg") or "",
             ac_label=orders.AC_LABEL,
             at_label=orders.AT_LABEL,
         ),
@@ -840,6 +879,7 @@ def page_order_reveal_pii(request: Request, order_id: str):
         user["id"], user["username"], "reveal_pii", f"Đơn {order_id} (shop: {shop})"
     )
     rollup = orders.rollup_order(order_id, lines)
+    _annotate_exclusions("", [rollup])
     has_finance = bool(user.get("can_view_order_finance"))
     lines = [{**ln, "line_value": orders.line_value(ln)} for ln in lines]
     if not has_finance:
@@ -857,15 +897,63 @@ def page_order_reveal_pii(request: Request, order_id: str):
             buyer_revealed=True,
             has_finance=has_finance,
             can_pii=True,
+            can_import=bool(user.get("can_import_orders")),
+            msg="",
             ac_label=orders.AC_LABEL,
             at_label=orders.AT_LABEL,
         ),
     )
 
 
+@router.post(_ORDERS_BASE + "/don/{order_id}/exclude")
+def page_order_exclude_confirm(request: Request, order_id: str):
+    """Xác nhận loại trừ 1 đơn khỏi hàng chờ đối soát (U2): đơn vẫn
+    nằm ngoài KPI chính nhưng không còn bị tính là "chờ kiểm tra".
+    Yêu cầu quyền nhập file; ghi order_exclusions + audit."""
+    user, redir = _orders_guard(request)
+    if redir:
+        return redir
+    if not user.get("can_import_orders"):
+        raise HTTPException(
+            status_code=403, detail="Tài khoản không có quyền xác nhận loại trừ đơn."
+        )
+    shop = (request.query_params.get("shop") or "").strip()
+    lines = db.orders_get_lines(shop, order_id) if shop else []
+    if not lines:
+        raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng.")
+    db.orders_add_exclusion(shop, order_id, _actor(user))
+    db.orders_audit(
+        user["id"],
+        user["username"],
+        "exclude_confirm",
+        f"Đơn {order_id} (shop: {shop}): xác nhận loại trừ khỏi hàng chờ đối soát.",
+    )
+    return RedirectResponse(
+        url=f"{_ORDERS_BASE}/don/{order_id}?shop={quote(shop)}"
+        "&msg=" + quote("Đã xác nhận loại trừ đơn này khỏi hàng chờ đối soát."),
+        status_code=303,
+    )
+
+
+def _annotate_exclusions(shop: str, rollups: list) -> None:
+    """Gắn cờ 'excluded' (đã xác nhận loại trừ) lên các rollup của 1 shop."""
+    excl = db.orders_list_exclusions()
+    for r in rollups:
+        r["excluded"] = (shop or r["shop"], r["order_id"]) in excl
+
+
+_RECON_CONCLUSIONS = {
+    1: "Khớp công thức gốc",
+    2: "Khớp khi tính thêm AK, AQ",
+    3: "Chưa khớp — cần kiểm tra",
+}
+
+
 def _orders_preview_analysis(shop: str, items: list) -> dict:
     """Phân tích xem trước: dòng mới/trùng, đơn đã có, đơn cần kiểm tra
-    tiền (đối soát trên dữ liệu GỘP file mới + dòng đã có trong hệ thống)."""
+    tiền (đối soát trên dữ liệu GỘP file mới + dòng đã có trong hệ thống)
+    + bảng chênh lệch đối soát theo đơn (U3) — chạy trên dữ liệu tạm,
+    CHƯA ghi gì vào DB."""
     ok_items = [it for it in items if it["status"] == "ok"]
     new_lines = dup_lines = 0
     for it in ok_items:
@@ -888,10 +976,72 @@ def _orders_preview_analysis(shop: str, items: list) -> dict:
     for ln in merged.values():
         by_order.setdefault(ln["order_id"], []).append(ln)
     flagged = []
+    recon_rows = []
+    tier_counts: Counter = Counter()
     for oid in sorted(file_order_ids):
         r = orders.rollup_order(oid, by_order.get(oid, []))
         if r["flagged"]:
             flagged.append(r)
+        if r["cancelled"]:
+            conclusion = "Đơn đã hủy — không đối soát"
+        elif r["at_inconsistent"]:
+            conclusion = "AT không nhất quán giữa các dòng"
+            tier_counts[3] += 1
+        elif r["tier"] in _RECON_CONCLUSIONS:
+            conclusion = _RECON_CONCLUSIONS[r["tier"]]
+            tier_counts[r["tier"]] += 1
+        else:
+            conclusion = "Không đủ dữ liệu đối soát"
+        recon_rows.append(
+            {
+                "order_id": oid,
+                "n_lines": r["n_lines"],
+                "ac_total": r["sum_ac"],
+                "ae_total": r["ae_total"],
+                "ae_level": r["ae_level"],
+                "ag_total": r["ag_total"],
+                "ag_level": r["ag_level"],
+                "formula_value": r["line_value"],
+                "ad": r["ad"],
+                "at": r["at"],
+                "diff_at": r["recon_diff"],
+                "tier": r["tier"],
+                "conclusion": conclusion,
+                "quarantined": False,
+            }
+        )
+    for it in items:
+        if it["status"] != "quarantine":
+            continue
+        raw = it.get("raw") or {}
+        recon_rows.append(
+            {
+                "order_id": raw.get("order_id_raw") or "(trống)",
+                "n_lines": 0,
+                "ac_total": raw.get("amount_ac"),
+                "ae_total": None,
+                "ae_level": "line",
+                "ag_total": None,
+                "ag_level": "line",
+                "formula_value": None,
+                "ad": None,
+                "at": raw.get("buyer_paid_at"),
+                "diff_at": None,
+                "tier": None,
+                "conclusion": "Dòng lỗi bị cách ly",
+                "quarantined": True,
+            }
+        )
+        tier_counts["quarantine"] += 1
+    # Hàng có vấn đề lên đầu: tầng 3 / cách ly -> tầng 2 -> tầng 1 -> hủy.
+    _rank = {3: 0, None: 1, 2: 2, 1: 3}
+    recon_rows.sort(
+        key=lambda r: (
+            0 if r["quarantined"] else _rank.get(r["tier"], 4),
+            r["order_id"],
+        )
+    )
+    recon_total = len(recon_rows)
     return {
         "total_rows": len(items),
         "ok_rows": len(ok_items),
@@ -902,6 +1052,10 @@ def _orders_preview_analysis(shop: str, items: list) -> dict:
         "existing_orders": len(file_order_ids & existing_ids),
         "new_orders": len(file_order_ids - existing_ids),
         "flagged": flagged,
+        "recon_rows": recon_rows[:200],
+        "recon_total": recon_total,
+        "recon_rest": max(0, recon_total - 200),
+        "tier_counts": tier_counts,
     }
 
 
@@ -937,6 +1091,7 @@ async def page_orders_import(
         {
             "kind": "orders",
             "filename": file.filename,
+            "raw": raw,
             "shop": shop,
             "file_hash": file_hash,
             "items": items,
@@ -954,6 +1109,7 @@ async def page_orders_import(
             analysis=analysis,
             col_warnings=col_warnings,
             prev_import=prev_import,
+            has_finance=bool(user.get("can_view_order_finance")),
             token=token,
             back_url=back,
             confirm_url=_ORDERS_BASE + "/import/confirm",
@@ -1024,6 +1180,11 @@ async def page_orders_import_confirm(
                 db.orders_upsert_buyer(shop, d["order_id"], it["buyer"])
     # Ghi đè số dòng mới bằng số ghi thật (chống trùng khóa ở tầng DB).
     db.orders_update_import_new_lines(batch_id, n_inserted)
+    # U4: lưu bản sao FILE GỐC cạnh DB (local-only) để đối chiếu sau này.
+    raw = stash.get("raw")
+    if raw:
+        stored_path = orders.save_original_file(batch_id, stash["filename"], raw)
+        db.orders_update_import_original(batch_id, stored_path)
     db.orders_audit(
         user["id"],
         user["username"],
@@ -1069,6 +1230,8 @@ async def page_orders_import_delete(request: Request, batch_id: int):
     if batch is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy đợt nhập.")
     res = db.orders_delete_import(batch_id)
+    if batch.get("original_path"):
+        orders.delete_original_file(batch["original_path"])
     db.orders_audit(
         user["id"],
         user["username"],
@@ -1078,6 +1241,49 @@ async def page_orders_import_delete(request: Request, batch_id: int):
     )
     return RedirectResponse(
         url=_ORDERS_BASE + "?tab=nhap&msg=" + quote("Đã xoá đợt nhập."), status_code=303
+    )
+
+
+@router.get(_ORDERS_BASE + "/import/{batch_id}/file")
+def page_orders_import_file(request: Request, batch_id: int):
+    """Tải FILE GỐC của 1 đợt nhập (U4): chỉ chủ sở hữu hoặc người có
+    quyền nhập; kiểm tra SHA-256 khớp với hash đã lưu trước khi cho
+    tải; mỗi lần tải ghi audit download_original."""
+    user, redir = _orders_guard(request)
+    if redir:
+        return redir
+    if not (user.get("is_owner") or user.get("can_import_orders")):
+        raise HTTPException(
+            status_code=403, detail="Tài khoản không có quyền tải file gốc đợt nhập."
+        )
+    batch = db.orders_get_import(batch_id)
+    if batch is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy đợt nhập.")
+    if not batch.get("original_path"):
+        raise HTTPException(
+            status_code=404, detail="Đợt nhập này chưa lưu file gốc."
+        )
+    raw = orders.read_original_file(batch["original_path"])
+    if raw is None:
+        raise HTTPException(
+            status_code=404, detail="Không tìm thấy file gốc trên máy."
+        )
+    if hashlib.sha256(raw).hexdigest() != batch["file_hash"]:
+        raise HTTPException(
+            status_code=409,
+            detail="File gốc trên máy KHÔNG khớp hash đã lưu — từ chối tải.",
+        )
+    db.orders_audit(
+        user["id"],
+        user["username"],
+        "download_original",
+        f"Tải file gốc đợt nhập #{batch_id} ({batch['filename']}, shop: {batch['shop']}).",
+    )
+    safe_name = orders._sanitize_filename(batch["filename"])
+    return Response(
+        content=raw,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{safe_name}"'},
     )
 
 

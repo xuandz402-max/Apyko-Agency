@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_period_bar.html" import range_picker %}
+{% from "_platform_tabs.html" import platform_tabs %}
 {% set nav_active = "analysis" %}
 {% block title %}Đơn hàng Shopee — {{ app_name }}{% endblock %}
 {% block content %}
@@ -7,10 +8,7 @@
   <h1>Phân tích</h1>
   <p class="muted">Phân tích chuyên sâu file đơn hàng xuất từ Shopee Seller Centre</p>
 </div>
-<div class="tabs">
-  <a href="/analysis" class="tab">📈 Phân tích sản phẩm</a>
-  <a href="/analysis/don-hang" class="tab active">🛍️ Đơn hàng Shopee</a>
-</div>
+{{ platform_tabs('shopee') }}
 
 {% if msg %}<div class="alert alert-ok">{{ msg }}</div>{% endif %}
 
@@ -64,19 +62,20 @@
       <div class="stat-note">Tổng số lượng bán (không tính đơn hủy): {{ ov.qty }}</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Giá trị đơn sau voucher</div>
+      <div class="stat-label">Giá trị đơn sau voucher (đã đối soát)</div>
       {% if has_finance %}
       <div class="stat-value">{{ "{:,.0f}".format(ov.line_value).replace(",", ".") }}đ</div>
+      <div class="stat-note">Chỉ tính {{ ov.main_orders }} đơn đã đối soát khớp</div>
       {% else %}
       <div class="stat-value">—</div>
       <div class="stat-note">Cần quyền xem dữ liệu tài chính</div>
       {% endif %}
     </div>
     <div class="stat-card">
-      <div class="stat-label">{{ at_label }}</div>
+      <div class="stat-label">{{ at_label }} (đã đối soát)</div>
       {% if has_finance %}
       <div class="stat-value">{{ "{:,.0f}".format(ov.at_total).replace(",", ".") }}đ</div>
-      <div class="stat-note">Từ {{ ov.at_orders }} đơn có AT nhất quán</div>
+      <div class="stat-note">Từ {{ ov.at_orders }} đơn đã đối soát khớp</div>
       {% else %}
       <div class="stat-value">—</div>
       <div class="stat-note">Cần quyền xem dữ liệu tài chính</div>
@@ -88,7 +87,32 @@
       <div class="stat-note">Xem chi tiết ở tab Chất lượng dữ liệu</div>
     </div>
   </div>
-  <p class="kpi-note">Nguồn: file đơn Shopee đã nhập. Giá trị sau voucher của 1 dòng = AC × AA − AE − AG (AC = tiền trước voucher, AA = số lượng, AE = voucher shop, AG = voucher Shopee); giá trị của đơn = tổng các dòng thuộc cùng Mã đơn hàng. {{ at_label }} là số cấp đơn — chỉ cộng 1 lần/đơn khi mọi dòng ghi AT giống nhau. Phạm vi: ngày đặt hàng trong khoảng đang chọn; các chỉ số tiền LOẠI TRỪ đơn Đã hủy.</p>
+
+  <div class="card-head"><h3>Chưa đối soát — đang giữ ngoài KPI chính</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Nhóm</th><th>Số đơn</th>{% if has_finance %}<th>{{ at_label }} đang giữ (đ)</th><th>Giá trị sau voucher đang giữ (đ)</th>{% endif %}<th></th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Chưa đối soát (chờ kiểm tra)</td>
+        <td>{{ ov.held_out.orders }}</td>
+        {% if has_finance %}
+        <td>{{ "{:,.0f}".format(ov.held_out.at).replace(",", ".") }}</td>
+        <td>{{ "{:,.0f}".format(ov.held_out.line_value).replace(",", ".") }}</td>
+        {% endif %}
+        <td><a class="btn btn-ghost btn-sm" href="/analysis/don-hang?tab=chat-luong&from={{ rng.cur_start }}&to={{ rng.cur_end }}{% if flt.shop %}&shop={{ flt.shop|urlencode }}{% endif %}">Xem ở Chất lượng dữ liệu</a></td>
+      </tr>
+      <tr>
+        <td>Đã xác nhận loại trừ</td>
+        <td>{{ ov.excluded.orders }}</td>
+        {% if has_finance %}
+        <td>{{ "{:,.0f}".format(ov.excluded.at).replace(",", ".") }}</td>
+        <td>{{ "{:,.0f}".format(ov.excluded.line_value).replace(",", ".") }}</td>
+        {% endif %}
+        <td></td>
+      </tr>
+    </tbody>
+  </table></div>
+  <p class="kpi-note">Nguồn: file đơn Shopee đã nhập. KPI tiền ở trên CHỈ tính đơn đã đối soát khớp (công thức gốc, hoặc khớp khi tính thêm AK × 100 + phí ship người mua trả AQ) và không bị gắn cờ; đơn chưa khớp được giữ riêng ở bảng "Chưa đối soát" cho đến khi kiểm tra xong hoặc được xác nhận loại trừ — tránh cộng tiền chưa chắc chắn vào KPI. Giá trị sau voucher của 1 dòng = AC × AA − AE − AG (AC = tiền trước voucher, AA = số lượng, AE = voucher shop, AG = voucher Shopee); riêng đơn mà AE/AG được ghi CẤP ĐƠN (lặp giống hệt ở mọi dòng và trừ 1 lần mới khớp đối soát) thì giá trị của đơn trừ khoản đó 1 lần. {{ at_label }} là số cấp đơn — chỉ cộng 1 lần/đơn khi mọi dòng ghi AT giống nhau. Phạm vi: ngày đặt hàng trong khoảng đang chọn; các chỉ số tiền LOẠI TRỪ đơn Đã hủy.</p>
 
   <div class="card-head"><h3>Xu hướng theo ngày</h3></div>
   <div class="table-wrap"><table class="table table-compact">
@@ -140,7 +164,7 @@
     {% endfor %}
     </tbody>
   </table></div>
-  <p class="kpi-note">Nguồn cột: Q (Tên sản phẩm), P/T (SKU / SKU phân loại), U (Tên phân loại), AA (Số lượng), AB (Số lượng hoàn trả). SL bán và giá trị chỉ tính dòng thuộc đơn KHÔNG hủy; SL của đơn hủy tách riêng ở cột cuối. SKU trống trong file xuất Shopee là bình thường — nhóm theo Tên sản phẩm + Tên phân loại. Giá trị sau voucher của dòng = AC × AA − AE − AG. Đây là GIÁ TRỊ ĐƠN, không phải lợi nhuận (chưa trừ giá vốn).</p>
+  <p class="kpi-note">Nguồn cột: Q (Tên sản phẩm), P/T (SKU / SKU phân loại), U (Tên phân loại), AA (Số lượng), AB (Số lượng hoàn trả). SL bán và giá trị chỉ tính dòng thuộc đơn KHÔNG hủy; SL của đơn hủy tách riêng ở cột cuối. SKU trống trong file xuất Shopee là bình thường — nhóm theo Tên sản phẩm + Tên phân loại. Giá trị sau voucher của dòng = AC × AA − AE − AG. LƯU Ý: cột giá trị CHỈ tính đơn đã đối soát khớp (KPI chính); với đơn mà voucher được phát hiện ghi CẤP ĐƠN, khoản voucher đó KHÔNG phân bổ xuống từng dòng — giá trị dòng giữ nguyên trước voucher cấp đơn, khoản cấp đơn chỉ thể hiện ở cấp đơn. Đây là GIÁ TRỊ ĐƠN, không phải lợi nhuận (chưa trừ giá vốn).</p>
 {% endif %}
 
 {% if tab == "gia" %}
@@ -170,8 +194,8 @@
   <div class="table-wrap"><table class="table">
     <thead><tr><th>Khoản mục</th><th>Nguồn cột</th><th>Tổng (đ)</th></tr></thead>
     <tbody>
-      <tr><td>Voucher của Shop</td><td>AE — Mã giảm giá của Shop (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.voucher_shop).replace(",", ".") }}</td></tr>
-      <tr><td>Voucher của Shopee</td><td>AG — Mã giảm giá của Shopee (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.voucher_shopee).replace(",", ".") }}</td></tr>
+      <tr><td>Voucher của Shop</td><td>AE — theo cấp phát hiện: cấp dòng cộng từng dòng; cấp đơn (lặp giống hệt mọi dòng) chỉ cộng 1 lần/đơn</td><td>{{ "{:,.0f}".format(fin.voucher_shop).replace(",", ".") }}</td></tr>
+      <tr><td>Voucher của Shopee</td><td>AG — theo cấp phát hiện: cấp dòng cộng từng dòng; cấp đơn chỉ cộng 1 lần/đơn</td><td>{{ "{:,.0f}".format(fin.voucher_shopee).replace(",", ".") }}</td></tr>
       <tr><td>Người bán trợ giá</td><td>Y — Tổng số tiền được người bán trợ giá (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.seller_subsidy_total).replace(",", ".") }}</td></tr>
       <tr><td>Shopee trợ giá</td><td>X — Được Shopee trợ giá (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.shopee_subsidy).replace(",", ".") }}</td></tr>
       <tr><td>Giảm giá combo Shopee</td><td>AI (cấp dòng)</td><td>{{ "{:,.0f}".format(fin.combo_shopee).replace(",", ".") }}</td></tr>
@@ -184,7 +208,7 @@
       {% endfor %}
     </tbody>
   </table></div>
-  <p class="kpi-note">Cách tính: khoản CẤP DÒNG cộng theo từng dòng sản phẩm; khoản CẤP ĐƠN (phí AX/AY/AZ, phí vận chuyển AO/AQ/AR/AS, AD, AK, AT) chỉ cộng 1 lần cho mỗi đơn khi mọi dòng của đơn ghi giống nhau — đơn nhiều dòng không bị cộng lặp. Đối soát từng đơn: A) Σ(AC × AA − AE − AG) = AT, hoặc B) Σ(AC × AA − AE − AG) − AK × 100 + AQ = AT (dung sai 1đ). Kết quả đối soát trong phạm vi: {{ fin.recon_ok }} đơn khớp, {{ fin.recon_review }} đơn cần kiểm tra, {{ fin.recon_na }} đơn không áp dụng (đã hủy/thiếu AT). Mọi số ở tab này là GIÁ TRỊ ĐƠN và PHÍ theo file Shopee — KHÔNG phải lợi nhuận (chưa có giá vốn và chi phí ngoài file).</p>
+  <p class="kpi-note">Cách tính: MỌI tổng tiền ở tab này CHỈ tính đơn đã đối soát khớp (KPI chính) — hiện đang giữ ngoài {{ fin.held_out_orders }} đơn chưa đối soát và {{ fin.excluded_orders }} đơn đã xác nhận loại trừ. Khoản CẤP DÒNG cộng theo từng dòng sản phẩm; khoản CẤP ĐƠN (phí AX/AY/AZ, phí vận chuyển AO/AQ/AR/AS, AD, AK, AT) chỉ cộng 1 lần cho mỗi đơn khi mọi dòng của đơn ghi giống nhau — đơn nhiều dòng không bị cộng lặp. Đối soát từng đơn: A) giá trị sau voucher (theo cách ghi AE/AG phát hiện được) = AT, hoặc B) giá trị sau voucher − AK × 100 + AQ = AT (dung sai 1đ). Kết quả đối soát trong phạm vi: {{ fin.recon_ok }} đơn khớp, {{ fin.recon_review }} đơn cần kiểm tra, {{ fin.recon_na }} đơn không áp dụng (đã hủy/thiếu AT). Mọi số ở tab này là GIÁ TRỊ ĐƠN và PHÍ theo file Shopee — KHÔNG phải lợi nhuận (chưa có giá vốn và chi phí ngoài file).</p>
 {% endif %}
 
 {% if tab == "van-hanh" %}
@@ -328,7 +352,7 @@
         <td>{% if r.at is not none %}{{ "{:,.0f}".format(r.at).replace(",", ".") }}{% else %}—{% endif %}</td>
         {% endif %}
         <td>{{ r.carrier }}</td>
-        <td>{% if r.flagged %}<span class="badge badge-need">Cần kiểm tra</span>{% endif %}</td>
+        <td>{% if r.excluded %}<span class="badge">Đã loại trừ</span>{% elif r.flagged %}<span class="badge badge-need">Cần kiểm tra</span>{% endif %}</td>
         <td><a class="btn btn-ghost btn-sm" href="/analysis/don-hang/don/{{ r.order_id }}?shop={{ r.shop|urlencode }}">Chi tiết</a></td>
       </tr>
     {% else %}
@@ -336,7 +360,7 @@
     {% endfor %}
     </tbody>
   </table></div>
-  <p class="kpi-note">Giá trị sau voucher của đơn = tổng (AC × AA − AE − AG) các dòng. {{ at_label }} chỉ hiện khi mọi dòng của đơn ghi AT giống nhau; đơn bị gắn cờ "Cần kiểm tra" là đơn không khớp đối soát hoặc AT không nhất quán — xem tab Chất lượng dữ liệu.</p>
+  <p class="kpi-note">Giá trị sau voucher của đơn = tổng (AC × AA − AE − AG) các dòng, trừ trường hợp AE/AG được phát hiện ghi cấp đơn thì trừ 1 lần ở cấp đơn. {{ at_label }} chỉ hiện khi mọi dòng của đơn ghi AT giống nhau; đơn bị gắn cờ "Cần kiểm tra" là đơn không khớp đối soát hoặc AT không nhất quán — xem tab Chất lượng dữ liệu.</p>
 {% endif %}
 
 {% if tab == "chat-luong" %}
@@ -352,21 +376,62 @@
     </tbody>
   </table></div>
 
-  <div class="card-head"><h3>Đơn không khớp đối soát tiền</h3></div>
+  <div class="card-head"><h3>Báo cáo đối soát 3 tầng</h3></div>
+  <p class="kpi-note">Tầng 1 — Khớp công thức gốc: giá trị sau voucher (theo cách ghi AE/AG phát hiện được của đơn) khớp AT hoặc AD trong 1đ, KHÔNG cần điều chỉnh thêm. Tầng 2 — Khớp khi tính thêm AK × 100 và phí ship người mua trả (AQ): đây là mức kiểm tra NỚI LỎNG HƠN tầng 1 (chấp nhận chênh lệch được giải thích bởi Xu hoàn và phí ship người mua trả). Tầng 3 — Không khớp — cần kiểm tra: không cách tính nào khớp, hoặc AT không nhất quán giữa các dòng; các đơn này bị giữ ngoài KPI tiền cho tới khi xử lý xong.</p>
   <div class="table-wrap"><table class="table table-compact">
-    <thead><tr><th>Mã đơn</th><th>Shop</th><th>Vấn đề</th>{% if has_finance %}<th>Chênh lệch biến thể A (đ)</th>{% endif %}</tr></thead>
+    <thead><tr><th>Tầng</th><th>Số đơn</th><th>Đơn</th></tr></thead>
     <tbody>
-    {% for r in dq.recon_review %}
-      <tr><td>{{ r.order_id }}</td><td>{{ r.shop }}</td><td>Σ(AC × AA − AE − AG) không khớp AT theo cả 2 biến thể đối soát</td>{% if has_finance %}<td>{{ "{:,.0f}".format(r.recon_diff).replace(",", ".") if r.recon_diff is not none else "—" }}</td>{% endif %}</tr>
-    {% endfor %}
-    {% for r in dq.at_inconsistent %}
-      <tr><td>{{ r.order_id }}</td><td>{{ r.shop }}</td><td>AT không nhất quán giữa các dòng của đơn — đã loại khỏi tổng AT</td>{% if has_finance %}<td>—</td>{% endif %}</tr>
-    {% endfor %}
-    {% if not dq.recon_review and not dq.at_inconsistent %}
-      <tr><td colspan="4" class="muted empty">Không có đơn nào lệch đối soát trong phạm vi.</td></tr>
-    {% endif %}
+      <tr><td>Tầng 1 — Khớp công thức gốc</td><td>{{ dq.tiers[1]|length }}</td><td>{{ dq.tiers[1]|map(attribute='order_id')|join(", ") or "—" }}</td></tr>
+      <tr><td>Tầng 2 — Khớp khi tính thêm AK, AQ</td><td>{{ dq.tiers[2]|length }}</td><td>{{ dq.tiers[2]|map(attribute='order_id')|join(", ") or "—" }}</td></tr>
+      <tr><td>Tầng 3 — Không khớp — cần kiểm tra</td><td>{{ dq.tiers[3]|length }}</td><td>—</td></tr>
     </tbody>
   </table></div>
+  {% if dq.tiers[3] %}
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Mã đơn (tầng 3)</th><th>Shop</th><th>Vấn đề</th>{% if has_finance %}<th>Chênh lệch so với AT (đ)</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for r in dq.tiers[3] %}
+      <tr><td>{{ r.order_id }}</td><td>{{ r.shop }}</td><td>{% if r.at_inconsistent %}AT không nhất quán giữa các dòng của đơn — đã loại khỏi tổng AT{% else %}Không khớp đối soát: giá trị sau voucher không khớp AT theo cả công thức gốc lẫn khi tính thêm AK, AQ{% if r.level_ambiguous %} (AE/AG chưa rõ cấp dòng hay cấp đơn){% endif %}{% endif %}</td>{% if has_finance %}<td>{{ "{:,.0f}".format(r.recon_diff).replace(",", ".") if r.recon_diff is not none else "—" }}</td>{% endif %}</tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+
+  <div class="card-head"><h3>Đơn đang chờ xử lý (chưa vào KPI chính)</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Mã đơn</th><th>Shop</th><th>Trạng thái đối soát</th><th></th></tr></thead>
+    <tbody>
+    {% for r in dq.pending %}
+      <tr>
+        <td>{{ r.order_id }}</td><td>{{ r.shop }}</td>
+        <td>{% if r.recon == "review" %}Chưa khớp đối soát{% elif r.at_inconsistent %}AT không nhất quán{% else %}Chưa đủ dữ kiện đối soát{% endif %}</td>
+        <td>
+          <a class="btn btn-ghost btn-sm" href="/analysis/don-hang/don/{{ r.order_id }}?shop={{ r.shop|urlencode }}">Chi tiết</a>
+          {% if can_import %}
+          <form method="post" action="/analysis/don-hang/don/{{ r.order_id }}/exclude?shop={{ r.shop|urlencode }}" onsubmit="return confirm('Xác nhận loại trừ đơn {{ r.order_id }} khỏi hàng chờ? Đơn vẫn nằm ngoài KPI chính nhưng không còn bị tính là chờ kiểm tra.');" style="display:inline">
+            <button type="submit" class="btn btn-ghost btn-sm">Xác nhận loại trừ</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" class="muted empty">Không có đơn nào đang chờ xử lý.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+
+  <div class="card-head"><h3>Đã xác nhận loại trừ</h3></div>
+  <div class="table-wrap"><table class="table table-compact">
+    <thead><tr><th>Mã đơn</th><th>Shop</th></tr></thead>
+    <tbody>
+    {% for r in dq.excluded_orders %}
+      <tr><td>{{ r.order_id }}</td><td>{{ r.shop }}</td></tr>
+    {% else %}
+      <tr><td colspan="2" class="muted empty">Chưa có đơn nào được xác nhận loại trừ.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="kpi-note">“Xác nhận loại trừ” (cần quyền nhập file) chỉ chuyển đơn khỏi hàng chờ kiểm tra — đơn VẪN nằm ngoài KPI tiền, và nạp lại dữ liệu không tự xoá xác nhận này.</p>
 
   <div class="card-head"><h3>Lỗi kiểu dữ liệu theo ô & trạng thái bất thường</h3></div>
   <div class="table-wrap"><table class="table table-compact">
@@ -438,6 +503,9 @@
         <td>{{ b.total_rows }}</td><td>{{ b.unique_orders }}</td><td>{{ b.new_lines }}</td><td>{{ b.dup_lines }}</td>
         <td>{{ b.flagged_orders }}</td><td>{{ b.quarantine_rows }}</td><td>{{ b.imported_by }}</td>
         <td>
+          {% if b.original_path and (can_import or (user and user.is_owner)) %}
+          <a class="btn btn-ghost btn-sm" href="/analysis/don-hang/import/{{ b.id }}/file">⬇️ Tải file gốc</a>
+          {% endif %}
           {% if can_import %}
           <form method="post" action="/analysis/don-hang/import/{{ b.id }}/delete" onsubmit="return confirm('Xoá đợt nhập #{{ b.id }}? Chỉ xoá các dòng do đợt này ghi lần đầu.');">
             <button type="submit" class="btn btn-ghost btn-sm">Xoá đợt nhập</button>
@@ -462,7 +530,7 @@
     {% endfor %}
     </tbody>
   </table></div>
-  <p class="kpi-note">Nhật ký ghi lại: nhập file (import), xuất dữ liệu (export), mở thông tin người mua (reveal_pii) và xoá đợt nhập (delete_batch) — kèm người thực hiện và thời gian.</p>
+  <p class="kpi-note">Nhật ký ghi lại: nhập file (import), xuất dữ liệu (export), mở thông tin người mua (reveal_pii), xoá đợt nhập (delete_batch), xác nhận loại trừ đơn (exclude_confirm) và tải file gốc (download_original) — kèm người thực hiện và thời gian. File gốc của mỗi đợt nhập được lưu trên máy chạy app (thư mục dữ liệu cạnh file DB, không đưa lên Git) và chỉ tải được sau khi kiểm tra khớp hash SHA-256.</p>
 {% endif %}
 </div>
 {% endblock %}

@@ -8,32 +8,49 @@ Nguyên tắc đã chốt trong kế hoạch (KE-HOACH-SHOPEE-ORDER-ANALYTICS):
   của cột — hai cột tiền AC và AT có tiêu đề gần giống nhau nhưng vị
   trí khác nhau nên không bao giờ bị gán nhầm cho nhau.
 - Giá trị sau voucher của 1 dòng = AC x AA - AE - AG (công thức nghiệp
-  vụ của chủ shop). Giá trị của đơn = tổng các dòng của đơn.
+  vụ của chủ shop) — NHƯNG AE/AG có thể được Shopee ghi CẤP ĐƠN (lặp
+  giống hệt trên mọi dòng). Vì vậy ở cấp đơn có bước PHÁT HIỆN CẤP
+  VOUCHER (U1): thử cả 2 cách trừ (theo dòng / trừ 1 lần) rồi đối chiếu
+  AD và AT; cách nào khớp duy nhất thì dùng cách đó và ghi lại
+  ae_level/ag_level ("line" | "order"). Cả 2 cách cùng khớp -> coi như
+  cấp dòng (không khác biệt). Không cách nào khớp -> GIỮ NGUYÊN số gốc,
+  không ép khớp, đơn bị gắn cờ kèm lý do mập mờ.
 - AT (Tiền khách thanh toán cuối cùng) là số CẤP ĐƠN: chỉ tính 1 lần
   cho mỗi đơn khi mọi dòng của đơn ghi AT giống nhau; khác nhau -> đơn
   bị gắn cờ "AT không nhất quán" và bị loại khỏi tổng AT.
-- Đối soát từng đơn (dung sai 1đ):
-    A: tổng(AC x AA - AE - AG) == AT
-    B: tổng(AC x AA - AE - AG) - AK x 100 + AQ == AT
-       (AK = Shopee Xu được hoàn, AQ = phí vận chuyển người mua trả;
-       AK/AQ chỉ lấy 1 lần khi các dòng trong đơn nhất quán)
-  Không biến thể nào khớp -> gắn cờ "cần kiểm tra tiền", ghi số lệch.
+- Đối soát từng đơn (dung sai 1đ), theo giá trị thắng của bước phát
+  hiện cấp voucher:
+    Tầng 1 (công thức gốc): giá trị == AT (hoặc == AD) — không cần
+      điều chỉnh gì thêm.
+    Tầng 2 (nới lỏng hơn): giá trị - AK x 100 + AQ == AT
+      (AK = Shopee Xu được hoàn, AQ = phí vận chuyển người mua trả;
+      AK/AQ chỉ lấy 1 lần khi các dòng trong đơn nhất quán).
+  Không tầng nào khớp -> gắn cờ "cần kiểm tra tiền", ghi số lệch.
+- KPI chính (U2) CHỈ gồm đơn ĐÃ đối soát (tầng 1/2, không bị gắn cờ,
+  không hủy). Đơn chưa đối soát bị giữ ngoài KPI ở khối "Chưa đối
+  soát" riêng; người có quyền nhập có thể "Xác nhận loại trừ" (ghi
+  order_exclusions + audit) để đơn ra khỏi hàng chờ — vẫn nằm ngoài
+  KPI chính, liệt kê riêng ở nhóm "Đã xác nhận loại trừ".
 - Dòng trống Mã đơn hàng / lỗi dữ liệu chí mạng -> CÁCH LY, không bao
   giờ tham gia chỉ số. Ô tiền đọc không được -> ghi nhận lỗi ô (cell
   error), không crash, không âm thầm nuốt dữ liệu.
 - Mọi chỉ số tiền mặc định LOẠI đơn "Đã hủy" (nêu rõ ở chú thích UI).
+- File gốc của mỗi đợt nhập được lưu ở data/order_uploads/ (chỉ trên
+  máy chạy app, KHÔNG lên Git) để đối chiếu; tải xuống phải qua kiểm
+  tra hash SHA-256 và ghi audit.
 - Module này thuần logic + đọc DB qua app.database; không ghi DB ở
   bước ánh xạ (routes ghi sau khi user xác nhận xem trước).
 """
 
 import hashlib
 import json
+import os
 import re
 from collections import Counter
 from datetime import date
 
+from . import config, importer
 from . import database as db
-from . import importer
 
 # --------------------------- bản đồ cột Shopee ----------------------------
 # (field, vị trí 0-based chuẩn, từ khóa tiêu đề đã chuẩn hoá để đối chiếu,
@@ -368,40 +385,126 @@ def _single(values):
     return vals[0] if len(vals) == 1 else None
 
 
+def _voucher_field_stats(lines: list, field: str) -> dict:
+    """Thống kê 1 cột voucher (AE/AG) trong 1 đơn: tổng theo dòng, giá
+    trị khi trừ 1 lần (chỉ có nghĩa khi cột không đổi trên mọi dòng)."""
+    vals = [(ln.get(field) or 0) for ln in lines]
+    constant = len(set(vals)) == 1 if vals else True
+    return {
+        "total": sum(vals),
+        "constant": constant,
+        "once": vals[0] if constant and vals else 0,
+    }
+
+
+def _detect_voucher_levels(lines: list, at, ad, ak, aq) -> dict:
+    """U1 — phát hiện AE/AG được ghi cấp dòng hay cấp đơn cho 1 đơn.
+
+    Thử 2 cách tính giá trị sau voucher của đơn:
+      line: Σ(AC x AA) - ΣAE - ΣAG            (trừ theo từng dòng)
+      once: Σ(AC x AA) - AE_1lần - AG_1lần    (cột nào không đổi trên
+            mọi dòng thì trừ 1 lần; cột thay đổi vẫn trừ theo dòng)
+    Đối chiếu từng cách với AT/AD (tầng 1: khớp thẳng; tầng 2: khớp
+    khi tính thêm -AK x 100 + AQ vào AT). Đúng 1 cách khớp -> dùng
+    cách đó. Cả 2 cùng khớp (đơn 1 dòng, voucher = 0...) -> "line"
+    (không khác biệt). Không cách nào khớp -> GIỮ cách "line" (số
+    gốc), đánh dấu mập mờ, đơn bị gắn cờ ở bước đối soát.
+    """
+    sum_ac = 0
+    value_ok = True
+    for ln in lines:
+        ac, qty = ln.get("amount_ac"), ln.get("qty")
+        if ac is None or qty is None:
+            value_ok = False
+        else:
+            sum_ac += ac * qty
+    ae = _voucher_field_stats(lines, "voucher_shop")
+    ag = _voucher_field_stats(lines, "voucher_shopee")
+    ae_once_sub = ae["once"] if ae["constant"] else ae["total"]
+    ag_once_sub = ag["once"] if ag["constant"] else ag["total"]
+    val_line = sum_ac - ae["total"] - ag["total"]
+    val_once = sum_ac - ae_once_sub - ag_once_sub
+
+    def match(value):
+        """-> (tầng khớp: 1 | 2 | None, đích khớp: 'AT' | 'AD' | '')."""
+        if at is not None and abs(value - at) <= RECON_TOLERANCE:
+            return 1, "AT"
+        if ad is not None and abs(value - ad) <= RECON_TOLERANCE:
+            return 1, "AD"
+        if (
+            at is not None
+            and ak is not None
+            and aq is not None
+            and abs(value - ak * 100 + aq - at) <= RECON_TOLERANCE
+        ):
+            return 2, "AT"
+        return None, ""
+
+    candidates = [("line", val_line)]
+    if val_once != val_line:
+        candidates.append(("once", val_once))
+    results = {name: match(v) for name, v in candidates}
+    matched = [name for name, (tier, _t) in results.items() if tier is not None]
+    if len(matched) == 1:
+        winner = matched[0]
+    else:
+        # Cả 2 cùng khớp hoặc cùng không khớp -> mặc định "line".
+        winner = "line"
+    tier, target = results[winner]
+    value = val_line if winner == "line" else val_once
+    ae_level = (
+        "order" if winner == "once" and ae_once_sub != ae["total"] else "line"
+    )
+    ag_level = (
+        "order" if winner == "once" and ag_once_sub != ag["total"] else "line"
+    )
+    return {
+        "value_ok": value_ok,
+        "sum_ac": sum_ac,
+        "ae_total": ae["total"],
+        "ag_total": ag["total"],
+        "ae_once": ae["once"] if ae["constant"] else None,
+        "ag_once": ag["once"] if ag["constant"] else None,
+        "ae_level": ae_level,
+        "ag_level": ag_level,
+        "level_ambiguous": tier is None and val_once != val_line,
+        "value": value if value_ok else None,
+        "tier": tier,
+        "recon_target": target,
+    }
+
+
 def rollup_order(order_id: str, lines: list) -> dict:
-    """Tổng hợp 1 đơn từ các dòng của nó + đối soát AC/AE/AG/AK/AQ/AT."""
+    """Tổng hợp 1 đơn từ các dòng của nó + phát hiện cấp voucher (U1)
+    + đối soát 2 tầng AC/AE/AG/AK/AQ/AT."""
     statuses = [ln.get("status") or "" for ln in lines if (ln.get("status") or "")]
     status = Counter(statuses).most_common(1)[0][0] if statuses else ""
     cancelled = is_cancelled(status)
-    total_value = 0
-    value_ok = True
-    for ln in lines:
-        v = line_value(ln)
-        if v is None:
-            value_ok = False
-        else:
-            total_value += v
     at_vals = _distinct(ln.get("buyer_paid_at") for ln in lines)
     at_inconsistent = len(at_vals) > 1
     at = at_vals[0] if len(at_vals) == 1 else None
     ak = _single(ln.get("shopee_coin") for ln in lines)
     aq = _single(ln.get("ship_buyer") for ln in lines)
     ad = _single(ln.get("order_total_ad") for ln in lines)
+    det = _detect_voucher_levels(lines, at, ad, ak, aq)
+    total_value = det["value"]
     recon = "na"
-    recon_diff = None
     recon_variant = ""
-    if not cancelled and at is not None and value_ok:
-        recon_diff = total_value - at
-        if abs(recon_diff) <= RECON_TOLERANCE:
-            recon, recon_variant = "ok", "A"
-        elif ak is not None and aq is not None:
-            diff_b = total_value - ak * 100 + aq - at
-            if abs(diff_b) <= RECON_TOLERANCE:
-                recon, recon_variant = "ok", "B"
-            else:
-                recon = "review"
+    tier = None
+    if not cancelled and at is not None and det["value_ok"]:
+        if det["tier"] == 1:
+            recon, recon_variant, tier = "ok", "A", 1
+        elif det["tier"] == 2:
+            recon, recon_variant, tier = "ok", "B", 2
         else:
-            recon = "review"
+            recon, tier = "review", 3
+    if at_inconsistent and not cancelled:
+        tier = 3
+    recon_diff = (
+        total_value - at
+        if (not cancelled and total_value is not None and at is not None)
+        else None
+    )
     flagged = at_inconsistent or recon == "review"
     dates = [ln.get("order_date") or "" for ln in lines if ln.get("order_date")]
     return {
@@ -416,7 +519,15 @@ def rollup_order(order_id: str, lines: list) -> dict:
         "n_lines": len(lines),
         "qty": sum(ln.get("qty") or 0 for ln in lines),
         "qty_returned": sum(ln.get("qty_returned") or 0 for ln in lines),
-        "line_value": total_value if value_ok else None,
+        "line_value": total_value,
+        "sum_ac": det["sum_ac"] if det["value_ok"] else None,
+        "ae_total": det["ae_total"],
+        "ag_total": det["ag_total"],
+        "ae_once": det["ae_once"],
+        "ag_once": det["ag_once"],
+        "ae_level": det["ae_level"],
+        "ag_level": det["ag_level"],
+        "level_ambiguous": det["level_ambiguous"],
         "at": at,
         "at_inconsistent": at_inconsistent,
         "ak": ak,
@@ -424,8 +535,11 @@ def rollup_order(order_id: str, lines: list) -> dict:
         "ad": ad,
         "recon": recon,
         "recon_variant": recon_variant,
+        "recon_target": det["recon_target"],
         "recon_diff": recon_diff,
+        "tier": tier,
         "flagged": flagged,
+        "excluded": False,
         "carrier": next((ln.get("carrier") for ln in lines if ln.get("carrier")), ""),
         "payment_method": next(
             (ln.get("payment_method") for ln in lines if ln.get("payment_method")), ""
@@ -438,6 +552,42 @@ def rollup_order(order_id: str, lines: list) -> dict:
             (ln.get("return_status") for ln in lines if ln.get("return_status")), ""
         ),
     }
+
+
+def is_main_order(rollup: dict) -> bool:
+    """Đơn thuộc KPI CHÍNH (U2): không hủy, đã đối soát (tầng 1/2),
+    không bị gắn cờ và không bị xác nhận loại trừ."""
+    return (
+        not rollup["cancelled"]
+        and rollup["recon"] == "ok"
+        and not rollup["flagged"]
+        and not rollup.get("excluded")
+    )
+
+
+def is_pending_order(rollup: dict) -> bool:
+    """Đơn CHƯA đối soát đang chờ xử lý: không hủy, chưa khớp đối soát
+    (cờ/review/AT không nhất quán/không đủ dữ liệu) và chưa bị loại trừ."""
+    return (
+        not rollup["cancelled"]
+        and not is_main_order(rollup)
+        and not rollup.get("excluded")
+    )
+
+
+def line_product_value(line: dict, rollup: dict):
+    """Giá trị của 1 dòng cho tab Sản phẩm: AC x AA trừ AE/AG CHỈ khi
+    voucher đó ghi cấp dòng; voucher cấp đơn không phân bổ xuống dòng
+    (kế hoạch E2) — phần cấp đơn chỉ trừ ở cấp đơn."""
+    ac, qty = line.get("amount_ac"), line.get("qty")
+    if ac is None or qty is None:
+        return None
+    value = ac * qty
+    if rollup.get("ae_level", "line") == "line":
+        value -= line.get("voucher_shop") or 0
+    if rollup.get("ag_level", "line") == "line":
+        value -= line.get("voucher_shopee") or 0
+    return value
 
 
 def rollup_orders(lines: list) -> list:
@@ -461,33 +611,63 @@ _ORDER_LEVEL_MONEY = (
 )
 
 
+def _money_block(rollups: list) -> dict:
+    """Khối tiền của 1 nhóm đơn: tổng AT + tổng giá trị sau voucher."""
+    return {
+        "orders": len(rollups),
+        "at": sum(r["at"] for r in rollups if r["at"] is not None),
+        "line_value": sum(r["line_value"] or 0 for r in rollups),
+        "order_ids": [r["order_id"] for r in rollups],
+    }
+
+
 def overview_stats(rollups: list) -> dict:
-    """Chỉ số Tổng quan trên các đơn đã tổng hợp (phạm vi lọc hiện tại)."""
+    """Chỉ số Tổng quan. U2: tiền KPI CHÍNH chỉ tính đơn đã đối soát
+    (is_main_order); đơn chưa đối soát tách vào khối held_out (đang
+    chờ) và excluded (đã xác nhận loại trừ). Đếm đơn/dòng giữ toàn
+    phạm vi; xu hướng tiền cũng chỉ tính đơn KPI chính."""
     active = [r for r in rollups if not r["cancelled"]]
+    main = [r for r in active if is_main_order(r)]
+    pending = [r for r in active if is_pending_order(r)]
+    excluded = [
+        r for r in active if r.get("excluded") and not is_main_order(r)
+    ]
+    main_keys = {(r["shop"], r["order_id"]) for r in main}
     trend: dict[str, dict] = {}
     for r in rollups:
         d = r["order_date"] or "(không ngày)"
         t = trend.setdefault(d, {"date": d, "orders": 0, "at": 0})
         t["orders"] += 1
-        if not r["cancelled"] and r["at"] is not None:
+        if (r["shop"], r["order_id"]) in main_keys and r["at"] is not None:
             t["at"] += r["at"]
     return {
         "orders": len(rollups),
         "lines": sum(r["n_lines"] for r in rollups),
         "qty": sum(r["qty"] for r in active),
-        "line_value": sum(r["line_value"] or 0 for r in active),
-        "at_total": sum(r["at"] for r in active if r["at"] is not None),
-        "at_orders": sum(1 for r in active if r["at"] is not None),
-        "flagged": sum(1 for r in rollups if r["flagged"]),
+        "line_value": sum(r["line_value"] or 0 for r in main),
+        "at_total": sum(r["at"] for r in main if r["at"] is not None),
+        "at_orders": sum(1 for r in main if r["at"] is not None),
+        "main_orders": len(main),
+        "held_out": _money_block(pending),
+        "excluded": _money_block(excluded),
+        "flagged": len(pending),
         "cancelled": sum(1 for r in rollups if r["cancelled"]),
         "status_dist": Counter(r["status"] or "(trống)" for r in rollups),
         "trend": [trend[d] for d in sorted(trend)],
     }
 
 
-def product_stats(lines: list) -> list:
+def product_stats(lines: list, rollups: list | None = None) -> list:
     """Gộp theo (tên SP, SKU, SKU phân loại, tên phân loại); loại đơn hủy
-    khỏi số bán — đơn hủy được đếm riêng ở cột qty_cancelled."""
+    khỏi số bán — đơn hủy được đếm riêng ở cột qty_cancelled.
+
+    Giá trị theo dòng (line_value) CHỈ tính từ đơn thuộc KPI chính
+    (U2) và dùng line_product_value: voucher cấp đơn không phân bổ
+    xuống dòng (E2). Khi không truyền rollups, lùi về công thức dòng
+    thuần cho mọi đơn không hủy (tương thích lời gọi cũ)."""
+    by_order: dict[tuple, dict] = {}
+    if rollups is not None:
+        by_order = {(r["shop"], r["order_id"]): r for r in rollups}
     groups: dict[tuple, dict] = {}
     for ln in lines:
         key = (
@@ -518,7 +698,15 @@ def product_stats(lines: list) -> list:
         g["orders"].add((ln.get("shop") or "", ln.get("order_id") or ""))
         g["qty"] += ln.get("qty") or 0
         g["qty_returned"] += ln.get("qty_returned") or 0
-        v = line_value(ln)
+        roll = by_order.get((ln.get("shop") or "", ln.get("order_id") or ""))
+        if roll is None:
+            if rollups is not None:
+                continue  # dòng không thuộc đơn nào trong phạm vi tổng hợp
+            v = line_value(ln)
+        elif not is_main_order(roll):
+            continue  # tiền chỉ tính đơn KPI chính
+        else:
+            v = line_product_value(ln, roll)
         if v is not None:
             g["line_value"] += v
     out = []
@@ -530,25 +718,41 @@ def product_stats(lines: list) -> list:
 
 
 def finance_stats(lines: list, rollups: list) -> dict:
-    """Phân rã giá / voucher / trợ giá / phí. Tiền CẤP DÒNG cộng theo
+    """Phân rã giá / voucher / trợ giá / phí. U2: mọi tổng tiền CHỈ
+    tính đơn thuộc KPI chính (đã đối soát). Tiền CẤP DÒNG cộng theo
     dòng; tiền CẤP ĐƠN (phí AX/AY/AZ, vận chuyển, AT, AK, AQ) chỉ cộng
-    1 lần/đơn khi các dòng nhất quán — tránh cộng lặp đơn nhiều dòng."""
-    active_lines = [ln for ln in lines if not is_cancelled(ln.get("status") or "")]
+    1 lần/đơn khi các dòng nhất quán — tránh cộng lặp đơn nhiều dòng.
+    Voucher AE/AG: đơn nào phát hiện ghi cấp đơn thì trừ/tổng 1 lần
+    theo ae_once/ag_once (U1), cấp dòng thì cộng theo dòng."""
+    main = [r for r in rollups if is_main_order(r)]
+    main_keys = {(r["shop"], r["order_id"]) for r in main}
     active = [r for r in rollups if not r["cancelled"]]
+    main_lines = [
+        ln
+        for ln in lines
+        if not is_cancelled(ln.get("status") or "")
+        and (ln.get("shop") or "", ln.get("order_id") or "") in main_keys
+    ]
 
     def ssum(field, mult_qty=False):
         total = 0
-        for ln in active_lines:
+        for ln in main_lines:
             v = ln.get(field)
             if v is None:
                 continue
             total += v * (ln.get("qty") or 0) if mult_qty else v
         return total
 
+    def voucher_total(level_key, total_key, once_key):
+        total = 0
+        for r in main:
+            total += r[total_key] if r[level_key] == "line" else (r[once_key] or 0)
+        return total
+
     order_level: dict[str, dict] = {}
     for field, label in _ORDER_LEVEL_MONEY:
         total, n_ok, n_bad = 0, 0, 0
-        for r in active:
+        for r in main:
             v = _single(ln.get(field) for ln in r["lines"])
             if v is None:
                 if any(ln.get(field) is not None for ln in r["lines"]):
@@ -557,27 +761,31 @@ def finance_stats(lines: list, rollups: list) -> dict:
                 total += v
                 n_ok += 1
         order_level[field] = {"label": label, "total": total, "orders": n_ok, "inconsistent": n_bad}
-    ak_total = sum(r["ak"] for r in active if r["ak"] is not None)
+    ak_total = sum(r["ak"] for r in main if r["ak"] is not None)
     return {
         "gross_original": ssum("price_original", mult_qty=True),
         "promo_total": ssum("price_promo", mult_qty=True),
         "seller_subsidy_total": ssum("seller_subsidy_total"),
         "shopee_subsidy": ssum("shopee_subsidy"),
-        "voucher_shop": ssum("voucher_shop"),
-        "voucher_shopee": ssum("voucher_shopee"),
+        "voucher_shop": voucher_total("ae_level", "ae_total", "ae_once"),
+        "voucher_shopee": voucher_total("ag_level", "ag_total", "ag_once"),
         "combo_shopee": ssum("combo_shopee"),
         "combo_shop": ssum("combo_shop"),
         "card_discount": ssum("card_discount"),
         "coin_cashback": ssum("coin_cashback"),
-        "line_value": sum(r["line_value"] or 0 for r in active),
-        "at_total": sum(r["at"] for r in active if r["at"] is not None),
-        "ad_total": sum(r["ad"] for r in active if r["ad"] is not None),
+        "line_value": sum(r["line_value"] or 0 for r in main),
+        "at_total": sum(r["at"] for r in main if r["at"] is not None),
+        "ad_total": sum(r["ad"] for r in main if r["ad"] is not None),
         "ak_xu": ak_total,
         "ak_vnd": ak_total * 100,
         "order_level": order_level,
         "recon_ok": sum(1 for r in active if r["recon"] == "ok"),
         "recon_review": sum(1 for r in active if r["recon"] == "review"),
         "recon_na": sum(1 for r in active if r["recon"] == "na"),
+        "held_out_orders": sum(1 for r in active if is_pending_order(r)),
+        "excluded_orders": sum(
+            1 for r in active if r.get("excluded") and not is_main_order(r)
+        ),
     }
 
 
@@ -715,14 +923,90 @@ def data_quality(lines: list, rollups: list) -> dict:
         for ln in lines
         if (ln.get("status") or "") not in KNOWN_STATUSES
     )
+    # U5 — báo cáo đối soát 3 tầng (chỉ đơn không hủy):
+    # tầng 1 khớp công thức gốc (không điều chỉnh), tầng 2 khớp khi
+    # tính thêm AK x 100 + AQ (mức nới lỏng hơn), tầng 3 không khớp /
+    # AT không nhất quán — cần kiểm tra.
+    tiers: dict[int, list] = {1: [], 2: [], 3: []}
+    for r in rollups:
+        if r["cancelled"]:
+            continue
+        if r["tier"] in tiers:
+            tiers[r["tier"]].append(r)
+        elif r["at_inconsistent"]:
+            tiers[3].append(r)
     return {
         "cell_error_lines": cell_error_lines,
         "unknown_statuses": unknown_statuses.most_common(),
         "recon_review": [r for r in rollups if r["recon"] == "review"],
         "at_inconsistent": [r for r in rollups if r["at_inconsistent"]],
         "status_conflicts": [r for r in rollups if r["status_conflict"]],
+        "tiers": tiers,
+        "pending": [r for r in rollups if is_pending_order(r)],
+        "excluded_orders": [
+            r for r in rollups if r.get("excluded") and not r["cancelled"]
+        ],
     }
 
 
 def shops_for_filter() -> list:
     return db.orders_distinct_shops()
+
+
+# ------------------------- file gốc của đợt nhập (U4) ----------------------
+# File gốc chứa thông tin người mua: chỉ lưu ở thư mục dữ liệu trên
+# máy chạy app (cạnh file DB), KHÔNG đưa lên Git, không nằm dưới
+# static/ hay templates/. Thư mục data/ nằm ngoài phạm vi ghi đè của
+# quy trình cập nhật app (chỉ app/templates/static/lessons bị ghi đè).
+
+
+def uploads_dir() -> str:
+    """Thư mục lưu file gốc: <thư mục chứa DB>/order_uploads."""
+    base = os.path.dirname(os.path.abspath(config.DATABASE_PATH))
+    return os.path.join(base, "order_uploads")
+
+
+def _sanitize_filename(filename: str) -> str:
+    name = os.path.basename((filename or "").replace("\\", "/"))
+    name = re.sub(r"[^A-Za-z0-9._-]+", "_", name).strip("._")
+    return name or "file"
+
+
+def save_original_file(batch_id: int, filename: str, raw: bytes) -> str:
+    """Lưu bản sao file gốc cho 1 đợt nhập; trả đường dẫn tương đối
+    (order_uploads/<batch>__<tên đã làm sạch>) để ghi vào order_imports."""
+    folder = uploads_dir()
+    os.makedirs(folder, exist_ok=True)
+    stored = f"{batch_id}__{_sanitize_filename(filename)}"
+    with open(os.path.join(folder, stored), "wb") as fh:
+        fh.write(raw)
+    return f"order_uploads/{stored}"
+
+
+def original_file_abspath(stored_path: str) -> str | None:
+    """Đường dẫn tuyệt đối của file gốc đã lưu; None nếu đường dẫn lưu
+    không hợp lệ (chặn path traversal ra ngoài thư mục order_uploads)."""
+    if not stored_path:
+        return None
+    folder = os.path.abspath(uploads_dir())
+    path = os.path.abspath(os.path.join(os.path.dirname(folder), stored_path))
+    if os.path.dirname(path) != folder:
+        return None
+    return path
+
+
+def read_original_file(stored_path: str) -> bytes | None:
+    path = original_file_abspath(stored_path)
+    if path is None or not os.path.isfile(path):
+        return None
+    with open(path, "rb") as fh:
+        return fh.read()
+
+
+def delete_original_file(stored_path: str) -> None:
+    path = original_file_abspath(stored_path)
+    if path is not None and os.path.isfile(path):
+        try:
+            os.remove(path)
+        except OSError:
+            pass

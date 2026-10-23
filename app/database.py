@@ -329,6 +329,7 @@ CREATE TABLE IF NOT EXISTS order_imports (
     flagged_orders INTEGER NOT NULL DEFAULT 0,
     quarantine_rows INTEGER NOT NULL DEFAULT 0,
     missing_columns TEXT NOT NULL DEFAULT '',
+    original_path TEXT NOT NULL DEFAULT '',
     imported_by TEXT NOT NULL DEFAULT '',
     imported_at TEXT NOT NULL
 );
@@ -421,6 +422,14 @@ CREATE TABLE IF NOT EXISTS order_audit_log (
     action TEXT NOT NULL DEFAULT '',
     detail TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS order_exclusions (
+    shop TEXT NOT NULL,
+    order_id TEXT NOT NULL,
+    excluded_by TEXT NOT NULL DEFAULT '',
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (shop, order_id)
 );
 """
 
@@ -687,10 +696,22 @@ def _migrate_users_columns(conn) -> None:
             )
 
 
+def _migrate_order_imports_columns(conn) -> None:
+    """Thêm cột còn thiếu vào order_imports của DB cũ (idempotent):
+    original_path (U4 — đường dẫn file gốc lưu local của đợt nhập)."""
+    rows = conn.execute("PRAGMA table_info(order_imports)").fetchall()
+    existing = {r["name"] for r in rows}
+    if existing and "original_path" not in existing:
+        conn.execute(
+            "ALTER TABLE order_imports ADD COLUMN original_path TEXT NOT NULL DEFAULT ''"
+        )
+
+
 def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(_SCHEMA)
         _migrate_users_columns(conn)
+        _migrate_order_imports_columns(conn)
     pricing_seed_settings()
     cskh_seed_defaults()
     # Import trễ để tránh vòng lặp module (checklist.py dùng database.py).
@@ -2036,7 +2057,10 @@ ORDER_LINE_COLUMNS = [
 ]
 
 
-_IMPORT_TEXT_COLS = ("shop", "filename", "file_hash", "missing_columns", "imported_by")
+_IMPORT_TEXT_COLS = (
+    "shop", "filename", "file_hash", "missing_columns", "imported_by",
+    "original_path",
+)
 
 
 def orders_create_import(d: dict) -> int:
@@ -2044,7 +2068,7 @@ def orders_create_import(d: dict) -> int:
         "shop", "filename", "file_hash", "total_rows", "unique_orders",
         "new_orders", "dup_orders", "new_lines", "dup_lines",
         "flagged_orders", "quarantine_rows", "missing_columns",
-        "imported_by",
+        "original_path", "imported_by",
     ]
     data = {
         c: d.get(c, "" if c in _IMPORT_TEXT_COLS else 0) for c in cols
@@ -2065,6 +2089,45 @@ def orders_update_import_new_lines(batch_id: int, n: int) -> None:
         conn.execute(
             "UPDATE order_imports SET new_lines = ? WHERE id = ?", (n, batch_id)
         )
+
+
+def orders_get_import(batch_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM order_imports WHERE id = ?", (batch_id,)
+        ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def orders_update_import_original(batch_id: int, stored_path: str) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE order_imports SET original_path = ? WHERE id = ?",
+            (stored_path, batch_id),
+        )
+
+
+def orders_add_exclusion(shop: str, order_id: str, excluded_by: str, note: str = "") -> None:
+    """Ghi xác nhận loại trừ 1 đơn khỏi hàng chờ đối soát (U2). Nạp lại
+    dữ liệu KHÔNG xoá bản ghi này."""
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO order_exclusions (shop, order_id, excluded_by, note, created_at)"
+            " VALUES (?, ?, ?, ?, ?)"
+            " ON CONFLICT(shop, order_id) DO UPDATE SET"
+            " excluded_by = excluded.excluded_by, note = excluded.note,"
+            " created_at = excluded.created_at",
+            (shop, order_id, excluded_by, note, _utcnow()),
+        )
+
+
+def orders_list_exclusions() -> set:
+    """Tập (shop, order_id) đã được xác nhận loại trừ."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT shop, order_id FROM order_exclusions"
+        ).fetchall()
+    return {(r["shop"], r["order_id"]) for r in rows}
 
 
 def orders_insert_line(d: dict) -> bool:

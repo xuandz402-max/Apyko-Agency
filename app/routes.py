@@ -36,6 +36,7 @@ from . import (
     lessons,
     periods,
     pricing,
+    tiktok,
 )
 from . import database as db
 from .auth import (
@@ -3066,4 +3067,101 @@ def page_affiliate_delete(request: Request, item_id: int):
         raise HTTPException(status_code=404, detail="Không tìm thấy link affiliate.")
     return RedirectResponse(
         url="/affiliate?msg=" + quote("Đã xóa link affiliate."), status_code=303
+    )
+
+
+# ------------------------------ tiktok onboard ------------------------------
+# Lộ trình onboarding TikTok Shop: danh mục tĩnh 5 giai đoạn / 46 việc lấy
+# nguyên văn từ file Excel của chủ shop (app/data/tiktok_onboard.json);
+# DB chỉ lưu tiến độ từng việc + nhật ký đổi trạng thái. Validate theo
+# sheet "Thiết kế web app" của file nguồn (xem app/tiktok.py).
+
+
+def _tt_fmt_history_time(iso_utc: str) -> str:
+    """Mốc UTC trong tt_history -> giờ Việt Nam 'DD/MM/YYYY HH:MM'."""
+    from zoneinfo import ZoneInfo
+
+    try:
+        dt = datetime.fromisoformat(iso_utc)
+    except (TypeError, ValueError):
+        return iso_utc or ""
+    if dt.tzinfo is None:
+        from datetime import timezone
+
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(ZoneInfo("Asia/Ho_Chi_Minh")).strftime("%d/%m/%Y %H:%M")
+
+
+@router.get("/tiktok-onboard", response_class=HTMLResponse)
+def page_tiktok_onboard(
+    request: Request,
+    tab: str | None = None,
+    phase: str | None = None,
+    status: str | None = None,
+    q: str | None = None,
+    err: str | None = None,
+    msg: str | None = None,
+):
+    user, redir = auth.page_guard(request, "can_view_products")
+    if redir:
+        return redir
+    tab = tab if tab in ("danh-sach", "lich-su") else "danh-sach"
+    all_tasks = tiktok.merge_progress(tiktok.list_tasks(), db.tt_progress_map())
+    phase = phase if phase in tiktok.phase_names() else None
+    status = status if status in tiktok.STATUSES else None
+    filtered = tiktok.filter_tasks(all_tasks, phase=phase, status=status, q=q)
+    history = []
+    if tab == "lich-su":
+        titles = {t["code"]: t["title"] for t in tiktok.list_tasks()}
+        for h in db.tt_history_list(100):
+            row = dict(h)
+            row["title"] = titles.get(row["code"], "")
+            row["changed_vn"] = _tt_fmt_history_time(row.get("changed_at") or "")
+            row["old_class"] = tiktok.STATUS_CLASSES.get(row["old_status"], "")
+            row["new_class"] = tiktok.STATUS_CLASSES.get(row["new_status"], "")
+            history.append(row)
+    return templates.TemplateResponse(
+        "tiktok_onboard.html",
+        _ctx(
+            request,
+            user,
+            tab=tab,
+            groups=tiktok.group_by_phase(filtered),
+            summary=tiktok.summarize(all_tasks),
+            phase_cards=tiktok.phase_summaries(all_tasks),
+            phases=tiktok.list_phases(),
+            statuses=tiktok.STATUSES,
+            status_classes=tiktok.STATUS_CLASSES,
+            phase=phase or "",
+            status=status or "",
+            q=q or "",
+            shown=len(filtered),
+            history=history,
+            can_edit=bool(user.get("can_add_edit_products")),
+            err=err,
+            msg=msg,
+        ),
+    )
+
+
+@router.post("/tiktok-onboard/update")
+async def page_tiktok_update(request: Request):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    form = await request.form()
+    data = dict(form)
+    task = tiktok.get_task(str(data.get("code") or "").strip())
+    if task is None:
+        return RedirectResponse(
+            url="/tiktok-onboard?err=" + quote("Mã công việc không tồn tại."),
+            status_code=303,
+        )
+    _clean, errors = tiktok.update_progress(data, _cskh_actor(user), db)
+    back = "/tiktok-onboard?phase=" + quote(task["phase"])
+    if errors:
+        message = "; ".join(errors.values()) or "Dữ liệu chưa hợp lệ."
+        return RedirectResponse(url=back + "&err=" + quote(message), status_code=303)
+    return RedirectResponse(
+        url=back + "&msg=" + quote(f"Đã cập nhật việc {task['code']}."), status_code=303
     )

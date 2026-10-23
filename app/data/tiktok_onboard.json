@@ -1,0 +1,547 @@
+{
+ "phases": [
+  {
+   "order": 1,
+   "name": "Chuẩn bị",
+   "understand": "Nhận bàn giao, hiểu thị trường, chiến lược giá, seeding và phạm vi Shop Mall.",
+   "practice": "Đọc biên bản; hoàn thiện nghiên cứu/giá và ghi rõ các việc có áp dụng hay không.",
+   "done_when": "Có đủ thông tin nền, các mục cần duyệt đã xác định."
+  },
+  {
+   "order": 2,
+   "name": "Cài đặt",
+   "understand": "Đưa sản phẩm và nội dung cơ bản lên shop: SKU, MGG, combo, trang trí, banner và từ khóa.",
+   "practice": "Thực hành trên SKU/campaign được giao; kiểm tra hiển thị và link.",
+   "done_when": "Cài đặt chính xác, có kết quả/link và được duyệt khi cần."
+  },
+  {
+   "order": 3,
+   "name": "Vận hành",
+   "understand": "Tối ưu sản phẩm/Ads; theo dõi FLS, CTKM, Spike Day, tin nhắn, vận hành và tồn kho.",
+   "practice": "Thực hiện checklist vận hành theo lịch; ghi vấn đề, hành động và kết quả.",
+   "done_when": "Việc quan trọng được xử lý hoặc bàn giao đúng người."
+  },
+  {
+   "order": 4,
+   "name": "Báo cáo",
+   "understand": "Lập kế hoạch ngày/campaign và báo cáo tuần/tháng theo dữ liệu được thống nhất.",
+   "practice": "Hoàn tất một kế hoạch ngày, một kế hoạch campaign và báo cáo mẫu.",
+   "done_when": "Có kỳ dữ liệu, nguồn, kết luận, người rà soát."
+  },
+  {
+   "order": 5,
+   "name": "Phối hợp liên nhóm",
+   "understand": "Phối hợp nội dung, livestream, KOC, affiliate, seeding, banner, quà tặng, Ads và các nhóm vận hành.",
+   "practice": "Tạo brief/đầu việc, theo dõi trạng thái, duyệt và lưu bằng chứng.",
+   "done_when": "Đúng người nhận, hạn, trạng thái và kết quả bàn giao."
+  }
+ ],
+ "tasks": [
+  {
+   "code": "TT-001",
+   "phase": "Chuẩn bị",
+   "title": "Biên bản bàn giao",
+   "goal": "Nắm tình hình shop, quyền truy cập, mục tiêu, việc đang làm và vấn đề còn mở.",
+   "guide": "Đọc tài liệu bàn giao; xác nhận sản phẩm, đầu mối, lịch, quyền truy cập, việc tồn và câu hỏi cần làm rõ.",
+   "evidence": "Biên bản bàn giao đã xác nhận; danh sách việc mở có người nhận.",
+   "frequency": "Khi bắt đầu nhận shop / đổi người phụ trách",
+   "owner_hint": "Người bàn giao + nhân sự tiếp nhận",
+   "review_note": ""
+  },
+  {
+   "code": "TT-002",
+   "phase": "Chuẩn bị",
+   "title": "Nghiên cứu thị trường",
+   "goal": "Hiểu khách hàng, ngành hàng, đối thủ, mức giá và cơ hội của shop.",
+   "guide": "Tổng hợp khách hàng mục tiêu, nhu cầu, đối thủ, xu hướng, giá tham khảo và nguồn dữ liệu; ghi ngày cập nhật.",
+   "evidence": "Tóm tắt nghiên cứu có nguồn/link, ngày và kết luận.",
+   "frequency": "Khi onboard; cập nhật theo kế hoạch",
+   "owner_hint": "Vận hành + ngành hàng",
+   "review_note": ""
+  },
+  {
+   "code": "TT-003",
+   "phase": "Chuẩn bị",
+   "title": "Chiến lược giá theo bộ sản phẩm",
+   "goal": "Định hướng giá cho các SKU trong bộ sản phẩm, phù hợp mục tiêu kinh doanh.",
+   "guide": "Phân nhóm SKU; đối chiếu giá thị trường, giá bán dự kiến, chi phí/biên lợi nhuận và vai trò từng SKU; trình duyệt.",
+   "evidence": "Bảng chiến lược giá theo bộ sản phẩm; có người phê duyệt.",
+   "frequency": "Khi bắt đầu shop/SKU; trước campaign hoặc thay đổi giá",
+   "owner_hint": "Vận hành + ngành hàng",
+   "review_note": "Không tự đổi giá khi chưa được duyệt"
+  },
+  {
+   "code": "TT-004",
+   "phase": "Chuẩn bị",
+   "title": "Seeding (nếu có)",
+   "goal": "Hỗ trợ tạo nhận biết/nội dung ban đầu cho sản phẩm theo kế hoạch.",
+   "guide": "Xác định SKU, mục tiêu, đối tượng, nội dung, lịch và chi phí; triển khai theo chính sách nền tảng và quy định công ty.",
+   "evidence": "Kế hoạch seeding, nội dung/đối tượng, trạng thái và kết quả.",
+   "frequency": "Nếu có kế hoạch",
+   "owner_hint": "Vận hành + marketing",
+   "review_note": "Cần duyệt; tuân thủ chính sách áp dụng"
+  },
+  {
+   "code": "TT-005",
+   "phase": "Chuẩn bị",
+   "title": "Shop Mall với một số ngành hàng",
+   "goal": "Xác định khả năng/nhu cầu vận hành Shop Mall cho ngành hàng liên quan.",
+   "guide": "Kiểm tra shop/ngành hàng có thuộc phạm vi triển khai Mall không; làm rõ điều kiện, tài liệu, đầu mối và các bước cần thực hiện.",
+   "evidence": "Kết luận có/không áp dụng; nếu có, lưu điều kiện và kế hoạch/hồ sơ.",
+   "frequency": "Khi onboard hoặc khi có yêu cầu Mall",
+   "owner_hint": "Quản lý shop + vận hành",
+   "review_note": "Chỉ áp dụng với ngành hàng phù hợp; xác nhận điều kiện hiện hành"
+  },
+  {
+   "code": "TT-006",
+   "phase": "Cài đặt",
+   "title": "Đăng sản phẩm mới (nếu có)",
+   "goal": "Đưa sản phẩm lên shop chính xác và sẵn sàng bán.",
+   "guide": "Dùng thông tin đã duyệt; điền nội dung, phân loại, thuộc tính, giá, tồn kho, biến thể, hình/video; kiểm tra trang hiển thị.",
+   "evidence": "Link sản phẩm; trạng thái hoạt động và kiểm tra hiển thị.",
+   "frequency": "Khi có sản phẩm mới",
+   "owner_hint": "Vận hành + ngành hàng",
+   "review_note": ""
+  },
+  {
+   "code": "TT-007",
+   "phase": "Cài đặt",
+   "title": "Cài đặt mã giảm giá (MGG)",
+   "goal": "Thiết lập mã giảm giá đúng điều kiện, thời hạn và sản phẩm áp dụng.",
+   "guide": "Nhập mức giảm, điều kiện, số lượng, thời gian và SKU theo kế hoạch; kiểm tra lại trước khi bật.",
+   "evidence": "Link/ảnh cấu hình; điều kiện và thời hạn đúng.",
+   "frequency": "Theo campaign/kế hoạch khuyến mãi",
+   "owner_hint": "Vận hành",
+   "review_note": "Duyệt mức giảm và ngân sách nếu áp dụng"
+  },
+  {
+   "code": "TT-008",
+   "phase": "Cài đặt",
+   "title": "Cài đặt combo khuyến mãi",
+   "goal": "Tạo combo theo sản phẩm và ưu đãi đã thống nhất.",
+   "guide": "Chọn SKU, số lượng/điều kiện combo, giá và thời hạn; kiểm tra tồn kho, giá cuối và cách hiển thị.",
+   "evidence": "Link/ảnh combo; SKU, giá và thời gian đã kiểm tra.",
+   "frequency": "Theo campaign/kế hoạch khuyến mãi",
+   "owner_hint": "Vận hành",
+   "review_note": "Duyệt giá/ưu đãi trước khi bật"
+  },
+  {
+   "code": "TT-009",
+   "phase": "Cài đặt",
+   "title": "Trang trí gian hàng (nếu có)",
+   "goal": "Sắp xếp mặt tiền shop và nội dung trưng bày cho đúng chương trình.",
+   "guide": "Cập nhật bố cục/nhóm sản phẩm/banner theo kế hoạch; kiểm tra link và hiển thị trên thiết bị di động.",
+   "evidence": "Ảnh chụp hoặc link gian hàng sau cập nhật.",
+   "frequency": "Khi cần làm mới / theo campaign",
+   "owner_hint": "Vận hành + thiết kế/nội dung",
+   "review_note": ""
+  },
+  {
+   "code": "TT-010",
+   "phase": "Cài đặt",
+   "title": "Cập nhật nội dung và banner",
+   "goal": "Đảm bảo thông điệp, hình ảnh và banner đúng chương trình, đúng thời hạn.",
+   "guide": "Dùng nội dung đã duyệt; kiểm tra câu chữ, hình ảnh, CTA, liên kết và ngày gỡ/thay banner.",
+   "evidence": "Link/ảnh banner và nội dung đã cập nhật; kiểm tra hiển thị.",
+   "frequency": "Theo lịch nội dung/campaign",
+   "owner_hint": "Vận hành + nội dung/thiết kế",
+   "review_note": "Cần duyệt nội dung/claim nếu có"
+  },
+  {
+   "code": "TT-011",
+   "phase": "Cài đặt",
+   "title": "Cập nhật bộ từ khóa sản phẩm",
+   "goal": "Giúp nội dung sản phẩm dùng từ khóa liên quan và nhất quán.",
+   "guide": "Đối chiếu nhu cầu tìm kiếm và đặc tính thật của SKU; cập nhật theo hướng dẫn nội bộ, tránh từ khóa sai lệch.",
+   "evidence": "Danh sách từ khóa/SKU hoặc link cập nhật.",
+   "frequency": "Khi đăng SKU; rà soát theo kế hoạch",
+   "owner_hint": "Vận hành + nội dung",
+   "review_note": ""
+  },
+  {
+   "code": "TT-012",
+   "phase": "Vận hành",
+   "title": "Tối ưu sản phẩm",
+   "goal": "Cải thiện nội dung/trang sản phẩm dựa trên vấn đề và mục tiêu đã xác định.",
+   "guide": "Rà tiêu đề, hình/video, thông tin, giá, tồn và hiệu quả; xác định điểm cần sửa, người phụ trách và kiểm tra sau sửa.",
+   "evidence": "Danh sách thay đổi; link trước/sau hoặc kết quả kiểm tra.",
+   "frequency": "Theo lịch tối ưu; ưu tiên SKU trọng tâm",
+   "owner_hint": "Vận hành + ngành hàng/nội dung",
+   "review_note": ""
+  },
+  {
+   "code": "TT-013",
+   "phase": "Vận hành",
+   "title": "Tin nhắn truyền thông",
+   "goal": "Theo dõi và xử lý thông báo/tin nhắn truyền thông liên quan đến shop.",
+   "guide": "Kiểm tra tin mới; phân loại nội dung, hạn phản hồi và người cần xử lý; chuyển tiếp hoặc phản hồi theo quy trình.",
+   "evidence": "Tin đã xử lý hoặc có người nhận/hạn; lưu nội dung quan trọng.",
+   "frequency": "Kiểm tra theo lịch vận hành",
+   "owner_hint": "Vận hành / CS",
+   "review_note": ""
+  },
+  {
+   "code": "TT-014",
+   "phase": "Vận hành",
+   "title": "FLS",
+   "goal": "Theo dõi và vận hành FLS theo lịch shop.",
+   "guide": "Xác nhận SKU, giá/ưu đãi, tồn kho, khung giờ và trạng thái tham gia; theo dõi khi chương trình chạy.",
+   "evidence": "Danh sách SKU và trạng thái FLS; link/capture cài đặt hoặc kết quả.",
+   "frequency": "Theo lịch FLS",
+   "owner_hint": "Vận hành",
+   "review_note": "Xác nhận tên/chính sách FLS nội bộ nếu viết tắt có nghĩa riêng"
+  },
+  {
+   "code": "TT-015",
+   "phase": "Vận hành",
+   "title": "Tối ưu Ads",
+   "goal": "Theo dõi hiệu quả quảng cáo và đề xuất/triển khai điều chỉnh đúng quyền.",
+   "guide": "Kiểm tra chi tiêu, kết quả và mục tiêu; ghi nhận sản phẩm/campaign cần điều chỉnh; xin duyệt thay đổi ngân sách khi cần.",
+   "evidence": "Báo cáo/capture số liệu; đề xuất hoặc thay đổi có lý do.",
+   "frequency": "Theo dõi theo nhịp chiến dịch; tổng hợp theo kế hoạch",
+   "owner_hint": "Vận hành Ads",
+   "review_note": "Ngân sách/thay đổi lớn cần duyệt"
+  },
+  {
+   "code": "TT-016",
+   "phase": "Vận hành",
+   "title": "Đạt 50 video mới cho 1 sản phẩm được coi là tối ưu",
+   "goal": "Theo dõi mục tiêu sản lượng video được ghi trong checklist nguồn.",
+   "guide": "Ghi rõ sản phẩm được áp dụng, số video đã có/mới, kỳ tính, trạng thái duyệt và link từng video; xác nhận cách tính với quản lý.",
+   "evidence": "Bảng đếm video theo một sản phẩm; link video; xác nhận kỳ/chỉ tiêu.",
+   "frequency": "Theo kế hoạch video",
+   "owner_hint": "Vận hành + nội dung",
+   "review_note": "Nguồn ghi “Đủ 50 Video mới cho 1 sp mới được coi là tối ưu”; xác nhận mục tiêu 50 video/1 sản phẩm và kỳ áp dụng trước khi giao"
+  },
+  {
+   "code": "TT-017",
+   "phase": "Vận hành",
+   "title": "Tham gia chương trình khuyến mãi (CTKM)",
+   "goal": "Đăng ký các sản phẩm phù hợp vào chương trình khuyến mãi.",
+   "guide": "Kiểm tra điều kiện, thời hạn, giá, tồn kho và SKU; đăng ký theo kế hoạch và theo dõi trạng thái.",
+   "evidence": "Danh sách SKU đăng ký, trạng thái, điều kiện và link chương trình.",
+   "frequency": "Theo lịch CTKM",
+   "owner_hint": "Vận hành + ngành hàng",
+   "review_note": "Duyệt giá/ưu đãi nếu cần"
+  },
+  {
+   "code": "TT-018",
+   "phase": "Vận hành",
+   "title": "Trực Spike Day",
+   "goal": "Đảm bảo có người theo dõi shop trong ngày cao điểm.",
+   "guide": "Xác nhận lịch trực, đầu mối, SKU, ưu đãi, tồn, nội dung, quảng cáo và cách báo sự cố; cập nhật diễn biến trong ca.",
+   "evidence": "Lịch trực; checklist trước ngày; log sự cố/kết quả trong ca.",
+   "frequency": "Mỗi Spike Day",
+   "owner_hint": "Vận hành + CS + kho",
+   "review_note": "Phân công ca/đầu mối trước sự kiện"
+  },
+  {
+   "code": "TT-019",
+   "phase": "Vận hành",
+   "title": "Thông báo tình trạng vận hành",
+   "goal": "Cập nhật kịp thời tình trạng shop và vấn đề phát sinh cho các bên liên quan.",
+   "guide": "Nêu trạng thái, ảnh hưởng, việc đã xử lý, việc cần hỗ trợ, người phụ trách và hạn tiếp theo.",
+   "evidence": "Cập nhật trên kênh thống nhất; vấn đề có người nhận và bước tiếp theo.",
+   "frequency": "Theo nhịp nhóm; ngay khi có sự cố cần báo",
+   "owner_hint": "Vận hành",
+   "review_note": ""
+  },
+  {
+   "code": "TT-020",
+   "phase": "Vận hành",
+   "title": "Booking",
+   "goal": "Điều phối booking theo kế hoạch hoạt động.",
+   "guide": "Ghi đối tác/người tham gia, nội dung, sản phẩm, lịch, chi phí nếu có, đầu mối và trạng thái xác nhận.",
+   "evidence": "Danh sách booking/lịch xác nhận; thông tin người phụ trách và kết quả.",
+   "frequency": "Theo kế hoạch",
+   "owner_hint": "Vận hành + đối tác/KOC",
+   "review_note": "Chi phí/điều khoản cần phê duyệt"
+  },
+  {
+   "code": "TT-021",
+   "phase": "Vận hành",
+   "title": "Sản xuất video",
+   "goal": "Tổ chức sản xuất video theo kế hoạch sản phẩm và nội dung.",
+   "guide": "Lập brief, SKU, thông điệp, định dạng, người làm, lịch quay/dựng/duyệt và nơi lưu file; theo dõi đến khi đăng/bàn giao.",
+   "evidence": "Video/link file; trạng thái sản xuất và duyệt; liên kết tới SKU.",
+   "frequency": "Theo kế hoạch nội dung",
+   "owner_hint": "Nội dung + vận hành",
+   "review_note": "Duyệt thông tin/claim sản phẩm"
+  },
+  {
+   "code": "TT-022",
+   "phase": "Vận hành",
+   "title": "Kiểm tra tồn kho, đánh giá sản phẩm chủ lực và sản phẩm phễu",
+   "goal": "Giữ hàng chủ lực/phễu sẵn sàng và phát hiện sớm vấn đề về tồn kho hoặc chất lượng.",
+   "guide": "Rà tồn kho và đánh giá của SKU chủ lực/phễu; ghi vấn đề, nguyên nhân sơ bộ, mức độ ảnh hưởng và người cần phối hợp.",
+   "evidence": "Danh sách SKU; tồn kho; đánh giá/vấn đề; việc xử lý và người nhận.",
+   "frequency": "Theo lịch vận hành; trước campaign",
+   "owner_hint": "Vận hành + kho + ngành hàng",
+   "review_note": ""
+  },
+  {
+   "code": "TT-023",
+   "phase": "Báo cáo",
+   "title": "Báo cáo tuần",
+   "goal": "Tổng kết kết quả và ưu tiên công việc của tuần.",
+   "guide": "Điền mẫu báo cáo tuần; ghi kỳ dữ liệu, chỉ số theo mẫu, so sánh mục tiêu, kết quả đáng chú ý, vướng mắc và việc tuần tới.",
+   "evidence": "Báo cáo tuần có nguồn/link dữ liệu, kết luận và hành động tiếp theo.",
+   "frequency": "Hàng tuần",
+   "owner_hint": "Vận hành",
+   "review_note": "Quản lý rà soát"
+  },
+  {
+   "code": "TT-024",
+   "phase": "Báo cáo",
+   "title": "Báo cáo tháng",
+   "goal": "Tổng kết theo tháng để xem xu hướng và đề xuất cải thiện.",
+   "guide": "Tổng hợp số liệu theo mẫu; giải thích thay đổi đã xác minh, kết quả hoạt động và đề xuất tháng sau.",
+   "evidence": "Báo cáo tháng có kỳ dữ liệu, nguồn, kết luận và đề xuất.",
+   "frequency": "Hàng tháng",
+   "owner_hint": "Vận hành",
+   "review_note": "Quản lý rà soát"
+  },
+  {
+   "code": "TT-025",
+   "phase": "Báo cáo",
+   "title": "Lập kế hoạch ngày",
+   "goal": "Chuyển ưu tiên thành công việc cụ thể trong ngày.",
+   "guide": "Ghi mục tiêu/ưu tiên, việc cần làm, thời hạn, người phụ trách và phụ thuộc; cuối ngày cập nhật kết quả hoặc việc dời.",
+   "evidence": "Kế hoạch ngày có trạng thái và kết quả/việc chuyển tiếp.",
+   "frequency": "Hàng ngày làm việc",
+   "owner_hint": "Vận hành",
+   "review_note": ""
+  },
+  {
+   "code": "TT-026",
+   "phase": "Báo cáo",
+   "title": "Lập kế hoạch campaign",
+   "goal": "Chuẩn bị hoạt động campaign theo mục tiêu và lịch triển khai.",
+   "guide": "Ghi mục tiêu, SKU, giá/ưu đãi, nội dung, quảng cáo, tồn kho, lịch, người làm, phê duyệt và cách theo dõi.",
+   "evidence": "Kế hoạch campaign có đầu mối, mốc thời gian, liên kết tài liệu và trạng thái duyệt.",
+   "frequency": "Trước mỗi campaign",
+   "owner_hint": "Vận hành + các nhóm liên quan",
+   "review_note": "Quản lý duyệt mục tiêu/giá/ngân sách"
+  },
+  {
+   "code": "TT-027",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Đăng bài truyền thông trên các kênh ngoài sàn cho sale",
+   "goal": "Tạo lưu lượng từ kênh ngoài sàn về đúng sản phẩm/chương trình sale.",
+   "guide": "Gửi brief cho kênh phụ trách: SKU, ưu đãi đã duyệt, thông điệp, thời gian, nội dung/link đích; kiểm tra bài sau khi đăng.",
+   "evidence": "Link bài đăng, lịch đăng và kết quả traffic/đơn nếu có tracking.",
+   "frequency": "Theo lịch sale/content",
+   "owner_hint": "Vận hành + social/content",
+   "review_note": "Duyệt nội dung/ưu đãi"
+  },
+  {
+   "code": "TT-028",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Đăng video trên kênh hàng ngày + gắn giỏ hàng",
+   "goal": "Duy trì video trên kênh và gắn đúng sản phẩm trong giỏ hàng.",
+   "guide": "Lập lịch video; xác nhận video được duyệt, sản phẩm gắn đúng, link còn hoạt động và thời gian đăng.",
+   "evidence": "Link video; kiểm tra giỏ hàng/SKU; lịch và trạng thái đăng.",
+   "frequency": "Hằng ngày theo kế hoạch kênh",
+   "owner_hint": "Nội dung + vận hành",
+   "review_note": "Xác nhận lịch đăng cụ thể theo kênh"
+  },
+  {
+   "code": "TT-029",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Đạt mục tiêu 20–25 video/tuần",
+   "goal": "Theo dõi mục tiêu sản lượng video hàng tuần được ghi trong checklist nguồn.",
+   "guide": "Lập chỉ tiêu theo sản phẩm/người làm; đếm video đã duyệt/đăng trong tuần; ghi link và phần còn thiếu.",
+   "evidence": "Bảng theo dõi số video tuần; link video; trạng thái duyệt/đăng.",
+   "frequency": "Hàng tuần",
+   "owner_hint": "Nội dung + vận hành",
+   "review_note": "Ảnh ghi “1 tuần cần có tối thiểu 20–25 Video”; xác nhận cách tính và mục tiêu áp dụng"
+  },
+  {
+   "code": "TT-030",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Check và xử lý đánh giá xấu phát sinh",
+   "goal": "Giảm tác động đến khách hàng và phối hợp xử lý nguyên nhân.",
+   "guide": "Theo dõi đánh giá mới; phân loại nguyên nhân; chuyển đúng nhóm; phản hồi theo quy trình và ghi lại việc khắc phục.",
+   "evidence": "Danh sách đánh giá, trạng thái, người xử lý và kết quả phản hồi/khắc phục.",
+   "frequency": "Theo dõi hằng ngày hoặc theo lịch CS",
+   "owner_hint": "CS + vận hành + nhóm liên quan",
+   "review_note": ""
+  },
+  {
+   "code": "TT-031",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Duy trì và cải thiện hiệu quả hoạt động (tỷ lệ giao hàng, tỷ lệ chat, đánh giá,...)",
+   "goal": "Theo dõi các chỉ số hoạt động nêu trong nguồn và phối hợp cải thiện.",
+   "guide": "Ghi nhận chỉ số theo mẫu/nền tảng; xác định mục tiêu do quản lý cung cấp; phân tích điểm giảm và giao việc khắc phục.",
+   "evidence": "Bảng chỉ số theo kỳ, vấn đề, hành động, người phụ trách và kết quả.",
+   "frequency": "Theo kỳ báo cáo; cảnh báo khi phát sinh",
+   "owner_hint": "Vận hành + CS + kho",
+   "review_note": "Không tự đặt ngưỡng KPI; dùng mục tiêu được quản lý xác nhận"
+  },
+  {
+   "code": "TT-032",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Lên Star Shop – được tham gia nhiều campaign với ưu đãi tốt",
+   "goal": "Theo dõi mục tiêu/định hướng tham gia Star Shop nêu trong nguồn.",
+   "guide": "Xác minh tiêu chí hiện hành; kiểm tra tình trạng shop, yêu cầu, lợi ích và việc cần hoàn thiện; lập kế hoạch/đề xuất tham gia.",
+   "evidence": "Kết quả kiểm tra điều kiện; kế hoạch và trạng thái tham gia.",
+   "frequency": "Khi phù hợp; theo lịch chương trình",
+   "owner_hint": "Quản lý shop + vận hành",
+   "review_note": "Xác nhận tên chương trình và điều kiện hiện hành"
+  },
+  {
+   "code": "TT-033",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Thực hiện livestream",
+   "goal": "Chuẩn bị và phối hợp livestream theo lịch.",
+   "guide": "Chốt lịch, host, kịch bản, SKU, tồn, ưu đãi, link, người hỗ trợ; trong/sau live ghi vấn đề và kết quả.",
+   "evidence": "Lịch/brief livestream, link hoặc bản ghi, kết quả và việc tiếp theo.",
+   "frequency": "Theo lịch livestream",
+   "owner_hint": "Vận hành + nội dung/host",
+   "review_note": "Duyệt ưu đãi/chi phí nếu có"
+  },
+  {
+   "code": "TT-034",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Cung cấp chương trình quà tặng (nếu có)",
+   "goal": "Chuẩn bị quà tặng và thể lệ đúng chương trình.",
+   "guide": "Xác nhận quà, số lượng, điều kiện nhận, thời gian, tồn, cách công bố và nhóm thực hiện; theo dõi kết quả cấp quà.",
+   "evidence": "Thể lệ/kế hoạch được duyệt; số lượng; trạng thái thực hiện.",
+   "frequency": "Nếu có chương trình",
+   "owner_hint": "Vận hành + kho + marketing",
+   "review_note": "Duyệt chi phí/thể lệ"
+  },
+  {
+   "code": "TT-035",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Cung cấp thông tin sản phẩm cho 10 sản phẩm đề xuất (hoặc ít hơn)",
+   "goal": "Cung cấp dữ liệu đầy đủ cho tối đa 10 sản phẩm được đề xuất trong nguồn.",
+   "guide": "Xác nhận danh sách tối đa 10 SKU; thu thập tên, thông tin đúng, điểm nổi bật, hình/video, giá/ưu đãi và tài liệu tham khảo; gửi đúng đầu mối.",
+   "evidence": "Bộ thông tin cho từng SKU; có thể ít hơn 10 theo danh sách được duyệt.",
+   "frequency": "Theo yêu cầu đề xuất sản phẩm",
+   "owner_hint": "Ngành hàng + vận hành",
+   "review_note": "Không tự thêm SKU ngoài danh sách đề xuất"
+  },
+  {
+   "code": "TT-036",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Tạo banner cho các ngày sale hoặc giới thiệu sản phẩm mới",
+   "goal": "Chuẩn bị banner đúng mục đích và thời điểm sử dụng.",
+   "guide": "Gửi brief gồm kích thước/kênh, SKU, thông điệp, ưu đãi, ngày chạy; kiểm tra bản cuối và link hiển thị.",
+   "evidence": "File/link banner được duyệt; vị trí, thời gian và hiển thị đã kiểm tra.",
+   "frequency": "Trước ngày sale / khi ra sản phẩm mới",
+   "owner_hint": "Vận hành + thiết kế",
+   "review_note": "Duyệt nội dung, giá và quyền sử dụng hình ảnh"
+  },
+  {
+   "code": "TT-037",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Nạp ngân sách chạy Ads",
+   "goal": "Bổ sung ngân sách quảng cáo theo kế hoạch được duyệt.",
+   "guide": "Kiểm tra hạn mức/số dư và nhu cầu; tạo yêu cầu nạp theo quy trình; ghi số tiền, tài khoản, thời gian và xác nhận sau nạp.",
+   "evidence": "Yêu cầu và xác nhận nạp; số tiền, thời điểm và người duyệt.",
+   "frequency": "Theo nhu cầu chiến dịch",
+   "owner_hint": "Vận hành Ads + tài chính",
+   "review_note": "Bắt buộc duyệt ngân sách trước khi nạp"
+  },
+  {
+   "code": "TT-038",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Tự Seeding",
+   "goal": "Thực hiện seeding nội bộ/tự triển khai theo phạm vi cho phép.",
+   "guide": "Xác định nội dung, SKU, người tham gia và lịch; bảo đảm minh bạch, không tạo tương tác/đánh giá giả hoặc vi phạm chính sách.",
+   "evidence": "Kế hoạch, nội dung/kết quả và bằng chứng triển khai phù hợp quy định.",
+   "frequency": "Nếu có kế hoạch",
+   "owner_hint": "Vận hành + marketing",
+   "review_note": "Cần quản lý duyệt; tuân thủ chính sách nền tảng"
+  },
+  {
+   "code": "TT-039",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Cập nhật ảnh phụ, video liên quan đến sản phẩm",
+   "goal": "Bổ sung/cập nhật tư liệu trực quan gắn với sản phẩm.",
+   "guide": "Xác nhận đúng SKU và phiên bản; nhận file đã duyệt; cập nhật ảnh phụ/video và kiểm tra chất lượng, thứ tự, hiển thị.",
+   "evidence": "Link SKU sau cập nhật; danh sách file đã dùng và kiểm tra.",
+   "frequency": "Khi có nội dung mới hoặc cần cập nhật",
+   "owner_hint": "Vận hành + nội dung",
+   "review_note": ""
+  },
+  {
+   "code": "TT-040",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Thông báo tồn kho",
+   "goal": "Thông báo kịp thời tình trạng tồn kho cho nhóm cần phối hợp.",
+   "guide": "Gửi SKU, tồn hiện tại/ước tính theo nguồn, nguy cơ, ảnh hưởng campaign và hành động đề xuất; cập nhật khi có thay đổi.",
+   "evidence": "Thông báo có thời gian, SKU, người nhận và phản hồi/hành động.",
+   "frequency": "Khi tồn kho thay đổi đáng kể; trước campaign",
+   "owner_hint": "Vận hành + kho",
+   "review_note": ""
+  },
+  {
+   "code": "TT-041",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Duyệt mã giảm giá, combo khuyến mãi và banner (nếu có)",
+   "goal": "Kiểm tra và phê duyệt thông tin ưu đãi/banner trước khi áp dụng.",
+   "guide": "Đối chiếu SKU, giá, điều kiện, thời gian, nội dung và hiển thị với kế hoạch; ghi duyệt hoặc yêu cầu chỉnh sửa.",
+   "evidence": "Trạng thái duyệt, người duyệt, thời điểm và link/capture phiên bản cuối.",
+   "frequency": "Trước khi bật/chạy",
+   "owner_hint": "Người có thẩm quyền + vận hành",
+   "review_note": "Không tự duyệt nếu không được phân quyền"
+  },
+  {
+   "code": "TT-042",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Gửi hàng cho KOC",
+   "goal": "Điều phối gửi sản phẩm cho KOC theo booking/kế hoạch.",
+   "guide": "Xác nhận KOC, SKU, số lượng, địa chỉ theo quy trình, lịch gửi/nhận và brief; theo dõi giao nhận.",
+   "evidence": "Danh sách gửi hàng; mã vận đơn/trạng thái nhận; người phụ trách.",
+   "frequency": "Theo booking/campaign",
+   "owner_hint": "Vận hành + kho/đối tác",
+   "review_note": "Duyệt sản phẩm/chi phí nếu cần"
+  },
+  {
+   "code": "TT-043",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Duyệt kịch bản video",
+   "goal": "Bảo đảm kịch bản đúng thông tin, mục tiêu và yêu cầu nội dung.",
+   "guide": "Soát sản phẩm, thông điệp, lời thoại, CTA, ưu đãi và yêu cầu kênh; phản hồi rõ phần duyệt/sửa.",
+   "evidence": "Kịch bản có trạng thái, người duyệt, phiên bản và góp ý.",
+   "frequency": "Trước khi quay/đăng",
+   "owner_hint": "Nội dung + vận hành/ngành hàng",
+   "review_note": "Duyệt claim/thông tin sản phẩm bởi người có thẩm quyền"
+  },
+  {
+   "code": "TT-044",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Duyệt ảnh bìa, ảnh phụ (nếu có)",
+   "goal": "Kiểm tra hình ảnh sản phẩm trước khi đăng/sử dụng.",
+   "guide": "Đối chiếu đúng SKU, chất lượng, nội dung chữ, khuyến mãi, nhận diện và yêu cầu kênh; ghi phản hồi.",
+   "evidence": "File/phiên bản ảnh đã duyệt hoặc danh sách cần sửa.",
+   "frequency": "Trước khi cập nhật/đăng",
+   "owner_hint": "Vận hành + nội dung/thiết kế",
+   "review_note": ""
+  },
+  {
+   "code": "TT-045",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Cài đặt và chạy AFF",
+   "goal": "Thiết lập và theo dõi hoạt động affiliate theo kế hoạch.",
+   "guide": "Xác nhận sản phẩm, mức hoa hồng/ưu đãi, điều kiện, thời gian và link; kiểm tra trạng thái chạy và theo dõi kết quả.",
+   "evidence": "Cấu hình/link AFF, SKU, điều kiện, thời gian và báo cáo kết quả.",
+   "frequency": "Theo kế hoạch affiliate",
+   "owner_hint": "Vận hành + affiliate",
+   "review_note": "Duyệt mức hoa hồng/ưu đãi"
+  },
+  {
+   "code": "TT-046",
+   "phase": "Phối hợp liên nhóm",
+   "title": "Cung cấp sản phẩm mới",
+   "goal": "Thông báo và bàn giao thông tin sản phẩm mới cho các nhóm cần triển khai.",
+   "guide": "Gửi SKU, thông tin chuẩn, ngày mở bán, tồn, giá, ảnh/video, điểm nổi bật, ưu đãi và đầu mối; cập nhật khi thay đổi.",
+   "evidence": "Bộ thông tin sản phẩm mới và xác nhận đã nhận từ các nhóm.",
+   "frequency": "Khi có sản phẩm mới",
+   "owner_hint": "Ngành hàng + vận hành",
+   "review_note": ""
+  }
+ ]
+}

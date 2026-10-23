@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% set nav_active = "tiktok_onboard" %}
+{% block title %}TikTok Onboard · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>🎵 TikTok Onboard</h1>
+  <p class="muted">Lộ trình onboarding TikTok Shop: 5 giai đoạn, 46 đầu việc — danh mục nguyên văn
+  từ file checklist của chủ shop. Cập nhật trạng thái, người phụ trách, hạn và link bằng chứng cho từng việc.</p>
+</div>
+
+{% if err %}<div class="alert alert-error">{{ err }}</div>{% endif %}
+{% if msg %}<div class="alert alert-ok">{{ msg }}</div>{% endif %}
+
+<div class="card">
+  <div class="progress-meta">
+    <span><strong>{{ summary.done }}/{{ summary.total }} việc hoàn tất</strong>
+      ({{ summary.percent }}%){% if summary.na %} · {{ summary.na }} việc không áp dụng{% endif %}</span>
+  </div>
+  <div class="progress progress-lg"><div class="progress-bar" style="width: {{ summary.percent }}%"></div></div>
+</div>
+
+<div class="tabs">
+  <a href="/tiktok-onboard?tab=danh-sach" class="tab{% if tab == 'danh-sach' %} active{% endif %}">📋 Danh sách việc</a>
+  <a href="/tiktok-onboard?tab=lich-su" class="tab{% if tab == 'lich-su' %} active{% endif %}">🕘 Lịch sử thay đổi</a>
+</div>
+
+{% if tab == 'lich-su' %}
+<div class="card card-flat">
+  <div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr><th>Thời gian</th><th>Mã</th><th>Công việc</th><th>Trạng thái cũ</th><th>Trạng thái mới</th><th>Người đổi</th><th>Ghi chú</th></tr>
+    </thead>
+    <tbody>
+    {% for h in history %}
+      <tr>
+        <td class="nowrap">{{ h.changed_vn }}</td>
+        <td><strong>{{ h.code }}</strong></td>
+        <td>{{ h.title }}</td>
+        <td>{% if h.old_status %}<span class="tt-status {{ h.old_class }}">{{ h.old_status }}</span>{% endif %}</td>
+        <td><span class="tt-status {{ h.new_class }}">{{ h.new_status }}</span></td>
+        <td>{{ h.changed_by }}</td>
+        <td>{{ h.note }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="muted">Chưa có thay đổi trạng thái nào.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+{% else %}
+<div class="tt-phases">
+  <a href="/tiktok-onboard" class="tt-phase-card{% if not phase %} active{% endif %}">
+    <div class="tt-phase-name">Tất cả giai đoạn</div>
+    <div class="tt-phase-count">{{ summary.done }}/{{ summary.total }} hoàn tất</div>
+  </a>
+  {% for pc in phase_cards %}
+  <a href="/tiktok-onboard?phase={{ pc.phase.name | urlencode }}" class="tt-phase-card{% if phase == pc.phase.name %} active{% endif %}">
+    <div class="tt-phase-name">{{ pc.phase.order }}. {{ pc.phase.name }}</div>
+    <div class="tt-phase-count">{{ pc.done }}/{{ pc.total }} hoàn tất</div>
+  </a>
+  {% endfor %}
+</div>
+
+<form method="get" action="/tiktok-onboard" class="form-inline">
+  <input type="hidden" name="tab" value="danh-sach">
+  <label>Giai đoạn
+    <select name="phase" class="input">
+      <option value="">Tất cả</option>
+      {% for p in phases %}
+      <option value="{{ p.name }}"{% if phase == p.name %} selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Trạng thái
+    <select name="status" class="input">
+      <option value="">Tất cả</option>
+      {% for s in statuses %}
+      <option value="{{ s }}"{% if status == s %} selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="grow">Từ khóa
+    <input type="text" name="q" value="{{ q }}" class="input" placeholder="Mã việc, tên việc, người phụ trách…">
+  </label>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
+    {% if phase or status or q %}<a href="/tiktok-onboard" class="btn btn-ghost btn-sm">Xóa lọc</a>{% endif %}
+  </div>
+</form>
+<p class="sync-note">Đang hiển thị {{ shown }} việc. Bấm vào từng việc để xem chi tiết{% if can_edit %} và cập nhật tiến độ{% endif %}.</p>
+
+{% for g in groups %}
+<h2 class="cl-group">{{ g.phase.order }}. {{ g.phase.name }}</h2>
+<div class="tt-phase-intro">
+  {% if g.phase.understand %}<p><strong>Bạn cần hiểu:</strong> {{ g.phase.understand }}</p>{% endif %}
+  {% if g.phase.practice %}<p><strong>Thực hành / đầu ra:</strong> {{ g.phase.practice }}</p>{% endif %}
+  {% if g.phase.done_when %}<p><strong>Hoàn thành khi:</strong> {{ g.phase.done_when }}</p>{% endif %}
+</div>
+
+{% for t in g.tasks %}
+{% set p = t.progress %}
+<details class="tt-item">
+  <summary>
+    <span class="tt-code">{{ t.code }}</span>
+    <span class="tt-title">{{ t.title }}</span>
+    <span class="tt-status {{ t.status_class }}">{{ p.status }}</span>
+    <span class="tt-meta">👤 {{ p.assignee or "Chưa giao" }}</span>
+    {% if t.due_vn %}<span class="tt-meta">📅 Hạn: {{ t.due_vn }}</span>{% endif %}
+  </summary>
+  <div class="tt-body">
+    {% if t.goal %}<div class="tt-field"><span class="tt-label">Mục tiêu:</span> {{ t.goal }}</div>{% endif %}
+    {% if t.guide %}<div class="tt-field"><span class="tt-label">Cách thực hiện:</span> {{ t.guide }}</div>{% endif %}
+    {% if t.evidence %}<div class="tt-field"><span class="tt-label">Bằng chứng cần có:</span> {{ t.evidence }}</div>{% endif %}
+    {% if t.frequency %}<div class="tt-field"><span class="tt-label">Tần suất:</span> {{ t.frequency }}</div>{% endif %}
+    {% if t.owner_hint %}<div class="tt-field"><span class="tt-label">Chủ trì gợi ý:</span> {{ t.owner_hint }}</div>{% endif %}
+    {% if t.review_note %}<div class="tt-field"><span class="tt-label">Duyệt / lưu ý:</span> {{ t.review_note }}</div>{% endif %}
+
+    {% if can_edit %}
+    <form method="post" action="/tiktok-onboard/update" class="form-inline tt-form">
+      <input type="hidden" name="code" value="{{ t.code }}">
+      <label>Trạng thái
+        <select name="status" class="input">
+          {% for s in statuses %}
+          <option value="{{ s }}"{% if p.status == s %} selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Người phụ trách
+        <input type="text" name="assignee" value="{{ p.assignee }}" class="input" placeholder="Tên người làm">
+      </label>
+      <label>Hạn hoàn thành
+        <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="due" value="{{ p.due }}" class="input date-vn">
+      </label>
+      <label class="grow">Link bằng chứng
+        <input type="text" name="evidence" value="{{ p.evidence }}" class="input" placeholder="https://…">
+      </label>
+      <label class="grow">Ghi chú / lý do
+        <input type="text" name="note" value="{{ p.note }}" class="input" placeholder="Bắt buộc khi Hoàn tất (nếu chưa có link) hoặc Không áp dụng">
+      </label>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-sm">Lưu cập nhật</button>
+      </div>
+    </form>
+    {% if p.updated_by %}<p class="sync-note">Cập nhật gần nhất: {{ p.updated_by }}{% if p.updated_at %} · {{ p.updated_at }}{% endif %}</p>{% endif %}
+    {% else %}
+    <div class="tt-field"><span class="tt-label">Người phụ trách:</span> {{ p.assignee or "Chưa giao" }}</div>
+    {% if t.due_vn %}<div class="tt-field"><span class="tt-label">Hạn hoàn thành:</span> {{ t.due_vn }}</div>{% endif %}
+    {% if p.evidence %}<div class="tt-field"><span class="tt-label">Bằng chứng:</span> <a href="{{ p.evidence }}" target="_blank" rel="noopener">{{ p.evidence }}</a></div>{% endif %}
+    {% if p.note %}<div class="tt-field"><span class="tt-label">Ghi chú:</span> {{ p.note }}</div>{% endif %}
+    {% if p.updated_by %}<p class="sync-note">Cập nhật gần nhất: {{ p.updated_by }}{% if p.updated_at %} · {{ p.updated_at }}{% endif %}</p>{% endif %}
+    {% endif %}
+  </div>
+</details>
+{% endfor %}
+{% else %}
+<p class="empty muted">Không có việc nào khớp bộ lọc.</p>
+{% endfor %}
+{% endif %}
+{% endblock %}

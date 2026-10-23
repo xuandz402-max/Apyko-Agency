@@ -254,6 +254,25 @@ CREATE TABLE IF NOT EXISTS affiliate_links (
     updated_by TEXT DEFAULT '',
     updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS tt_progress (
+    code TEXT PRIMARY KEY,
+    status TEXT NOT NULL DEFAULT 'Chưa bắt đầu',
+    assignee TEXT NOT NULL DEFAULT '',
+    due TEXT NOT NULL DEFAULT '',
+    evidence TEXT NOT NULL DEFAULT '',
+    note TEXT NOT NULL DEFAULT '',
+    updated_by TEXT DEFAULT '',
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS tt_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL,
+    old_status TEXT NOT NULL DEFAULT '',
+    new_status TEXT NOT NULL DEFAULT '',
+    changed_by TEXT DEFAULT '',
+    changed_at TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT ''
+);
 """
 
 # Migration cộng thêm cho các DB đã tồn tại trước module Daily Checklist:
@@ -1562,3 +1581,84 @@ def affiliate_delete(item_id: int) -> bool:
     with get_conn() as conn:
         cur = conn.execute("DELETE FROM affiliate_links WHERE id = ?", (item_id,))
         return cur.rowcount > 0
+
+
+# ------------------------------ tiktok onboard ------------------------------
+# Tiến độ 46 đầu việc onboarding TikTok Shop: danh mục tĩnh nằm ở
+# app/data/tiktok_onboard.json (app/tiktok.py), DB chỉ lưu TRẠNG THÁI của
+# từng mã việc (tt_progress) + nhật ký đổi trạng thái (tt_history). Việc
+# chưa từng cập nhật = không có dòng, hiểu là "Chưa bắt đầu".
+
+TT_PROGRESS_COLUMNS = [
+    "code",
+    "status",
+    "assignee",
+    "due",
+    "evidence",
+    "note",
+    "updated_by",
+    "updated_at",
+]
+
+
+def tt_progress_map() -> dict:
+    """Toàn bộ tiến độ đã lưu, tra theo mã việc (TT-001...)."""
+    with get_conn() as conn:
+        rows = conn.execute("SELECT * FROM tt_progress").fetchall()
+    return {r["code"]: dict(r) for r in rows}
+
+
+def tt_get_progress(code: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM tt_progress WHERE code = ?", (code,)
+        ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def tt_upsert_progress(code: str, d: dict, updated_by: str = "") -> dict:
+    """Ghi tiến độ của 1 mã việc (chèn mới hoặc cập nhật). Trả về dòng đã lưu."""
+    data = {k: v for k, v in d.items() if k in TT_PROGRESS_COLUMNS and k != "code"}
+    data["updated_by"] = updated_by
+    data["updated_at"] = _utcnow()
+    with get_conn() as conn:
+        existing = conn.execute(
+            "SELECT code FROM tt_progress WHERE code = ?", (code,)
+        ).fetchone()
+        if existing is not None:
+            conn.execute(
+                f"UPDATE tt_progress SET {', '.join(f'{k} = ?' for k in data)}"
+                " WHERE code = ?",
+                [*data.values(), code],
+            )
+        else:
+            cols = ["code", *data.keys()]
+            placeholders = ", ".join("?" for _ in cols)
+            conn.execute(
+                f"INSERT INTO tt_progress ({', '.join(cols)}) VALUES ({placeholders})",
+                [code, *data.values()],
+            )
+        row = conn.execute(
+            "SELECT * FROM tt_progress WHERE code = ?", (code,)
+        ).fetchone()
+    return dict(row)
+
+
+def tt_add_history(
+    code: str, old_status: str, new_status: str, changed_by: str = "", note: str = ""
+) -> int:
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO tt_history (code, old_status, new_status, changed_by,"
+            " changed_at, note) VALUES (?, ?, ?, ?, ?, ?)",
+            (code, old_status, new_status, changed_by, _utcnow(), note),
+        )
+        return cur.lastrowid
+
+
+def tt_history_list(limit: int = 100) -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM tt_history ORDER BY id DESC LIMIT ?", (limit,)
+        ).fetchall()
+    return [dict(r) for r in rows]

@@ -417,6 +417,7 @@ input.input-invalid { border-color: #DC2626; box-shadow: 0 0 0 1px #DC2626; }
 
 /* Ảnh minh họa SOP Seeding Shopee: ảnh chụp màn hình đọc rõ chữ, tràn hết chiều ngang thẻ, không cắt góc */
 .seed-img { max-width: 640px; width: 100%; height: auto; border: 1px solid var(--line); display: block; margin: 12px auto; }
+.seed-img-tall { max-height: 520px; width: auto; max-width: 100%; height: auto; border: 1px solid var(--line); display: block; margin: 12px auto; }
 .seed-cap { color: var(--muted); font-size: 13px; margin: 4px 0 16px; }
 
 /* Affiliate: lưới slide trải rộng hết chiều ngang (append 2026-10-22) */

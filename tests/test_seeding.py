@@ -108,3 +108,13 @@ def test_seeding_images_capped_width():
     css = open("static/style.css", encoding="utf-8").read()
     rule = next(line for line in css.splitlines() if line.strip().startswith(".seed-img"))
     assert "max-width: 640px" in rule and "margin: 12px auto" in rule
+
+
+def test_seeding_tall_images_capped_by_height():
+    """2 ảnh dọc (bước 3, lưu ý) giới hạn theo chiều cao, không cao tràn trang."""
+    css = open("static/style.css", encoding="utf-8").read()
+    rule = next(line for line in css.splitlines() if line.strip().startswith(".seed-img-tall"))
+    assert "max-height: 520px" in rule
+    html = open("templates/seeding.html", encoding="utf-8").read()
+    assert 'buoc3-1.jpeg" alt="Ảnh minh họa bước 3" class="seed-img seed-img-tall"' in html
+    assert 'luu-y-1.jpeg" alt="Ảnh minh họa lưu ý" class="seed-img seed-img-tall"' in html

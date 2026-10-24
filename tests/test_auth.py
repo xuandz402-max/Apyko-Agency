@@ -142,3 +142,10 @@ def test_brand_slogan_with_logo_on_auth_and_sidebar(client):
     assert "/static/logo.png" in r.text
     assert "brand-slogan" in r.text
     assert "Trao Giá Trị - Nhận Niềm Tin" in r.text
+
+
+def test_auth_logo_centered():
+    """Logo trang đăng nhập (và các trang auth dùng chung khối) căn giữa."""
+    css = open("static/style.css", encoding="utf-8").read()
+    rule = next(line for line in css.splitlines() if line.strip().startswith(".auth-logo {"))
+    assert "text-align: center" in rule

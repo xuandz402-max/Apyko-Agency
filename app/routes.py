@@ -235,6 +235,7 @@ async def page_setup_create(request: Request):
             "can_view_affiliate": 1,
             "can_view_tiktok": 1,
             "can_view_cskh": 1,
+            "can_view_seeding": 1,
             "can_view_accounts": 1,
             "can_view_orders": 1,
             "can_view_order_finance": 1,
@@ -364,6 +365,8 @@ def page_home(request: Request):
         target = "/ceo"
     elif user.get("can_view_products"):
         target = "/products"
+    elif user.get("can_view_seeding"):
+        target = "/seeding"
     elif user.get("can_view_daily"):
         target = "/bao-cao"
     elif user.get("can_view_gmv"):
@@ -1401,6 +1404,22 @@ async def page_uni_learn(lesson_id: str, request: Request):
     return RedirectResponse(url=f"/uni/{lesson_id}", status_code=303)
 
 
+# ------------------------------ seeding (SOP chỉ đọc) ----------------------
+# Trang SOP "Seeding Shopee": nội dung nguyên văn từ file user gửi, kèm ảnh
+# minh họa trong static/seeding/ (file gốc, không chỉnh sửa). Không có tính
+# năng tương tác. Quyền xem: chủ sở hữu hoặc can_view_seeding.
+
+
+@router.get("/seeding", response_class=HTMLResponse)
+def page_seeding(request: Request):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    if not (user.get("is_owner") or user.get("can_view_seeding")):
+        raise HTTPException(status_code=403, detail="Tài khoản không có quyền này.")
+    return templates.TemplateResponse("seeding.html", _ctx(request, user))
+
+
 # ------------------------------ accounts (owner) ---------------------------
 
 
@@ -1413,6 +1432,7 @@ _PERM_FIELDS = [
     ("can_view_tiktok", "Xem TikTok Onboard"),
     ("can_view_uni", "Xem Apyko Uni"),
     ("can_view_cskh", "Xem Mẫu CSKH"),
+    ("can_view_seeding", "Xem Seeding Shopee"),
     ("can_view_accounts", "Xem Quản lý tài khoản (kho)"),
     ("can_view_orders", "Xem Phân tích đơn Shopee"),
     ("can_view_order_finance", "Xem dữ liệu tài chính đơn hàng"),

@@ -61,6 +61,7 @@ USER_COLUMNS = [
     "can_view_affiliate",
     "can_view_tiktok",
     "can_view_cskh",
+    "can_view_seeding",
     "can_view_accounts",
     "can_view_orders",
     "can_view_order_finance",
@@ -117,6 +118,7 @@ CREATE TABLE IF NOT EXISTS users (
     can_view_affiliate INTEGER NOT NULL DEFAULT 0,
     can_view_tiktok INTEGER NOT NULL DEFAULT 0,
     can_view_cskh INTEGER NOT NULL DEFAULT 1,
+    can_view_seeding INTEGER NOT NULL DEFAULT 0,
     can_view_accounts INTEGER NOT NULL DEFAULT 0,
     can_view_orders INTEGER NOT NULL DEFAULT 0,
     can_view_order_finance INTEGER NOT NULL DEFAULT 0,
@@ -445,6 +447,7 @@ _USER_MIGRATION_COLUMNS = [
     ("can_view_affiliate", "INTEGER NOT NULL DEFAULT 0"),
     ("can_view_tiktok", "INTEGER NOT NULL DEFAULT 0"),
     ("can_view_cskh", "INTEGER NOT NULL DEFAULT 1"),
+    ("can_view_seeding", "INTEGER NOT NULL DEFAULT 0"),
     ("can_view_accounts", "INTEGER NOT NULL DEFAULT 0"),
     # Quyền module Phân tích đơn Shopee: mặc định ĐÓNG với tài khoản cũ
     # (fail-closed); chủ sở hữu được bật = 1 khi di trú (xem _OWNER_FLAGS).
@@ -474,6 +477,7 @@ _VIEW_FLAGS_FROM_PRODUCTS = (
     "can_view_gmv",
     "can_view_affiliate",
     "can_view_tiktok",
+    "can_view_seeding",
     "can_view_accounts",
 )
 

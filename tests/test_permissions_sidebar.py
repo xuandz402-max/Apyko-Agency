@@ -10,6 +10,7 @@ NEW_VIEW_FLAGS = (
     "can_view_affiliate",
     "can_view_tiktok",
     "can_view_cskh",
+    "can_view_seeding",
     "can_view_accounts",
 )
 
@@ -22,6 +23,7 @@ NEW_LABELS = (
     "Xem TikTok Onboard",
     "Xem Apyko Uni",
     "Xem Mẫu CSKH",
+    "Xem Seeding Shopee",
     "Xem Quản lý tài khoản (kho)",
 )
 

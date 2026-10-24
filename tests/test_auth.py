@@ -116,3 +116,23 @@ def test_locked_account_cannot_login(client):
     r = login(client, "nhanvien03", "matkhau123")
     assert r.status_code == 422
     assert "bị khóa" in r.text
+
+
+def test_brand_slogan_with_logo_on_auth_and_sidebar(client):
+    """Slogan đi kèm logo ở trang đăng nhập/thiết lập và sidebar (không sửa file logo)."""
+    r = client.get("/setup")
+    assert r.status_code == 200
+    assert "/static/logo.png" in r.text
+    assert "Trao Giá Trị, Nhận Niềm Tin" in r.text
+    create_owner(client)
+    logout(client)
+    r = client.get("/login")
+    assert r.status_code == 200
+    assert "/static/logo.png" in r.text
+    assert "Trao Giá Trị, Nhận Niềm Tin" in r.text
+    login(client, "chushop", "matkhau123")
+    r = client.get("/bao-cao")
+    assert r.status_code == 200
+    assert "/static/logo.png" in r.text
+    assert "brand-slogan" in r.text
+    assert "Trao Giá Trị, Nhận Niềm Tin" in r.text

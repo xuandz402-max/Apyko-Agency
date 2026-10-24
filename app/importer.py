@@ -10,9 +10,8 @@ Nguyên tắc:
   (sharedStrings + sheet đầu tiên; ngày dạng serial Excel được đổi theo
   epoch 1899-12-30, kể cả khi ô có style ngày tháng).
 - Ánh xạ cột theo BÍ DANH, không phân biệt hoa thường và dấu tiếng Việt.
-- TIỀN GMV LÀ CÁI BẪY: gmv_entries lưu revenue_rm/ad_cost theo RM
-  (app quy đổi VNĐ = RM x 5300), còn file Shopee Việt Nam ghi VNĐ.
-  map_gmv_rows nhận `currency`: "vnd" -> chia 5300 khi ghi; "rm" -> giữ
+- TIỀN GMV LƯU BẰNG VNĐ: gmv_entries lưu revenue_vnd/ad_cost bằng VNĐ,
+  đúng như file Shopee Việt Nam ghi. map_gmv_rows giữ nguyên số tiền.
   nguyên. Báo cáo ngày mọi số đã là VNĐ, không quy đổi.
 - Module này chỉ ĐỌC + ÁNH XẠ (không ghi DB). Việc ghi nằm ở routes sau
   khi user xem trước và bấm xác nhận.
@@ -27,7 +26,7 @@ from datetime import date, datetime, timedelta
 from xml.etree import ElementTree
 
 from .daily import validate_daily_report
-from .gmv import RM_VND_RATE, validate_gmv_entry
+from .gmv import validate_gmv_entry
 
 MAX_FILE_BYTES = 5 * 1024 * 1024
 MAX_ROWS = 5000
@@ -404,7 +403,7 @@ def _read_xlsx(file_bytes: bytes, sheet_name: str | None = None) -> list:
 
 def parse_number(text) -> float | None:
     """Đọc số chịu nhiều định dạng: '1.234.567', '1,234,567', '500.000₫',
-    'RM 12.5', '12,5', khoảng trắng thừa. Rỗng/không đọc được -> None."""
+    'VND 12.5', '12,5', khoảng trắng thừa. Rỗng/không đọc được -> None."""
     if text is None or isinstance(text, bool):
         return None
     if isinstance(text, int | float):
@@ -529,19 +528,14 @@ def _mark_duplicates(mapped: list, key_of) -> None:
         seen[key] = item
 
 
-def map_gmv_rows(headers: list, rows: list, currency: str) -> list:
-    """Ánh xạ dòng file -> entry GMV (số tiền đã quy về RM).
+def map_gmv_rows(headers: list, rows: list) -> list:
+    """Ánh xạ dòng file -> entry GMV (số tiền giữ nguyên bằng VNĐ).
 
-    currency: "vnd" (mặc định, file Shopee VN) -> chia 5300; "rm" -> giữ
-    nguyên. Trả list dict: {row, status: ok|error|dup, errors, warnings,
+    Trả list dict: {row, status: ok|error|dup, errors, warnings,
     data}. Thiếu cột bắt buộc -> ValueError (lỗi cấp file).
     """
-    currency = (currency or "vnd").lower()
-    if currency not in ("vnd", "rm"):
-        currency = "vnd"
     mapping, _unknown = match_columns(headers, GMV_ALIASES)
     _require_columns(mapping, GMV_REQUIRED)
-    divisor = RM_VND_RATE if currency == "vnd" else 1
     mapped: list = []
     for i, row in enumerate(rows, start=2):
         errors: list[str] = []
@@ -596,8 +590,8 @@ def map_gmv_rows(headers: list, rows: list, currency: str) -> list:
             "views": int(numbers["views"]),
             "clicks": int(numbers["clicks"]),
             "conversions": int(numbers["conversions"]),
-            "revenue_rm": round(numbers["revenue"] / divisor, 2),
-            "ad_cost": round(numbers["ad_cost"] / divisor, 2),
+            "revenue_vnd": round(numbers["revenue"], 2),
+            "ad_cost": round(numbers["ad_cost"], 2),
             "action_note": "",
         }
         clean, verr = validate_gmv_entry(data)

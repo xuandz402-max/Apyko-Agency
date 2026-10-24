@@ -43,7 +43,7 @@ def _report(db, date, total, ad_gmv, ad_cost):
     )
 
 
-def _gmv(db, pid, date, revenue_rm, ad_cost_rm):
+def _gmv(db, pid, date, revenue_vnd, ad_cost_vnd):
     db.gmv_upsert_entry(
         pid,
         {
@@ -51,8 +51,8 @@ def _gmv(db, pid, date, revenue_rm, ad_cost_rm):
             "views": 100,
             "clicks": 10,
             "conversions": 1,
-            "revenue_rm": revenue_rm,
-            "ad_cost": ad_cost_rm,
+            "revenue_vnd": revenue_vnd,
+            "ad_cost": ad_cost_vnd,
             "action_note": "",
         },
         "test",
@@ -140,8 +140,8 @@ def test_period_compare_day_up(client):
     _report(db, today, 3_000_000, 900_000, 300_000)  # ROAS 3.0
     _report(db, yesterday, 2_500_000, 500_000, 250_000)  # ROAS 2.0
     pid = db.gmv_create_product("SP PERIOD")
-    _gmv(db, pid, today, 100, 40)
-    _gmv(db, pid, yesterday, 50, 25)
+    _gmv(db, pid, today, 530000, 212000)
+    _gmv(db, pid, yesterday, 265000, 132500)
 
     cmp = ceo.period_compare(today, "day")
     assert cmp["period"] == "day"
@@ -161,8 +161,8 @@ def test_period_compare_day_down(client):
     _report(db, today, 2_000_000, 400_000, 200_000)  # ROAS 2.0
     _report(db, yesterday, 2_500_000, 500_000, 250_000)  # ROAS 2.0
     pid = db.gmv_create_product("SP XUONG")
-    _gmv(db, pid, today, 40, 10)
-    _gmv(db, pid, yesterday, 50, 10)
+    _gmv(db, pid, today, 212000, 53000)
+    _gmv(db, pid, yesterday, 265000, 53000)
 
     m = ceo.period_compare(today, "day")["metrics"]
     assert m["revenue"]["delta_pct"] == -20.0

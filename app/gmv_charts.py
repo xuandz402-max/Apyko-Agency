@@ -20,7 +20,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from . import database as db
 from .ceo import ROAS_WARN, STALE_DAYS
-from .gmv import RM_VND_RATE, calc_gmv
+from .gmv import calc_gmv
 
 # Ngưỡng giảm (%) cho quy tắc gmv_drop / roas_drop: giảm trên mức này mới báo.
 DROP_PCT = 30.0
@@ -56,12 +56,12 @@ def _entries_by_product() -> dict:
 
 
 def _day_sums(entries: list) -> dict:
-    """{date_str: (revenue_rm, ad_cost_rm)} cộng dồn theo ngày."""
+    """{date_str: (doanh thu VNĐ, chi phí VNĐ)} cộng dồn theo ngày."""
     sums: dict[str, tuple] = {}
     for e in entries:
         rev, cost = sums.get(e["date"], (0.0, 0.0))
         sums[e["date"]] = (
-            rev + float(e.get("revenue_rm") or 0),
+            rev + float(e.get("revenue_vnd") or 0),
             cost + float(e.get("ad_cost") or 0),
         )
     return sums
@@ -94,10 +94,10 @@ def build_series(product_id, days: int, today) -> dict:
             cost_vnd.append(None)
             roas.append(None)
             continue
-        rev_rm, cost_rm = sums[day]
-        gmv_vnd.append(round(rev_rm * RM_VND_RATE))
-        cost_vnd.append(round(cost_rm * RM_VND_RATE))
-        roas.append(round(rev_rm / cost_rm, 2) if cost_rm != 0 else None)
+        rev, cost = sums[day]
+        gmv_vnd.append(round(rev))
+        cost_vnd.append(round(cost))
+        roas.append(round(rev / cost, 2) if cost != 0 else None)
     return {
         "product_id": product_id,
         "days": days,
@@ -126,15 +126,15 @@ def product_totals(days: int, today) -> list:
         ]
         if not entries:
             continue
-        rev_rm = sum(float(e.get("revenue_rm") or 0) for e in entries)
-        cost_rm = sum(float(e.get("ad_cost") or 0) for e in entries)
+        rev = sum(float(e.get("revenue_vnd") or 0) for e in entries)
+        cost = sum(float(e.get("ad_cost") or 0) for e in entries)
         totals.append(
             {
                 "product_id": product["id"],
                 "product_name": product["name"],
-                "gmv_vnd": round(rev_rm * RM_VND_RATE),
-                "cost_vnd": round(cost_rm * RM_VND_RATE),
-                "roas": round(rev_rm / cost_rm, 2) if cost_rm != 0 else None,
+                "gmv_vnd": round(rev),
+                "cost_vnd": round(cost),
+                "roas": round(rev / cost, 2) if cost != 0 else None,
                 "entry_days": len({e["date"] for e in entries}),
             }
         )
@@ -147,23 +147,23 @@ def range_totals(start: str, end: str) -> dict:
 
     Dùng cho dải "So sánh theo kỳ" ở trang /gmv (độc lập với biểu đồ theo
     số ngày gần nhất). Không entry nào trong khoảng -> các chỉ số None.
-    ROAS kỳ = tổng GMV / tổng chi phí của cả khoảng; VNĐ = RM x 5300.
+    ROAS kỳ = tổng GMV / tổng chi phí của cả khoảng (toàn bộ bằng VNĐ).
     """
-    rev_rm = 0.0
-    cost_rm = 0.0
+    rev = 0.0
+    cost = 0.0
     count = 0
     for entry in db.gmv_all_entries():
         if start <= entry["date"] <= end:
             count += 1
-            rev_rm += float(entry.get("revenue_rm") or 0)
-            cost_rm += float(entry.get("ad_cost") or 0)
+            rev += float(entry.get("revenue_vnd") or 0)
+            cost += float(entry.get("ad_cost") or 0)
     if count == 0:
         return {"entries": 0, "gmv_vnd": None, "cost_vnd": None, "roas": None}
     return {
         "entries": count,
-        "gmv_vnd": round(rev_rm * RM_VND_RATE),
-        "cost_vnd": round(cost_rm * RM_VND_RATE),
-        "roas": round(rev_rm / cost_rm, 2) if cost_rm != 0 else None,
+        "gmv_vnd": round(rev),
+        "cost_vnd": round(cost),
+        "roas": round(rev / cost, 2) if cost != 0 else None,
     }
 
 
@@ -171,9 +171,9 @@ def range_totals(start: str, end: str) -> dict:
 
 
 def _window(entries: list, start: int, stop: int) -> tuple:
-    """(doanh thu RM, chi phí RM) của 1 cửa sổ entry."""
+    """(doanh thu VNĐ, chi phí VNĐ) của 1 cửa sổ entry."""
     part = entries[start:stop]
-    rev = sum(float(e.get("revenue_rm") or 0) for e in part)
+    rev = sum(float(e.get("revenue_vnd") or 0) for e in part)
     cost = sum(float(e.get("ad_cost") or 0) for e in part)
     return rev, cost
 
@@ -244,8 +244,8 @@ def gmv_alerts(today) -> list:
                             "message": (
                                 f"GMV 3 ngày gần nhất của {name} giảm"
                                 f" {drop:.0f}% so với kỳ trước"
-                                f" ({_fmt_vnd(rev_recent * RM_VND_RATE)}đ"
-                                f" so với {_fmt_vnd(rev_prev * RM_VND_RATE)}đ)."
+                                f" ({_fmt_vnd(rev_recent)}đ"
+                                f" so với {_fmt_vnd(rev_prev)}đ)."
                             ),
                             "severity": "high",
                         }

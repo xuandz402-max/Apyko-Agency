@@ -44,7 +44,7 @@ def _report(db, date_str, total, ad_gmv, ad_cost):
     )
 
 
-def _gmv(db, pid, date_str, revenue_rm, ad_cost_rm):
+def _gmv(db, pid, date_str, revenue_vnd, ad_cost_vnd):
     db.gmv_upsert_entry(
         pid,
         {
@@ -52,8 +52,8 @@ def _gmv(db, pid, date_str, revenue_rm, ad_cost_rm):
             "views": 100,
             "clicks": 10,
             "conversions": 1,
-            "revenue_rm": revenue_rm,
-            "ad_cost": ad_cost_rm,
+            "revenue_vnd": revenue_vnd,
+            "ad_cost": ad_cost_vnd,
             "action_note": "",
         },
         "test",
@@ -254,8 +254,8 @@ def test_gmv_page_period_compare(client):
     monday = d - timedelta(days=d.weekday())
     prev_monday = monday - timedelta(days=7)
     pid = db.gmv_create_product("SP KY")
-    _gmv(db, pid, monday.isoformat(), 100, 50)  # kỳ này: 100 RM
-    _gmv(db, pid, prev_monday.isoformat(), 50, 50)  # kỳ trước: 50 RM
+    _gmv(db, pid, monday.isoformat(), 530000, 265000)  # kỳ này: 530.000₫
+    _gmv(db, pid, prev_monday.isoformat(), 265000, 265000)  # kỳ trước: 265.000₫
     # Khoảng xem = trọn tuần này (thứ Hai -> Chủ Nhật); khoảng liền trước
     # dài bằng nhau chứa đúng thứ Hai tuần trước.
     sunday = (monday + timedelta(days=6)).isoformat()
@@ -263,7 +263,7 @@ def test_gmv_page_period_compare(client):
     assert r.status_code == 200
     html = r.text
     assert "So sánh theo kỳ" in html
-    assert "530.000đ" in html  # 100 RM x 5300
+    assert "530.000đ" in html
     assert "+100.0%" in html  # GMV gấp đôi kỳ trước
     assert "delta-up" in html
 

@@ -242,3 +242,17 @@ def test_delete_needs_delete_perm(client):
     logout(client)
     login(client, "chushop", "matkhau123")
     assert client.delete(f"/api/daily/{_today()}").status_code == 204
+
+
+def test_report_export_header_uses_logo_slogan_and_mint(client):
+    """Ảnh xuất báo cáo: header xanh lá + logo + slogan, thân báo cáo giữ nguyên."""
+    create_owner(client)
+    r = client.get("/bao-cao")
+    assert r.status_code == 200
+    assert 'img.src = "/static/logo.png"' in r.text
+    assert "Trao Giá Trị, Nhận Niềm Tin" in r.text
+    assert 'MINT = "#3FA46F"' in r.text
+    assert "BÁO CÁO DOANH THU NGÀY" in r.text
+    assert "DOANH THU THEO NGUỒN" in r.text
+    assert "HIỆU QUẢ QUẢNG CÁO" in r.text
+    assert client.get("/static/logo.png").status_code == 200

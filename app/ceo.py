@@ -2,7 +2,7 @@
 
 Chỉ đọc số thật đã được nhân sự nhập ở các module khác, không có bảng riêng:
 - Doanh thu / chi phí ads / ROAS: Báo cáo ngày (daily_reports, qua calc_daily).
-- GMV quảng cáo: GMV Max Shopee (gmv_entries, qua calc_gmv; VNĐ = RM x 5300).
+- GMV quảng cáo: GMV Max Shopee (gmv_entries, qua calc_gmv; toàn bộ tiền tệ bằng VNĐ).
 - Checklist hôm nay: Daily Checklist (checklist.board_stats).
 
 Ngưỡng cảnh báo mặc định (chỉnh trong code này):
@@ -37,7 +37,7 @@ from datetime import datetime, timedelta
 from . import checklist
 from . import database as db
 from .daily import calc_daily
-from .gmv import RM_VND_RATE, calc_gmv
+from .gmv import calc_gmv
 
 ROAS_WARN = 2.0
 STALE_DAYS = 3
@@ -107,8 +107,8 @@ def ceo_overview(today: str) -> dict:
     # 1 query entry cho mọi sản phẩm (thay cho query lặp theo sản phẩm);
     # gmv_all_entries đã sắp date ASC trong từng sản phẩm như gmv_list_entries.
     stale_cutoff = _shift(today, -(STALE_DAYS - 1))  # ngày cũ nhất còn "gần đây"
-    gmv_rev_rm = 0.0
-    gmv_cost_rm = 0.0
+    gmv_rev = 0.0
+    gmv_cost = 0.0
     gmv_entries_today = 0
     product_alerts = []
     entries_by_product: dict[int, list] = {}
@@ -118,8 +118,8 @@ def ceo_overview(today: str) -> dict:
         entries = entries_by_product.get(product["id"], [])
         for entry in entries:
             if entry["date"] == today:
-                gmv_rev_rm += float(entry.get("revenue_rm") or 0)
-                gmv_cost_rm += float(entry.get("ad_cost") or 0)
+                gmv_rev += float(entry.get("revenue_vnd") or 0)
+                gmv_cost += float(entry.get("ad_cost") or 0)
                 gmv_entries_today += 1
         latest = entries[-1] if entries else None
         if latest is None or latest["date"] < stale_cutoff:
@@ -144,11 +144,9 @@ def ceo_overview(today: str) -> dict:
                 )
     gmv_today = {
         "entry_count": gmv_entries_today,
-        "revenue_rm": round(gmv_rev_rm, 2),
-        "ad_cost_rm": round(gmv_cost_rm, 2),
-        "revenue_vnd": round(gmv_rev_rm * RM_VND_RATE),
-        "ad_cost_vnd": round(gmv_cost_rm * RM_VND_RATE),
-        "roas": round(gmv_rev_rm / gmv_cost_rm, 2) if gmv_cost_rm != 0 else None,
+        "revenue_vnd": round(gmv_rev, 2),
+        "ad_cost_vnd": round(gmv_cost, 2),
+        "roas": round(gmv_rev / gmv_cost, 2) if gmv_cost != 0 else None,
     }
 
     # ----- checklist hôm nay -----
@@ -327,17 +325,17 @@ def _aggregate(reports: dict, entries: list, start: str, end: str) -> dict:
             ads_cost += float(report.get("ad_cost") or 0)
             ad_gmv += float(report.get("ad_gmv") or 0)
         day += timedelta(days=1)
-    gmv_rm = 0.0
+    gmv_vnd_sum = 0.0
     has_gmv = False
     for entry in entries:
         if start <= entry["date"] <= end:
             has_gmv = True
-            gmv_rm += float(entry.get("revenue_rm") or 0)
+            gmv_vnd_sum += float(entry.get("revenue_vnd") or 0)
     return {
         "revenue": revenue if has_report else None,
         "ads_cost": round(ads_cost) if has_report else None,
         "roas": round(ad_gmv / ads_cost, 2) if has_report and ads_cost != 0 else None,
-        "gmv_vnd": round(gmv_rm * RM_VND_RATE) if has_gmv else None,
+        "gmv_vnd": round(gmv_vnd_sum) if has_gmv else None,
     }
 
 

@@ -2465,7 +2465,6 @@ def _import_summary(mapped: list) -> dict:
 async def page_gmv_import(
     request: Request,
     file: Annotated[UploadFile | None, File()] = None,
-    currency: Annotated[str, Form()] = "vnd",
     create_products: Annotated[str | None, Form()] = None,
 ):
     user, redir = auth.page_guard(request, "can_add_edit_products")
@@ -2476,7 +2475,7 @@ async def page_gmv_import(
     raw = await file.read()
     try:
         headers, rows = importer.read_table(raw, file.filename)
-        mapped = importer.map_gmv_rows(headers, rows, currency)
+        mapped = importer.map_gmv_rows(headers, rows)
     except ValueError as e:
         return _import_error_page(request, user, str(e), "/gmv")
     want_create = create_products is not None
@@ -2502,7 +2501,6 @@ async def page_gmv_import(
         {
             "kind": "gmv",
             "filename": file.filename,
-            "currency": "rm" if currency == "rm" else "vnd",
             "create_products": want_create,
             "rows": mapped,
         },
@@ -2514,7 +2512,6 @@ async def page_gmv_import(
             user,
             kind="gmv",
             filename=file.filename,
-            currency="rm" if currency == "rm" else "vnd",
             rows=mapped,
             summary=_import_summary(mapped),
             new_products=new_products,

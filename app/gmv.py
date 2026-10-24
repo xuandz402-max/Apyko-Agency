@@ -1,19 +1,16 @@
 """Chỉ số quảng cáo Shopee GMV Max (pure functions, không I/O).
 
-Công thức theo file Google Sheet "THEO DÕI CHỈ SỐ QUẢNG CÁO SẢN PHẨM" của user:
-- QUY ĐỔI VND = doanh_thu_RM x 5300
+Toàn bộ tiền tệ tính bằng VNĐ:
 - CTR%  = click / lượt_xem
-- CIR%  = chi_phí_qc / doanh_thu_RM
-- CPC   = chi_phí_qc / click
+- CIR%  = chi_phí_qc / doanh_thu
+- CPC   = chi_phí_qc / click (VNĐ)
 - CR%   = chuyển_đổi / click
-- AOV   = doanh_thu_RM / chuyển_đổi (dùng conversions làm số đơn)
-- ROAS  = doanh_thu_RM / chi_phí_qc
+- AOV   = doanh_thu / chuyển_đổi (VNĐ, dùng conversions làm số đơn)
+- ROAS  = doanh_thu / chi_phí_qc
 Chia cho 0 → None (UI hiển thị "—"), giống IFERROR trong sheet.
 """
 
 from datetime import datetime
-
-RM_VND_RATE = 5300
 
 # Tên sản phẩm lấy từ Google Sheet thật của user. Chỉ seed khi bảng đang
 # trống hoàn toàn (không seed lại khi đã có dữ liệu).
@@ -31,8 +28,8 @@ _INT_FIELDS = {
     "conversions": "Lượt chuyển đổi",
 }
 _MONEY_FIELDS = {
-    "revenue_rm": "Doanh thu (RM)",
-    "ad_cost": "Chi phí quảng cáo",
+    "revenue_vnd": "Doanh thu (VNĐ)",
+    "ad_cost": "Chi phí quảng cáo (VNĐ)",
 }
 
 
@@ -49,7 +46,7 @@ def calc_gmv(entry: dict) -> dict:
     views = _num(entry.get("views"))
     clicks = _num(entry.get("clicks"))
     conv = _num(entry.get("conversions"))
-    revenue = _num(entry.get("revenue_rm"))
+    revenue = _num(entry.get("revenue_vnd"))
     cost = _num(entry.get("ad_cost"))
 
     def pct(n: float, d: float):
@@ -63,7 +60,6 @@ def calc_gmv(entry: dict) -> dict:
         return round(n / d, 2)
 
     return {
-        "vnd": round(revenue * RM_VND_RATE),
         "ctr": pct(clicks, views),
         "cir": pct(cost, revenue),
         "cpc": money(cost, clicks),

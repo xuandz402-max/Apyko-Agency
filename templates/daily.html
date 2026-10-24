@@ -179,6 +179,7 @@
 
   // ---------------- vẽ thẻ báo cáo PNG (1080x1500) ----------------
   var BRAND = "#173A52";
+  var MINT = "#3FA46F";
   var INK = "#1A1A1A";
   var GRAY = "#6B7280";
   var LIGHT = "#F7F7F8";
@@ -195,7 +196,7 @@
     return lines;
   }
 
-  function drawReport(r) {
+  function drawReport(r, logoImg) {
     var cv = $("reportCanvas");
     var ctx = cv.getContext("2d");
     var W = 1080, H = 1500;
@@ -204,18 +205,35 @@
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, W, H);
 
-    // Header cam nghệ
-    ctx.fillStyle = BRAND;
-    ctx.fillRect(0, 0, W, 300);
-    ctx.fillStyle = "#FFFFFF";
-    ctx.textAlign = "center";
-    ctx.font = "800 54px " + FONT;
-    ctx.fillText("APYKO AGENCY", W / 2, 100);
-    ctx.font = "700 42px " + FONT;
-    ctx.fillText("BÁO CÁO DOANH THU NGÀY", W / 2, 175);
-    ctx.font = "400 36px " + FONT;
-    ctx.fillStyle = "#D9D9D9";
-    ctx.fillText(ddmmyyyy(r.date), W / 2, 240);
+    // Header: nền xanh lá + logo + slogan (logo lỗi thì giữ header chữ cũ)
+    if (logoImg) {
+      ctx.fillStyle = MINT;
+      ctx.fillRect(0, 0, W, 300);
+      var lw = 340, lh = lw * logoImg.naturalHeight / logoImg.naturalWidth;
+      ctx.drawImage(logoImg, (W - lw) / 2, 24, lw, lh);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(W / 2 - 32, 152, 64, 4);
+      ctx.textAlign = "center";
+      ctx.font = "400 28px " + FONT;
+      ctx.fillText("Trao Giá Trị, Nhận Niềm Tin", W / 2, 190);
+      ctx.font = "700 42px " + FONT;
+      ctx.fillText("BÁO CÁO DOANH THU NGÀY", W / 2, 245);
+      ctx.font = "400 32px " + FONT;
+      ctx.fillStyle = "#E6F4EC";
+      ctx.fillText(ddmmyyyy(r.date), W / 2, 286);
+    } else {
+      ctx.fillStyle = BRAND;
+      ctx.fillRect(0, 0, W, 300);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.textAlign = "center";
+      ctx.font = "800 54px " + FONT;
+      ctx.fillText("APYKO AGENCY", W / 2, 100);
+      ctx.font = "700 42px " + FONT;
+      ctx.fillText("BÁO CÁO DOANH THU NGÀY", W / 2, 175);
+      ctx.font = "400 36px " + FONT;
+      ctx.fillStyle = "#D9D9D9";
+      ctx.fillText(ddmmyyyy(r.date), W / 2, 240);
+    }
 
     var x0 = 80, x1 = W - 80, y = 390;
     ctx.textAlign = "left";
@@ -301,7 +319,15 @@
       if (REPORTS[i].date === isoDate) { r = REPORTS[i]; break; }
     }
     if (!r) { alert("Không tìm thấy báo cáo ngày này."); return; }
-    drawReport(r);
+    // Chờ logo tải xong mới vẽ (cùng nguồn, không CORS); lỗi thì vẽ header chữ cũ.
+    var img = new Image();
+    img.onload = function () { downloadReport(r, img); };
+    img.onerror = function () { downloadReport(r, null); };
+    img.src = "/static/logo.png";
+  }
+
+  function downloadReport(r, logoImg) {
+    drawReport(r, logoImg);
     var cv = $("reportCanvas");
     cv.toBlob(function (blob) {
       if (!blob) { alert("Không tạo được ảnh."); return; }

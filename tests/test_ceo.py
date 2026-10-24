@@ -106,8 +106,8 @@ def test_ceo_page_with_data(client):
             "views": 1000,
             "clicks": 100,
             "conversions": 5,
-            "revenue_rm": 100,
-            "ad_cost": 100,
+            "revenue_vnd": 530000,
+            "ad_cost": 530000,
             "action_note": "",
         },
         "test",
@@ -146,7 +146,7 @@ def test_ceo_page_with_data(client):
     assert "+20.0%" in html
     assert "2,500,000₫" in html  # xuất hiện ở bảng 7 ngày
 
-    # Thẻ GMV: 100 RM doanh thu x 5300 = 530,000₫
+    # Thẻ GMV: doanh thu 530.000₫
     assert "530,000₫" in html
 
     # Cảnh báo ROAS thấp có tên sản phẩm
@@ -209,7 +209,7 @@ def test_overview_gmv_stale_and_roas_alerts(client):
             "views": 10,
             "clicks": 1,
             "conversions": 0,
-            "revenue_rm": 50,
+            "revenue_vnd": 265000,
             "ad_cost": 10,
             "action_note": "",
         },
@@ -224,8 +224,8 @@ def test_overview_gmv_stale_and_roas_alerts(client):
             "views": 10,
             "clicks": 1,
             "conversions": 1,
-            "revenue_rm": 500,
-            "ad_cost": 100,
+            "revenue_vnd": 2650000,
+            "ad_cost": 530000,
             "action_note": "",
         },
         "test",
@@ -236,6 +236,6 @@ def test_overview_gmv_stale_and_roas_alerts(client):
     assert "SP TOT" not in names
     stale = next(a for a in ov["product_alerts"] if a["product_name"] == "SP CU")
     assert stale["note"] == "chưa có dữ liệu gần đây"
-    # GMV tổng hôm nay chỉ tính entry hôm nay của SP TOT: 500 x 5300
+    # GMV tổng hôm nay chỉ tính entry hôm nay của SP TOT: 2.650.000₫
     assert ov["gmv_today"]["revenue_vnd"] == 500 * 5300
     assert ov["gmv_today"]["roas"] == 5.0

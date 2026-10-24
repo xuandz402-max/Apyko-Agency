@@ -27,7 +27,7 @@
     </div>
   </div>
   {% if gmv_cmp.has_data %}
-  <p class="muted">Tổng hợp từ số liệu GMV Max trong kỳ (quy đổi RM × 5.300).</p>
+  <p class="muted">Tổng hợp từ số liệu GMV Max trong kỳ (toàn bộ bằng VNĐ).</p>
   {% else %}
   <p class="muted">Chưa có dòng số liệu GMV nào trong kỳ này nên các chỉ số hiện "—" — nhập số liệu ở bảng bên dưới hoặc chọn kỳ khác.</p>
   {% endif %}
@@ -62,19 +62,13 @@
     <label>File (.xlsx / .csv)
       <input type="file" name="file" accept=".xlsx,.csv" class="input" required>
     </label>
-    <label>Tiền trong file
-      <select name="currency" class="input">
-        <option value="vnd" selected>VNĐ (file Shopee Việt Nam)</option>
-        <option value="rm">RM (giữ nguyên như nhập tay)</option>
-      </select>
-    </label>
     <label class="check"><input type="checkbox" name="create_products" value="1" checked> Tạo sản phẩm mới nếu chưa có</label>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary btn-sm">⬆️ Tải lên &amp; xem trước</button>
     </div>
   </form>
   <p class="muted">Cột nhận diện được: Ngày, Tên sản phẩm, Lượt xem, Lượt click/nhấp, Đơn hàng/Chuyển đổi,
-    GMV/Doanh thu, Chi phí quảng cáo. File VNĐ sẽ tự chia 5.300 sang RM theo quy ước của bảng.</p>
+    GMV/Doanh thu, Chi phí quảng cáo. Số tiền trong file được ghi nguyên dạng VNĐ.</p>
 </div>
 {% endif %}
 
@@ -117,11 +111,11 @@
     <label>Chuyển đổi
       <input type="number" id="fConv" class="input" min="0" step="1" value="0">
     </label>
-    <label>Doanh thu (RM)
-      <input type="number" id="fRevenue" class="input" min="0" step="0.01" value="0">
+    <label>Doanh thu (VNĐ)
+      <input type="number" id="fRevenue" class="input" min="0" step="1" value="0">
     </label>
-    <label>Chi phí QC (RM)
-      <input type="number" id="fCost" class="input" min="0" step="0.01" value="0">
+    <label>Chi phí QC (VNĐ)
+      <input type="number" id="fCost" class="input" min="0" step="1" value="0">
     </label>
     <label class="grow">Action / Quyết định
       <input type="text" id="fNote" class="input" placeholder="VD: tăng ngân sách 20%">
@@ -137,12 +131,12 @@
   <div class="table-wrap"><table class="table table-compact" id="gmvTable">
     <thead><tr>
       <th>Ngày</th><th>Lượt xem</th><th>Click</th><th>CTR%</th><th>Chuyển đổi</th><th>CR%</th>
-      <th>Doanh thu (RM)</th><th>Quy đổi (VND)</th><th>Chi phí QC</th><th>CIR%</th>
-      <th>CPC</th><th>AOV</th><th>ROAS</th><th>Người nhập</th><th>Action / Quyết định</th>
+      <th>Doanh thu (VNĐ)</th><th>Chi phí QC (VNĐ)</th><th>CIR%</th>
+      <th>CPC (VNĐ)</th><th>AOV (VNĐ)</th><th>ROAS</th><th>Người nhập</th><th>Action / Quyết định</th>
       {% if can_edit or can_delete %}<th></th>{% endif %}
     </tr></thead>
     <tbody id="gmvBody">
-      <tr><td colspan="16" class="muted">Đang tải dữ liệu…</td></tr>
+      <tr><td colspan="15" class="muted">Đang tải dữ liệu…</td></tr>
     </tbody>
   </table></div>
   <p class="sync-note">Tự động đồng bộ mỗi 10 giây (polling). Cột tính toán do máy chủ tự tính — chia cho 0 hiển thị "—".</p>
@@ -193,12 +187,11 @@
       + "<td class=\"num\">" + pct(c.ctr) + "</td>"
       + "<td class=\"num\">" + num(e.conversions, 0) + "</td>"
       + "<td class=\"num\">" + pct(c.cr) + "</td>"
-      + "<td class=\"num\">" + num(e.revenue_rm, 2) + "</td>"
-      + "<td class=\"num\">" + num(c.vnd, 0) + "</td>"
-      + "<td class=\"num\">" + num(e.ad_cost, 2) + "</td>"
+      + "<td class=\"num\">" + num(e.revenue_vnd, 0) + "</td>"
+           + "<td class=\"num\">" + num(e.ad_cost, 0) + "</td>"
       + "<td class=\"num\">" + pct(c.cir) + "</td>"
-      + "<td class=\"num\">" + num(c.cpc, 2) + "</td>"
-      + "<td class=\"num\">" + num(c.aov, 2) + "</td>"
+      + "<td class=\"num\">" + num(c.cpc, 0) + "</td>"
+      + "<td class=\"num\">" + num(c.aov, 0) + "</td>"
       + "<td class=\"num\">" + num(c.roas, 2) + "</td>"
       + "<td>" + esc(e.updated_by || "") + "</td>"
       + "<td>" + esc(e.action_note || "") + "</td>"
@@ -207,7 +200,7 @@
 
   function render(entries) {
     if (!entries.length) {
-      bodyEl.innerHTML = "<tr><td colspan=\"16\" class=\"muted\">Chưa có dòng dữ liệu nào — nhập dòng đầu tiên ở form trên.</td></tr>";
+      bodyEl.innerHTML = "<tr><td colspan=\"15\" class=\"muted\">Chưa có dòng dữ liệu nào — nhập dòng đầu tiên ở form trên.</td></tr>";
       return;
     }
     bodyEl.innerHTML = entries.map(rowHtml).join("");
@@ -264,7 +257,7 @@
       var payload = {
         date: fDate.value,
         views: fViews.value, clicks: fClicks.value, conversions: fConv.value,
-        revenue_rm: fRevenue.value, ad_cost: fCost.value,
+        revenue_vnd: fRevenue.value, ad_cost: fCost.value,
         action_note: fNote.value
       };
       var editId = fEditId.value;
@@ -308,7 +301,7 @@
             if (!e) return;
             fEditId.value = e.id;
             fDate.value = DateVN.toDisplay(e.date); fViews.value = e.views; fClicks.value = e.clicks;
-            fConv.value = e.conversions; fRevenue.value = e.revenue_rm;
+            fConv.value = e.conversions; fRevenue.value = e.revenue_vnd;
             fCost.value = e.ad_cost; fNote.value = e.action_note || "";
             btnSubmit.textContent = "💾 Cập nhật";
             btnCancel.classList.remove("hidden");

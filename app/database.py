@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS gmv_entries (
     views INTEGER NOT NULL DEFAULT 0,
     clicks INTEGER NOT NULL DEFAULT 0,
     conversions INTEGER NOT NULL DEFAULT 0,
-    revenue_rm REAL NOT NULL DEFAULT 0,
+    revenue_vnd REAL NOT NULL DEFAULT 0,
     ad_cost REAL NOT NULL DEFAULT 0,
     action_note TEXT DEFAULT '',
     updated_by TEXT DEFAULT '',
@@ -711,11 +711,42 @@ def _migrate_order_imports_columns(conn) -> None:
         )
 
 
+def _migrate_gmv_currency_vnd(conn) -> None:
+    """Chuyển GMV từ RM sang VNĐ, chạy ĐÚNG MỘT LẦN trên DB cũ (idempotent).
+
+    DB cũ lưu revenue_rm/ad_cost theo RM: nhân cả hai cột với 5300 rồi đổi
+    tên cột revenue_rm -> revenue_vnd, để số liệu giữ nguyên giá trị thật
+    nhưng thể hiện bằng VNĐ. Cờ app_meta 'gmv_currency_vnd' đảm bảo không
+    bao giờ chạy lần hai (chạy lại sẽ nhân đôi số liệu). DB mới (schema đã
+    có revenue_vnd) chỉ ghi cờ, không đổi số liệu nào.
+    """
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS app_meta ("
+        "key TEXT PRIMARY KEY, value TEXT NOT NULL DEFAULT '')"
+    )
+    row = conn.execute(
+        "SELECT value FROM app_meta WHERE key = 'gmv_currency_vnd'"
+    ).fetchone()
+    if row is not None:
+        return
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(gmv_entries)").fetchall()}
+    if "revenue_rm" in cols:
+        conn.execute(
+            "UPDATE gmv_entries SET revenue_rm = revenue_rm * 5300, "
+            "ad_cost = ad_cost * 5300"
+        )
+        conn.execute("ALTER TABLE gmv_entries RENAME COLUMN revenue_rm TO revenue_vnd")
+    conn.execute(
+        "INSERT OR IGNORE INTO app_meta (key, value) VALUES ('gmv_currency_vnd', '1')"
+    )
+
+
 def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(_SCHEMA)
         _migrate_users_columns(conn)
         _migrate_order_imports_columns(conn)
+        _migrate_gmv_currency_vnd(conn)
     pricing_seed_settings()
     cskh_seed_defaults()
     # Import trễ để tránh vòng lặp module (checklist.py dùng database.py).
@@ -1062,13 +1093,13 @@ def gmv_upsert_entry(product_id: int, data: dict, updated_by: str) -> tuple:
         if existing is not None:
             conn.execute(
                 "UPDATE gmv_entries SET views = ?, clicks = ?, conversions = ?,"
-                " revenue_rm = ?, ad_cost = ?, action_note = ?,"
+                " revenue_vnd = ?, ad_cost = ?, action_note = ?,"
                 " updated_by = ?, updated_at = ? WHERE id = ?",
                 (
                     data["views"],
                     data["clicks"],
                     data["conversions"],
-                    data["revenue_rm"],
+                    data["revenue_vnd"],
                     data["ad_cost"],
                     data["action_note"],
                     updated_by,
@@ -1081,7 +1112,7 @@ def gmv_upsert_entry(product_id: int, data: dict, updated_by: str) -> tuple:
         else:
             cur = conn.execute(
                 "INSERT INTO gmv_entries (product_id, date, views, clicks, conversions,"
-                " revenue_rm, ad_cost, action_note, updated_by, updated_at)"
+                " revenue_vnd, ad_cost, action_note, updated_by, updated_at)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     product_id,
@@ -1089,7 +1120,7 @@ def gmv_upsert_entry(product_id: int, data: dict, updated_by: str) -> tuple:
                     data["views"],
                     data["clicks"],
                     data["conversions"],
-                    data["revenue_rm"],
+                    data["revenue_vnd"],
                     data["ad_cost"],
                     data["action_note"],
                     updated_by,
@@ -1108,14 +1139,14 @@ def gmv_update_entry(entry_id: int, data: dict, updated_by: str) -> dict | None:
     with get_conn() as conn:
         cur = conn.execute(
             "UPDATE gmv_entries SET date = ?, views = ?, clicks = ?, conversions = ?,"
-            " revenue_rm = ?, ad_cost = ?, action_note = ?,"
+            " revenue_vnd = ?, ad_cost = ?, action_note = ?,"
             " updated_by = ?, updated_at = ? WHERE id = ?",
             (
                 data["date"],
                 data["views"],
                 data["clicks"],
                 data["conversions"],
-                data["revenue_rm"],
+                data["revenue_vnd"],
                 data["ad_cost"],
                 data["action_note"],
                 updated_by,

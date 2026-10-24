@@ -38,8 +38,7 @@
   </div>
 
   {% if kind == "gmv" %}
-  <p class="muted">Đơn vị tiền trong file: <strong>{{ "VNĐ — đã tự chia 5.300 sang RM" if currency == "vnd" else "RM — giữ nguyên như nhập tay" }}</strong>.
-    Số tiền ở bảng dưới đã là RM (đơn vị lưu trong hệ thống).</p>
+  <p class="muted">Số tiền trong file được ghi nguyên dạng VNĐ.</p>
   {% endif %}
 
   {% if new_products %}
@@ -56,7 +55,7 @@
     {% if kind == "gmv" %}
     <thead><tr>
       <th>Dòng</th><th>Ngày</th><th>Sản phẩm</th><th>Lượt xem</th><th>Click</th>
-      <th>Chuyển đổi</th><th>Doanh thu (RM)</th><th>Chi phí QC (RM)</th><th>Trạng thái</th>
+      <th>Chuyển đổi</th><th>Doanh thu (VNĐ)</th><th>Chi phí QC (VNĐ)</th><th>Trạng thái</th>
     </tr></thead>
     <tbody>
       {% for it in rows %}
@@ -70,8 +69,8 @@
         <td class="num">{{ it.data.views }}</td>
         <td class="num">{{ it.data.clicks }}</td>
         <td class="num">{{ it.data.conversions }}</td>
-        <td class="num">{{ "%.2f"|format(it.data.revenue_rm) }}</td>
-        <td class="num">{{ "%.2f"|format(it.data.ad_cost) }}</td>
+        <td class="num">{{ "%.0f"|format(it.data.revenue_vnd) }}</td>
+        <td class="num">{{ "%.0f"|format(it.data.ad_cost) }}</td>
         {% else %}
         <td colspan="5" class="muted">—</td>
         {% endif %}

@@ -1,5 +1,5 @@
 """Nạp Excel/CSV: parser stdlib (CSV + XLSX tự parse), ánh xạ bí danh,
-quy đổi VNĐ->RM, kỷ luật xem trước -> xác nhận, phân quyền."""
+tiền tệ VNĐ, kỷ luật xem trước -> xác nhận, phân quyền."""
 
 import io
 import re
@@ -18,7 +18,7 @@ from conftest import activate, create_owner, create_staff, logout
         ("1.234.567", 1234567.0),
         ("1,234,567", 1234567.0),
         ("500.000₫", 500000.0),
-        ("RM 12.5", 12.5),
+        ("VND 12.5", 12.5),
         ("12,5", 12.5),
         ("1.234.567,89", 1234567.89),
         ("1,234,567.89", 1234567.89),
@@ -137,10 +137,10 @@ def test_read_xlsx_shared_strings_and_numbers():
     assert headers == ["Ngày", "Sản phẩm", "GMV", "Chi phí"]
     # Ô ngày serial KHÔNG style -> vẫn là chuỗi số, parse_date lo phần còn lại.
     assert rows[0][0] == "45931"
-    mapped = importer.map_gmv_rows(headers, rows, "vnd")
+    mapped = importer.map_gmv_rows(headers, rows)
     assert mapped[0]["status"] == "ok"
     assert mapped[0]["data"]["date"] == "2025-10-01"
-    assert mapped[0]["data"]["revenue_rm"] == 100.0
+    assert mapped[0]["data"]["revenue_vnd"] == 530000.0
 
 
 def test_read_xlsx_date_style_serial():
@@ -173,28 +173,28 @@ def test_read_xlsx_garbage():
 # ------------------------------- map GMV -----------------------------------
 
 
-def test_map_gmv_vnd_converts_to_rm():
+def test_map_gmv_keeps_vnd_values():
     headers, rows = importer.read_table(GMV_CSV, "gmv.csv")
-    mapped = importer.map_gmv_rows(headers, rows, "vnd")
+    mapped = importer.map_gmv_rows(headers, rows)
     assert [m["status"] for m in mapped] == ["ok", "ok"]
-    # 1.590.000đ / 5300 = 300 RM; 159.000đ -> 30 RM
-    assert mapped[0]["data"]["revenue_rm"] == 300.0
-    assert mapped[0]["data"]["ad_cost"] == 30.0
+    # Số tiền giữ nguyên bằng VNĐ, không quy đổi
+    assert mapped[0]["data"]["revenue_vnd"] == 1590000.0
+    assert mapped[0]["data"]["ad_cost"] == 159000.0
     assert mapped[0]["data"]["views"] == 1000
-    assert mapped[1]["data"]["revenue_rm"] == 600.0
+    assert mapped[1]["data"]["revenue_vnd"] == 3180000.0
 
 
-def test_map_gmv_rm_keeps_values():
+def test_map_gmv_keeps_decimal_values():
     headers = ["Date", "Product Name", "Revenue", "Ad Cost"]
     rows = [["2026-10-19", "SP IMPORT A", "100.5", "30"]]
-    mapped = importer.map_gmv_rows(headers, rows, "rm")
-    assert mapped[0]["data"]["revenue_rm"] == 100.5
+    mapped = importer.map_gmv_rows(headers, rows)
+    assert mapped[0]["data"]["revenue_vnd"] == 100.5
     assert mapped[0]["data"]["ad_cost"] == 30.0
 
 
 def test_map_gmv_missing_required_column_is_file_error():
     with pytest.raises(ValueError, match="thiếu cột bắt buộc"):
-        importer.map_gmv_rows(["Ngày", "Sản phẩm"], [["2026-10-19", "X"]], "vnd")
+        importer.map_gmv_rows(["Ngày", "Sản phẩm"], [["2026-10-19", "X"]])
 
 
 def test_map_gmv_bad_row_does_not_block_good_row():
@@ -205,9 +205,9 @@ def test_map_gmv_bad_row_does_not_block_good_row():
         ["2026-10-21", "SP IMPORT A", "-5", "53000"],
         ["2026-10-22", "", "530000", "53000"],
     ]
-    mapped = importer.map_gmv_rows(headers, rows, "vnd")
+    mapped = importer.map_gmv_rows(headers, rows)
     assert [m["status"] for m in mapped] == ["ok", "error", "error", "error"]
-    assert mapped[0]["data"]["revenue_rm"] == 100.0
+    assert mapped[0]["data"]["revenue_vnd"] == 530000.0
 
 
 def test_map_gmv_duplicate_in_file_last_wins():
@@ -216,10 +216,10 @@ def test_map_gmv_duplicate_in_file_last_wins():
         ["2026-10-19", "SP IMPORT A", "530000", "53000"],
         ["2026-10-19", "sp import a", "1060000", "53000"],
     ]
-    mapped = importer.map_gmv_rows(headers, rows, "vnd")
+    mapped = importer.map_gmv_rows(headers, rows)
     assert mapped[0]["status"] == "dup"
     assert mapped[1]["status"] == "ok"
-    assert mapped[1]["data"]["revenue_rm"] == 200.0
+    assert mapped[1]["data"]["revenue_vnd"] == 1060000.0
     assert mapped[0]["warnings"] and mapped[1]["warnings"]
 
 
@@ -300,7 +300,7 @@ def _make_product(client, name="SP IMPORT A"):
 
 
 def _upload_gmv(client, data=GMV_CSV, filename="gmv.csv", **form):
-    payload = {"currency": "vnd", "create_products": "1"}
+    payload = {"create_products": "1"}
     payload.update(form)
     return client.post(
         "/gmv/import",
@@ -325,7 +325,7 @@ def test_web_gmv_preview_does_not_write_then_confirm_writes(client):
     entries = client.get(f"/api/gmv/products/{prod['id']}/entries").json()["entries"]
     assert len(entries) == 2
     by_date = {e["date"]: e for e in entries}
-    assert by_date["2026-10-19"]["revenue_rm"] == 300.0
+    assert by_date["2026-10-19"]["revenue_vnd"] == 1590000.0
     assert by_date["2026-10-19"]["updated_by"] == "Chủ Shop"
 
 
@@ -359,7 +359,7 @@ def test_web_gmv_new_product_create_toggle(client):
     r = client.post(
         "/gmv/import",
         files={"file": ("g.csv", csv_new2, "application/octet-stream")},
-        data={"currency": "vnd"},
+        data={},
     )
     r2 = client.post("/gmv/import/confirm", data={"token": _token(r.text)})
     assert r2.status_code == 200

@@ -5,25 +5,26 @@ from conftest import activate, create_owner, create_staff, login, logout
 
 
 def test_calc_formulas():
-    c = calc_gmv({"views": 1000, "clicks": 50, "conversions": 10, "revenue_rm": 100, "ad_cost": 30})
+    c = calc_gmv(
+        {"views": 1000, "clicks": 50, "conversions": 10,
+         "revenue_vnd": 530000, "ad_cost": 159000}
+    )
     assert c["ctr"] == 5.0
     assert c["cir"] == 30.0
     assert c["roas"] == 3.33
-    assert c["vnd"] == 530000
-    assert c["cpc"] == 0.6
+    assert c["cpc"] == 3180
     assert c["cr"] == 20.0
-    assert c["aov"] == 10.0
+    assert c["aov"] == 53000
 
 
 def test_calc_divide_by_zero_is_none():
-    c = calc_gmv({"views": 0, "clicks": 0, "conversions": 0, "revenue_rm": 0, "ad_cost": 0})
+    c = calc_gmv({"views": 0, "clicks": 0, "conversions": 0, "revenue_vnd": 0, "ad_cost": 0})
     assert c["ctr"] is None
     assert c["cir"] is None
     assert c["cpc"] is None
     assert c["cr"] is None
     assert c["aov"] is None
     assert c["roas"] is None
-    assert c["vnd"] == 0
 
 
 def test_validate_entry():
@@ -33,14 +34,14 @@ def test_validate_entry():
             "views": "10",
             "clicks": 5,
             "conversions": 2,
-            "revenue_rm": "100.5",
+            "revenue_vnd": "530000",
             "ad_cost": 30,
             "action_note": "  tăng ngân sách ",
         }
     )
     assert errors == {}
     assert clean["views"] == 10
-    assert clean["revenue_rm"] == 100.5
+    assert clean["revenue_vnd"] == 530000
     assert clean["action_note"] == "tăng ngân sách"
 
     _, errors = validate_gmv_entry({"date": "19/10/2026", "views": -1, "clicks": "abc"})
@@ -60,8 +61,8 @@ def _entry(date="2026-10-19", **kw):
         "views": 1000,
         "clicks": 50,
         "conversions": 10,
-        "revenue_rm": 100,
-        "ad_cost": 30,
+        "revenue_vnd": 530000,
+        "ad_cost": 159000,
         "action_note": "ghi chú",
     }
     d.update(kw)
@@ -124,7 +125,7 @@ def test_entry_crud_and_cascade(client):
     p = _make_product(client)
     r = client.post(f"/api/gmv/products/{p['id']}/entries", json=_entry())
     eid = r.json()["id"]
-    r = client.put(f"/api/gmv/entries/{eid}", json=_entry(ad_cost=60))
+    r = client.put(f"/api/gmv/entries/{eid}", json=_entry(ad_cost=318000))
     assert r.status_code == 200
     assert r.json()["calc"]["roas"] == 1.67
     r = client.delete(f"/api/gmv/entries/{eid}")
@@ -154,13 +155,14 @@ def test_server_recomputes_ignores_client_values(client):
     create_owner(client)
     p = _make_product(client)
     payload = _entry()
-    payload.update({"ctr": 999, "roas": 123, "vnd": 1, "cir": -50})
+    payload.update({"ctr": 999, "roas": 123, "cir": -50})
     r = client.post(f"/api/gmv/products/{p['id']}/entries", json=payload)
     assert r.status_code == 201
     calc = r.json()["calc"]
     assert calc["ctr"] == 5.0
     assert calc["roas"] == 3.33
-    assert calc["vnd"] == 530000
+    assert calc["cpc"] == 3180
+    assert calc["aov"] == 53000
 
 
 def test_fail_closed_no_login(client):

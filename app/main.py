@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
-from . import auth, config, lessons
+from . import auth, config, lessons, selfupdate
 from . import database as db
 from .routes import router
 
@@ -158,6 +158,7 @@ def _startup() -> None:
         log.warning("GMV Max: đã tạo sẵn %d sản phẩm (bảng đang trống).", seeded)
     _bootstrap_owner_from_env()
     _start_background()
+    selfupdate.start_selfupdate()
     n = len(lessons.list_lessons())
     log.warning("Apyko Agency sẵn sàng — %d bài học Apyko Uni, DB: %s", n, config.DATABASE_PATH)
     if not config.SECRET_KEY:

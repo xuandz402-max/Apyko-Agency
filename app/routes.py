@@ -40,6 +40,7 @@ from . import (
     periods,
     pricing,
     rangeview,
+    selfupdate,
     sidebar,
     tiktok,
 )
@@ -167,6 +168,9 @@ def _safe_next(value: str | None) -> str:
 
 def _ctx(request: Request, user: dict, **kw) -> dict:
     base = {"request": request, "user": user, "app_name": config.APP_NAME}
+    # Số bản để gắn ?v= vào file tĩnh (trình duyệt tải lại CSS/JS mới sau
+    # khi tự cập nhật, không cần Ctrl+F5).
+    base["app_version"] = selfupdate.local_version() or 0
     # Caller nào đã tự tính số thông báo chưa đọc (VD: trang /thong-bao) thì
     # truyền unread_notifications=... để _ctx khỏi hỏi DB thêm 1 lần nữa.
     if "unread_notifications" not in kw and user and user.get("id"):

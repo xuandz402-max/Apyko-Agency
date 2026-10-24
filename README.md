@@ -514,3 +514,10 @@ python -m pytest -q        # 110 test: tính toán, auth, phân quyền, CRUD, b
 ruff check app tests       # lint sạch
 ruff format --check app tests
 ```
+
+## Tự cập nhật khi app đang chạy (bản máy tính Windows)
+
+App đang chạy tự kiểm tra bản mới mỗi 10 phút và tự cập nhật + khởi động
+lại. **Quy tắc bắt buộc: mỗi lần push phải tăng số trong `app/version.txt`
+lên 1 trước khi push, nếu không app đang chạy sẽ không tự cập nhật.**
+Chi tiết xem `SELFUPDATE.md`.

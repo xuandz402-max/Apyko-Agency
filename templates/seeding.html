@@ -1,11 +1,22 @@
 {% extends "base.html" %}
 {% set nav_active = "seeding" %}
-{% block title %}Seeding Shopee · {{ app_name }}{% endblock %}
+{% block title %}Seeding · {{ app_name }}{% endblock %}
 {% block content %}
 <div class="page-head">
-  <h1>🌱 Seeding Shopee</h1>
+  <h1>🌱 Seeding</h1>
 </div>
 
+<div class="tabs">
+  <a href="/seeding?sheet=shopee" class="tab{% if sheet == 'shopee' %} active{% endif %}">🛍️ Shopee</a>
+  <a href="/seeding?sheet=tiktok" class="tab{% if sheet == 'tiktok' %} active{% endif %}">🎵 TikTok</a>
+</div>
+
+{% if sheet == 'tiktok' %}
+<div class="card">
+  <div class="card-head"><h2>🎵 TikTok</h2></div>
+  <p class="muted">Sắp có — sheet TikTok sẽ được thêm sau. Hiện chưa có nội dung hay số liệu nào cho nền tảng này.</p>
+</div>
+{% else %}
 <div class="card">
   <div class="card-head"><h2>Bước 1</h2></div>
   <p>Tạo 1 sản phẩm giá 18-20k ( Phụ kiện hoặc gì đó ) – mục đích để giảm phí sàn khi đặt đơn ảo</p>
@@ -54,4 +65,5 @@
   </ul>
   <img src="/static/seeding/luu-y-1.jpeg" alt="Ảnh minh họa lưu ý" class="seed-img seed-img-tall">
 </div>
+{% endif %}
 {% endblock %}

@@ -279,16 +279,18 @@ def gmv_alerts(today) -> list:
 
 
 def _alert_recipients() -> list:
-    """Người nhận cảnh báo GMV: owner + user đang bật có quyền xem GMV.
+    """Người nhận cảnh báo GMV: owner + user đang bật có grant xem GMV.
 
-    Module GMV có quyền xem riêng (can_view_gmv — chính là quyền gác trang
-    /gmv), nên người nhận là owner và mọi tài khoản đang hoạt động có
-    can_view_gmv.
+    Module GMV có quyền xem riêng (grant sidebar "gmv" — chính là quyền
+    gác trang /gmv), nên người nhận là owner và mọi tài khoản đang hoạt
+    động có grant đó.
     """
+    grants = db.sidebar_grants_map()
     return [
         u
         for u in db.list_users()
-        if u.get("is_active") and (u.get("is_owner") or u.get("can_view_gmv"))
+        if u.get("is_active")
+        and (u.get("is_owner") or "gmv" in grants.get(u["id"], set()))
     ]
 
 

@@ -433,6 +433,28 @@ CREATE TABLE IF NOT EXISTS order_exclusions (
     created_at TEXT NOT NULL,
     PRIMARY KEY (shop, order_id)
 );
+CREATE TABLE IF NOT EXISTS user_sidebar_perms (
+    user_id INTEGER NOT NULL,
+    sidebar_id TEXT NOT NULL,
+    PRIMARY KEY (user_id, sidebar_id)
+);
+CREATE TABLE IF NOT EXISTS kpi_job_types (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS kpi_staff (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    job_type TEXT NOT NULL DEFAULT 'Khác',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS vault_account_types (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL
+);
 """
 
 # Migration cộng thêm cho các DB đã tồn tại trước các module sau này:
@@ -741,12 +763,288 @@ def _migrate_gmv_currency_vnd(conn) -> None:
     )
 
 
+def _migrate_sidebar_grants(conn) -> None:
+    """Dịch cột cờ xem sidebar cũ thành grant rows, chạy ĐÚNG MỘT LẦN.
+
+    Ánh xạ (giữ nguyên quyền đang có của user cũ):
+    - can_view_products -> grants products + analysis (cả 2 mục từng gác
+      bằng cờ này); các cờ module còn lại -> grant cùng tên.
+    - checklist + notifications từng mở cho mọi user đã đăng nhập -> cấp
+      cho toàn bộ user hiện hữu.
+    - Chủ sở hữu nhận đủ mọi grant (dù owner vốn đã bypass).
+    Cờ app_meta 'sidebar_grants_migrated' khóa chạy lặp: sau migration, các
+    cột can_view_* sidebar CHỈ CÒN LƯU TRỮ, không còn là căn cứ phân quyền
+    (form + cổng route đọc bảng user_sidebar_perms). Các cột nội dung
+    (can_view_orders, finance, import, export, pii) và cờ vai trò
+    (leader/admin, add/edit/delete) vẫn giữ nguyên vai trò cũ.
+    """
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS app_meta ("
+        "key TEXT PRIMARY KEY, value TEXT NOT NULL DEFAULT '')"
+    )
+    row = conn.execute(
+        "SELECT value FROM app_meta WHERE key = 'sidebar_grants_migrated'"
+    ).fetchone()
+    if row is not None:
+        return
+    from . import sidebar as _sidebar
+
+    flag_to_grants = {
+        "can_view_products": ("products", "analysis"),
+        "can_view_seeding": ("seeding",),
+        "can_view_daily": ("daily",),
+        "can_view_gmv": ("gmv",),
+        "can_view_affiliate": ("affiliate",),
+        "can_view_tiktok": ("tiktok",),
+        "can_view_cskh": ("cskh",),
+        "can_view_pricing": ("pricing",),
+        "can_view_accounts": ("accounts",),
+        "can_view_uni": ("uni",),
+    }
+    open_to_all = ("checklist", "notifications")
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS user_sidebar_perms ("
+        "user_id INTEGER NOT NULL, sidebar_id TEXT NOT NULL, "
+        "PRIMARY KEY (user_id, sidebar_id))"
+    )
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
+    users = conn.execute("SELECT id, is_owner FROM users").fetchall()
+    for u in users:
+        uid = u["id"]
+        if u["is_owner"]:
+            grants = set(_sidebar.all_ids())
+        else:
+            grants = set(open_to_all)
+            vals = conn.execute(
+                "SELECT * FROM users WHERE id = ?", (uid,)
+            ).fetchone()
+            rowmap = dict(vals) if vals is not None else {}
+            for flag, gids in flag_to_grants.items():
+                if flag in cols and rowmap.get(flag):
+                    grants.update(gids)
+        for gid in grants:
+            conn.execute(
+                "INSERT OR IGNORE INTO user_sidebar_perms (user_id, sidebar_id) "
+                "VALUES (?, ?)",
+                (uid, gid),
+            )
+    conn.execute(
+        "INSERT OR IGNORE INTO app_meta (key, value) "
+        "VALUES ('sidebar_grants_migrated', '1')"
+    )
+
+
+def sidebar_grants(user_id: int) -> set:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT sidebar_id FROM user_sidebar_perms WHERE user_id = ?",
+            (user_id,),
+        ).fetchall()
+    return {r["sidebar_id"] for r in rows}
+
+
+def sidebar_grants_map() -> dict:
+    """{user_id: set(sidebar_id)} cho toàn bộ user (dùng ở trang quản lý)."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT user_id, sidebar_id FROM user_sidebar_perms"
+        ).fetchall()
+    out = {}
+    for r in rows:
+        out.setdefault(r["user_id"], set()).add(r["sidebar_id"])
+    return out
+
+
+def sidebar_set_grants(user_id: int, sidebar_ids) -> None:
+    with get_conn() as conn:
+        conn.execute("DELETE FROM user_sidebar_perms WHERE user_id = ?", (user_id,))
+        for gid in sidebar_ids:
+            conn.execute(
+                "INSERT OR IGNORE INTO user_sidebar_perms (user_id, sidebar_id) "
+                "VALUES (?, ?)",
+                (user_id, gid),
+            )
+
+
+# ------------------------------ KPI: nhân sự + loại công việc -----------
+
+KPI_JOB_TYPES_BUILTIN = ("Shopee", "TikTok", "Vận hành", "Kế toán", "Khác")
+
+
+def kpi_job_types_custom() -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM kpi_job_types ORDER BY id ASC"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def kpi_job_type_names() -> list:
+    """Loại công việc đầy đủ: built-in (luôn có, không xóa được) + tự thêm."""
+    names = list(KPI_JOB_TYPES_BUILTIN)
+    for t in kpi_job_types_custom():
+        if t["name"] not in names:
+            names.append(t["name"])
+    return names
+
+
+def kpi_job_type_create(name: str) -> int:
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("Tên loại công việc không được để trống.")
+    if name in KPI_JOB_TYPES_BUILTIN:
+        raise ValueError(f"Loại '{name}' đã có sẵn, không cần thêm.")
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO kpi_job_types (name, created_at) VALUES (?, ?)",
+            (name, _utcnow()),
+        )
+        return cur.lastrowid
+
+
+def kpi_job_type_rename(type_id: int, new_name: str) -> None:
+    new_name = (new_name or "").strip()
+    if not new_name:
+        raise ValueError("Tên loại công việc không được để trống.")
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM kpi_job_types WHERE id = ?", (type_id,)
+        ).fetchone()
+        if row is None:
+            raise ValueError("Không tìm thấy loại công việc.")
+        old = row["name"]
+        if new_name in KPI_JOB_TYPES_BUILTIN:
+            raise ValueError(f"Loại '{new_name}' đã có sẵn.")
+        conn.execute(
+            "UPDATE kpi_job_types SET name = ? WHERE id = ?", (new_name, type_id)
+        )
+        conn.execute(
+            "UPDATE kpi_staff SET job_type = ?, updated_at = ? WHERE job_type = ?",
+            (new_name, _utcnow(), old),
+        )
+
+
+def kpi_job_type_delete(type_id: int) -> None:
+    """Xóa loại tự thêm; bị chặn khi còn nhân sự đang dùng loại đó."""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM kpi_job_types WHERE id = ?", (type_id,)
+        ).fetchone()
+        if row is None:
+            raise ValueError("Không tìm thấy loại công việc.")
+        used = conn.execute(
+            "SELECT COUNT(*) AS c FROM kpi_staff WHERE job_type = ?", (row["name"],)
+        ).fetchone()["c"]
+        if used:
+            raise ValueError(
+                f"Loại '{row['name']}' đang có {used} nhân sự dùng, "
+                "hãy chuyển họ sang loại khác trước khi xóa."
+            )
+        conn.execute("DELETE FROM kpi_job_types WHERE id = ?", (type_id,))
+
+
+def kpi_staff_list() -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM kpi_staff ORDER BY id ASC"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def kpi_staff_create(name: str, job_type: str) -> int:
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("Tên nhân sự không được để trống.")
+    job_type = (job_type or "").strip() or "Khác"
+    if job_type not in kpi_job_type_names():
+        raise ValueError(f"Loại công việc '{job_type}' không tồn tại.")
+    now = _utcnow()
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO kpi_staff (name, job_type, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?)",
+            (name, job_type, now, now),
+        )
+        return cur.lastrowid
+
+
+def kpi_staff_delete(staff_id: int) -> None:
+    with get_conn() as conn:
+        conn.execute("DELETE FROM kpi_staff WHERE id = ?", (staff_id,))
+
+
+# ------------------------------ kho: loại tài khoản tự thêm --------------
+
+def vault_type_names_custom() -> list:
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM vault_account_types ORDER BY id ASC"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def vault_type_create(name: str) -> int:
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("Tên loại tài khoản không được để trống.")
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO vault_account_types (name, created_at) VALUES (?, ?)",
+            (name, _utcnow()),
+        )
+        return cur.lastrowid
+
+
+def vault_type_rename(type_id: int, new_name: str) -> None:
+    new_name = (new_name or "").strip()
+    if not new_name:
+        raise ValueError("Tên loại tài khoản không được để trống.")
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM vault_account_types WHERE id = ?", (type_id,)
+        ).fetchone()
+        if row is None:
+            raise ValueError("Không tìm thấy loại tài khoản.")
+        old = row["name"]
+        conn.execute(
+            "UPDATE vault_account_types SET name = ? WHERE id = ?",
+            (new_name, type_id),
+        )
+        conn.execute(
+            "UPDATE vault_accounts SET kind = ? "
+            "WHERE kind = ? AND category = 'noi_bo'",
+            (new_name, old),
+        )
+
+
+def vault_type_delete(type_id: int) -> None:
+    """Xóa loại tự thêm; bị chặn khi còn tài khoản nội bộ đang dùng loại đó."""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM vault_account_types WHERE id = ?", (type_id,)
+        ).fetchone()
+        if row is None:
+            raise ValueError("Không tìm thấy loại tài khoản.")
+        used = conn.execute(
+            "SELECT COUNT(*) AS c FROM vault_accounts "
+            "WHERE kind = ? AND category = 'noi_bo'",
+            (row["name"],),
+        ).fetchone()["c"]
+        if used:
+            raise ValueError(
+                f"Loại '{row['name']}' đang có {used} tài khoản dùng, "
+                "hãy chuyển các tài khoản đó sang loại khác trước khi xóa."
+            )
+        conn.execute("DELETE FROM vault_account_types WHERE id = ?", (type_id,))
+
+
 def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(_SCHEMA)
         _migrate_users_columns(conn)
         _migrate_order_imports_columns(conn)
         _migrate_gmv_currency_vnd(conn)
+        _migrate_sidebar_grants(conn)
     pricing_seed_settings()
     cskh_seed_defaults()
     # Import trễ để tránh vòng lặp module (checklist.py dùng database.py).

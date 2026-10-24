@@ -1,31 +1,7 @@
-"""Quyền xem RIÊNG từng mục sidebar: mỗi module một cờ can_view_* riêng,
-không còn mượn can_view_products; migration backfill giữ quyền cho user cũ."""
+"""Sidebar registry + grant store: 1 entry registry = 1 checkbox phân quyền
+tự động, không còn cờ can_view_* tay; migration dịch cờ cũ thành grant."""
 
 from conftest import activate, create_owner, create_staff, login, logout
-
-NEW_VIEW_FLAGS = (
-    "can_view_daily",
-    "can_view_pricing",
-    "can_view_gmv",
-    "can_view_affiliate",
-    "can_view_tiktok",
-    "can_view_cskh",
-    "can_view_seeding",
-    "can_view_accounts",
-)
-
-NEW_LABELS = (
-    "Xem Báo cáo ngày",
-    "Xem Sản phẩm",
-    "Xem Định giá sản phẩm",
-    "Xem GMV Max Shopee",
-    "Xem Affiliate",
-    "Xem TikTok Onboard",
-    "Xem Apyko Uni",
-    "Xem Mẫu CSKH",
-    "Xem Seeding Shopee",
-    "Xem Quản lý tài khoản (kho)",
-)
 
 
 def _staff(client, username, perms):
@@ -34,18 +10,18 @@ def _staff(client, username, perms):
     activate(client, username, code)
 
 
-def test_only_tiktok_flag_opens_only_tiktok(client):
+def test_only_tiktok_grant_opens_only_tiktok(client):
     create_owner(client)
-    _staff(client, "nv_tt_only", perms=("can_view_tiktok",))
+    _staff(client, "nv_tt_only", perms=("sidebar_tiktok",))
     r = client.get("/tiktok-onboard")
     assert r.status_code == 200
-    # Các module khác (gác bằng cờ riêng) đều chặn
+    # Các module khác (gác bằng grant riêng) đều chặn
     assert client.get("/gmv").status_code == 403
     assert client.get("/affiliate").status_code == 403
     assert client.get("/bao-cao").status_code == 403
     assert client.get("/dinh-gia").status_code == 403
     assert client.get("/cskh").status_code == 403
-    # Sidebar: chỉ hiện mục TikTok Onboard trong nhóm module có cờ riêng
+    # Sidebar: chỉ hiện mục TikTok Onboard trong nhóm module có grant riêng
     assert 'href="/tiktok-onboard"' in r.text
     assert 'href="/gmv"' not in r.text
     assert 'href="/affiliate"' not in r.text
@@ -54,9 +30,9 @@ def test_only_tiktok_flag_opens_only_tiktok(client):
     assert 'href="/cskh"' not in r.text
 
 
-def test_only_accounts_flag_opens_vault_not_login_admin(client):
+def test_only_accounts_grant_opens_vault_not_login_admin(client):
     create_owner(client)
-    _staff(client, "nv_kho", perms=("can_view_accounts",))
+    _staff(client, "nv_kho", perms=("sidebar_accounts",))
     assert client.get("/accounts?tab=shop").status_code == 200
     assert client.get("/accounts?tab=noi-bo").status_code == 200
     assert client.get("/accounts?tab=ban-giao").status_code == 200
@@ -68,9 +44,9 @@ def test_only_accounts_flag_opens_vault_not_login_admin(client):
     assert 'href="/accounts?tab=shop"' in r.text
 
 
-def test_products_flag_no_longer_unlocks_other_modules(client):
+def test_products_grant_no_longer_unlocks_other_modules(client):
     create_owner(client)
-    _staff(client, "nv_sp_only", perms=("can_view_products",))
+    _staff(client, "nv_sp_only", perms=("sidebar_products",))
     assert client.get("/products").status_code == 200
     assert client.get("/gmv").status_code == 403
     assert client.get("/affiliate").status_code == 403
@@ -79,10 +55,10 @@ def test_products_flag_no_longer_unlocks_other_modules(client):
     assert client.get("/accounts?tab=shop").status_code == 403
 
 
-def test_migration_backfills_view_flags_from_products(client):
-    """DB cũ (chưa có các cột can_view_* mới): init_db phải thêm cột và
-    backfill = can_view_products cho 5 cờ module, = 1 cho can_view_cskh và
-    can_view_pricing (2 mục vốn mở cho mọi user đã đăng nhập)."""
+def test_migration_translates_old_flags_to_grants(client):
+    """Mô phỏng DB trước nâng cấp (có cờ cũ, chưa có bảng grant): init_db
+    phải dịch cờ thành grant rows — products -> products + analysis,
+    checklist/notifications cho mọi user, chủ sở hữu đủ mọi grant."""
     create_owner(client)
     from app import database as db
 
@@ -104,59 +80,62 @@ def test_migration_backfills_view_flags_from_products(client):
             "can_view_products": 0,
         }
     )
-    # Mô phỏng DB trước nâng cấp: bỏ hẳn các cột mới
+    # Mô phỏng DB trước nâng cấp: chưa có bảng grant, chưa có cờ migration
     with db.get_conn() as conn:
-        for col in NEW_VIEW_FLAGS:
-            conn.execute(f"ALTER TABLE users DROP COLUMN {col}")
+        conn.execute("DROP TABLE IF EXISTS user_sidebar_perms")
+        conn.execute(
+            "DELETE FROM app_meta WHERE key = 'sidebar_grants_migrated'"
+        )
     db.init_db()
 
-    yes = db.get_user(uid_yes)
-    for col in NEW_VIEW_FLAGS:
-        assert yes[col] == 1, col
-    no = db.get_user(uid_no)
-    for col in NEW_VIEW_FLAGS:
-        expected = 1 if col in ("can_view_cskh", "can_view_pricing") else 0
-        assert no[col] == expected, col
-    # Chủ sở hữu: mọi cờ đều 1 sau migration
+    yes = db.sidebar_grants(uid_yes)
+    assert "products" in yes and "analysis" in yes
+    assert "gmv" not in yes and "tiktok" not in yes
+    # checklist/notifications từng mở cho mọi user -> ai cũng có
+    assert "checklist" in yes and "notifications" in yes
+    no = db.sidebar_grants(uid_no)
+    assert "products" not in no and "analysis" not in no
+    assert "checklist" in no and "notifications" in no
+    # Chủ sở hữu: đủ mọi grant sau migration
     owner = db.get_user_by_username("chushop")
-    for col in NEW_VIEW_FLAGS:
-        assert owner[col] == 1, col
+    from app import sidebar as sb
+
+    assert db.sidebar_grants(owner["id"]) == set(sb.all_ids())
+    # Chạy lại migration: không nhân đôi, không đổi grant
+    db.init_db()
+    assert db.sidebar_grants(uid_yes) == yes
 
 
-def test_create_form_has_all_sidebar_perm_labels(client):
+def test_create_form_has_all_sidebar_labels(client):
     create_owner(client)
     r = client.get("/accounts")
     assert r.status_code == 200
-    for label in NEW_LABELS:
-        assert label in r.text, label
+    from app import sidebar as sb
+
+    for item in sb.SIDEBAR_ITEMS:
+        assert f'name="sidebar_{item["id"]}"' in r.text, item["id"]
+        assert f"Xem {item['label']}" in r.text, item["label"]
 
 
-def test_perms_update_persists_new_flag(client):
+def test_perms_update_persists_new_grant(client):
     create_owner(client)
     from app import database as db
 
     code = create_staff(client, "nv_moi", perms=())
     target = db.get_user_by_username("nv_moi")
-    assert target["can_view_gmv"] == 0
+    assert db.sidebar_grants(target["id"]) == set()
     r = client.post(
         f"/accounts/{target['id']}/perms",
-        data={"can_view_gmv": "on"},
+        data={"sidebar_gmv": "on"},
         follow_redirects=False,
     )
     assert r.status_code == 303
-    updated = db.get_user(target["id"])
-    assert updated["can_view_gmv"] == 1
-    # Form phân quyền thay toàn bộ: cờ không tick thì về 0
-    assert updated["can_view_products"] == 0
-    # Và quyền mới có hiệu lực thật khi nhân viên đăng nhập
+    assert db.sidebar_grants(target["id"]) == {"gmv"}
+    # Và grant mới có hiệu lực thật khi nhân viên đăng nhập
     logout(client)
     activate(client, "nv_moi", code)
     assert client.get("/gmv").status_code == 200
     assert client.get("/affiliate").status_code == 403
-    # Nhân viên mới tạo chỉ có đúng các cờ được tick lúc tạo (không mirror)
-    created = db.get_user_by_username("nv_moi")
-    assert created["can_view_tiktok"] == 0
-    assert created["can_view_daily"] == 0
 
 
 def test_home_redirects_to_first_permitted_page(client):
@@ -166,7 +145,7 @@ def test_home_redirects_to_first_permitted_page(client):
     assert r.status_code == 303
     assert r.headers["location"] == "/ceo"  # chủ shop -> Dashboard CEO
 
-    code = create_staff(client, "nv_home_sp", perms=("can_view_products",))
+    code = create_staff(client, "nv_home_sp", perms=("sidebar_products",))
     logout(client)
     activate(client, "nv_home_sp", code)
     r = client.get("/", follow_redirects=False)
@@ -174,7 +153,7 @@ def test_home_redirects_to_first_permitted_page(client):
 
     logout(client)
     login(client, "chushop", "matkhau123")
-    code2 = create_staff(client, "nv_home_tt", perms=("can_view_tiktok",))
+    code2 = create_staff(client, "nv_home_tt", perms=("sidebar_tiktok",))
     logout(client)
     activate(client, "nv_home_tt", code2)
     r = client.get("/", follow_redirects=False)
@@ -183,3 +162,33 @@ def test_home_redirects_to_first_permitted_page(client):
     page = client.get("/tiktok-onboard")
     assert "📊 Dashboard" not in page.text
     assert 'href="/products/new" class="nav-item' not in page.text
+
+
+def test_registry_entry_automatically_gets_permission_checkbox(client, monkeypatch):
+    """BẰNG CHỨNG TÍNH TỰ ĐỘNG: chỉ thêm 1 entry vào registry (không sửa
+    code nào khác) thì form phân quyền đã có checkbox của nó, cổng grant
+    tôn trọng grant cho nó, và sidebar hiện nó khi được cấp."""
+    from app import sidebar as sb
+
+    fake = {"id": "fake_new", "label": "Mục Mới Thử", "route": "/fake",
+            "icon": "🧪", "icon_img": "", "active": "fake_new", "default": False}
+    monkeypatch.setattr(sb, "SIDEBAR_ITEMS", [*sb.SIDEBAR_ITEMS, fake])
+    create_owner(client)
+    # Form phân quyền tự có checkbox mới
+    r = client.get("/accounts")
+    assert 'name="sidebar_fake_new"' in r.text
+    assert "Xem Mục Mới Thử" in r.text
+    # Cổng grant: chưa cấp -> không có quyền; cấp -> có quyền + hiện sidebar
+    from app import database as db
+
+    create_staff(client, "nv_fake", perms=())
+    target = db.get_user_by_username("nv_fake")
+    assert not sb.has_grant(
+        {"is_owner": 0, "sidebar_grants": db.sidebar_grants(target["id"])},
+        "fake_new",
+    )
+    db.sidebar_set_grants(target["id"], ["fake_new"])
+    user = {"is_owner": 0, "sidebar_grants": db.sidebar_grants(target["id"])}
+    assert sb.has_grant(user, "fake_new")
+    nav = sb.build_nav(user, 0)
+    assert any(it["route"] == "/fake" for it in nav)

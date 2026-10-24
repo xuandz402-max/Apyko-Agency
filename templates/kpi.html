@@ -11,6 +11,94 @@
   </div>
 </div>
 
+<div class="tabs">
+  <a href="/kpi" class="tab{% if sheet != 'nhan-su' %} active{% endif %}">🏆 Bảng xếp hạng</a>
+  <a href="/kpi?sheet=nhan-su" class="tab{% if sheet == 'nhan-su' %} active{% endif %}">👥 Nhân sự</a>
+</div>
+
+{% if sheet == 'nhan-su' %}
+{% if err %}<div class="alert alert-error">{{ err }}</div>{% endif %}
+{% if msg %}<div class="alert alert-ok">{{ msg }}</div>{% endif %}
+
+<div class="card">
+  <div class="card-head"><h2>➕ Thêm nhân sự</h2></div>
+  <form method="post" action="/kpi/nhan-su/them" class="form">
+    <div class="grid-2">
+      <label>Tên nhân sự *
+        <input name="name" required placeholder="VD: Nguyễn Văn A">
+      </label>
+      <label>Loại công việc phụ trách
+        <select name="job_type">
+          {% for t in job_types %}
+          <option value="{{ t }}">{{ t }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Thêm nhân sự</button>
+    </div>
+  </form>
+</div>
+
+<div class="card card-flat">
+  <div class="card-head"><h2>Danh sách nhân sự</h2></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Tên nhân sự</th><th>Loại công việc phụ trách</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for s in staff %}
+      <tr>
+        <td><strong>{{ s.name }}</strong></td>
+        <td><span class="badge badge-label">{{ s.job_type }}</span></td>
+        <td>
+          <form method="post" action="/kpi/nhan-su/{{ s.id }}/xoa" class="inline" onsubmit="return confirm('Xóa nhân sự {{ s.name }}?');">
+            <button type="submit" class="btn btn-danger btn-sm">🗑️ Xóa</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="3" class="muted">Chưa có nhân sự nào — thêm ở form trên.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>🏷️ Loại công việc</h2></div>
+  <p class="muted small">Loại có sẵn (Shopee, TikTok, Vận hành, Kế toán, Khác) luôn dùng được và không xóa được. Thêm loại mới khi phát sinh ngành nghề khác.</p>
+  <form method="post" action="/kpi/loai-cong-viec/them" class="form-inline">
+    <label>Thêm loại công việc
+      <input name="name" required class="input" placeholder="VD: Thiết kế, Livestream...">
+    </label>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">➕ Thêm loại</button>
+    </div>
+  </form>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Loại công việc</th><th>Nguồn</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for t in job_types_custom %}
+      <tr>
+        <td><strong>{{ t.name }}</strong></td>
+        <td><span class="muted small">Tự thêm</span></td>
+        <td>
+          <form method="post" action="/kpi/loai-cong-viec/{{ t.id }}/doi-ten" class="form-inline inline">
+            <input name="name" required class="input" value="{{ t.name }}">
+            <button class="btn btn-ghost btn-sm" type="submit">✏️ Đổi tên</button>
+          </form>
+          <form method="post" action="/kpi/loai-cong-viec/{{ t.id }}/xoa" class="inline" onsubmit="return confirm('Xóa loại công việc {{ t.name }}?');">
+            <button type="submit" class="btn btn-danger btn-sm">🗑️ Xóa</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="3" class="muted">Chưa có loại tự thêm nào.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+{% else %}
 <div class="card">
   <div class="card-head"><h2>🗓️ Chọn khoảng ngày</h2></div>
   {{ range_picker("/kpi", rng) }}
@@ -69,4 +157,5 @@
   <p class="muted">Chưa có nhân viên nào được giao việc trong khoảng này.</p>
   {% endif %}
 </div>
+{% endif %}
 {% endblock %}

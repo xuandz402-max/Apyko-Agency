@@ -45,7 +45,6 @@ a:hover { text-decoration: underline; }
 .brand-img { height: 30px; width: auto; display: block; }
 .brand-slogan { display: block; font-size: 11px; font-weight: 600; letter-spacing: .02em; text-align: center; }
 .sidebar .brand-slogan { color: #D7E8DE; }
-.sidebar .brand-slogan::before { content: ""; display: block; width: 28px; height: 3px; background: var(--mint); margin: 0 auto 6px; border-radius: 2px; }
 .auth-page .brand-slogan { color: var(--brand); font-size: 12px; margin: 6px 0 0; }
 .auth-logo img { height: 46px; width: auto; }
 .nav { padding: 8px 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; overflow-y: auto; }

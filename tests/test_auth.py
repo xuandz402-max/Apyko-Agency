@@ -119,20 +119,26 @@ def test_locked_account_cannot_login(client):
 
 
 def test_brand_slogan_with_logo_on_auth_and_sidebar(client):
-    """Slogan đi kèm logo ở trang đăng nhập/thiết lập và sidebar (không sửa file logo)."""
+    """Slogan đi kèm logo ở trang đăng nhập/thiết lập và sidebar (không sửa file logo).
+
+    Slogan dùng dấu gạch ngang, KHÔNG còn gạch mint trang trí phía trên.
+    """
     r = client.get("/setup")
     assert r.status_code == 200
     assert "/static/logo.png" in r.text
-    assert "Trao Giá Trị, Nhận Niềm Tin" in r.text
+    assert "Trao Giá Trị - Nhận Niềm Tin" in r.text
+    assert "Trao Giá Trị, Nhận Niềm Tin" not in r.text
+    css = open("static/style.css", encoding="utf-8").read()
+    assert "brand-slogan::before" not in css
     create_owner(client)
     logout(client)
     r = client.get("/login")
     assert r.status_code == 200
     assert "/static/logo.png" in r.text
-    assert "Trao Giá Trị, Nhận Niềm Tin" in r.text
+    assert "Trao Giá Trị - Nhận Niềm Tin" in r.text
     login(client, "chushop", "matkhau123")
     r = client.get("/bao-cao")
     assert r.status_code == 200
     assert "/static/logo.png" in r.text
     assert "brand-slogan" in r.text
-    assert "Trao Giá Trị, Nhận Niềm Tin" in r.text
+    assert "Trao Giá Trị - Nhận Niềm Tin" in r.text

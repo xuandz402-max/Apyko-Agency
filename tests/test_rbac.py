@@ -8,7 +8,7 @@ from conftest import activate, create_owner, create_staff, login, logout, produc
 def staff_view_only(client):
     """Nhân sự chỉ có quyền xem sản phẩm + xem Uni."""
     create_owner(client)
-    code = create_staff(client, "nv_xem", perms=("can_view_products", "can_view_uni"))
+    code = create_staff(client, "nv_xem", perms=("sidebar_products", "sidebar_uni"))
     logout(client)
     activate(client, "nv_xem", code)
     return client
@@ -66,7 +66,7 @@ def test_owner_can_manage_accounts(client):
 
 def test_delete_requires_delete_perm(client):
     create_owner(client)
-    code = create_staff(client, "nv_sua", perms=("can_view_products", "can_add_edit_products"))
+    code = create_staff(client, "nv_sua", perms=("sidebar_products", "can_add_edit_products"))
     # Owner tạo 1 sản phẩm
     r = client.post("/api/products", json=product_payload())
     pid = r.json()["product"]["id"]
@@ -85,7 +85,7 @@ def test_delete_requires_delete_perm(client):
     client.post(
         f"/accounts/{target['id']}/perms",
         data={
-            "can_view_products": "on",
+            "sidebar_products": "on",
             "can_add_edit_products": "on",
             "can_delete_products": "on",
         },

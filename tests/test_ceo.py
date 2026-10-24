@@ -57,7 +57,7 @@ def test_owner_can_open_ceo_without_data(client):
 
 def test_staff_without_leader_flag_blocked(client):
     create_owner(client)
-    code = create_staff(client, "nv_thuong", perms=("can_view_products",))
+    code = create_staff(client, "nv_thuong", perms=("sidebar_products",))
     logout(client)
     activate(client, "nv_thuong", code)
     r = client.get("/ceo")
@@ -68,7 +68,7 @@ def test_staff_without_leader_flag_blocked(client):
 
 def test_staff_with_leader_flag_can_open(client):
     create_owner(client)
-    code = create_staff(client, "nv_leader", perms=("can_view_products", "can_checklist_leader"))
+    code = create_staff(client, "nv_leader", perms=("sidebar_products", "can_checklist_leader"))
     logout(client)
     activate(client, "nv_leader", code)
     r = client.get("/ceo")
@@ -114,7 +114,7 @@ def test_ceo_page_with_data(client):
     )
 
     # Checklist: nhân viên được giao 2 việc — 1 xong, 1 quá hạn (hạn 00:01)
-    create_staff(client, "nv_ceo", perms=("can_view_products",))
+    create_staff(client, "nv_ceo", perms=("sidebar_products",))
     staff = db.get_user_by_username("nv_ceo")
     cl.seed_defaults()
     cl.generate_for_date(today)

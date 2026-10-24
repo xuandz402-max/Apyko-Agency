@@ -255,7 +255,7 @@ def staff_no_edit(client):
     """Nhân sự chỉ xem (không thêm/sửa/xóa sản phẩm), đã kích hoạt + đăng nhập."""
     create_owner(client)
     code = create_staff(
-        client, "nv_xem", perms=("can_view_products", "can_view_uni", "can_view_pricing")
+        client, "nv_xem", perms=("sidebar_products", "sidebar_uni", "sidebar_pricing")
     )
     logout(client)
     activate(client, "nv_xem", code)
@@ -286,7 +286,7 @@ def test_staff_edit_perm_but_no_delete(staff_no_edit):
     target = db.get_user_by_username("nv_xem")
     staff_no_edit.post(
         f"/accounts/{target['id']}/perms",
-        data={"can_view_products": "on", "can_add_edit_products": "on"},
+        data={"sidebar_products": "on", "can_add_edit_products": "on"},
     )
     logout(staff_no_edit)
     login(staff_no_edit, "nv_xem", "matkhau123")
@@ -363,7 +363,7 @@ def test_pricing_page_sidebar_visible_without_product_perm(client):
     """Nhân sự không có quyền sản phẩm vẫn thấy + mở được Định giá
     (Định giá có quyền xem riêng can_view_pricing, không mượn quyền SP)."""
     create_owner(client)
-    code = create_staff(client, "nv_uni", perms=("can_view_uni", "can_view_pricing"))
+    code = create_staff(client, "nv_uni", perms=("sidebar_uni", "sidebar_pricing"))
     logout(client)
     activate(client, "nv_uni", code)
     r = client.get("/dinh-gia")

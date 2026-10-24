@@ -1,5 +1,5 @@
-"""Sidebar mới 'Seeding Shopee': trang SOP chỉ đọc, nguyên văn nội dung
-file user gửi, kèm đủ 7 ảnh minh họa; quyền xem riêng can_view_seeding."""
+"""Sidebar mới 'Seeding': trang SOP chỉ đọc, nguyên văn nội dung
+file user gửi, kèm đủ 7 ảnh minh họa; grant sidebar "seeding" (registry)."""
 
 # ruff: noqa: RUF001, E501 — các chuỗi nguyên văn từ file user gửi chứa
 # dấu gạch ngang dài và vượt độ dài dòng; đó là nội dung, không được sửa.
@@ -43,7 +43,7 @@ def test_owner_sees_full_verbatim_content_and_all_images(client):
     create_owner(client)
     r = client.get("/seeding")
     assert r.status_code == 200
-    assert "🌱 Seeding Shopee" in r.text
+    assert "🌱 Seeding" in r.text
     for text in STEP_TEXTS + NOTES:
         assert text in r.text, text
     for img in IMAGES:
@@ -71,7 +71,7 @@ def test_owner_sees_full_verbatim_content_and_all_images(client):
 
 def test_staff_without_flag_is_blocked_and_sees_no_link(client):
     create_owner(client)
-    _staff(client, "nv_khong_seed", perms=("can_view_products",))
+    _staff(client, "nv_khong_seed", perms=("sidebar_products",))
     assert client.get("/seeding").status_code == 403
     page = client.get("/products")
     assert 'href="/seeding"' not in page.text
@@ -79,11 +79,11 @@ def test_staff_without_flag_is_blocked_and_sees_no_link(client):
 
 def test_staff_with_flag_sees_page_and_link(client):
     create_owner(client)
-    _staff(client, "nv_seed", perms=("can_view_seeding",))
+    _staff(client, "nv_seed", perms=("sidebar_seeding",))
     r = client.get("/seeding")
     assert r.status_code == 200
     assert 'href="/seeding"' in r.text
-    assert "🌱 Seeding Shopee" in r.text
+    assert "🌱 Seeding" in r.text
 
 
 def test_sidebar_order_seeding_right_after_analysis(client):
@@ -97,7 +97,7 @@ def test_sidebar_order_seeding_right_after_analysis(client):
 
 def test_home_falls_back_to_seeding_for_seeding_only_staff(client):
     create_owner(client)
-    _staff(client, "nv_chi_seed", perms=("can_view_seeding",))
+    _staff(client, "nv_chi_seed", perms=("sidebar_seeding",))
     r = client.get("/", follow_redirects=False)
     assert r.status_code == 303
     assert r.headers["location"] == "/seeding"
@@ -118,3 +118,27 @@ def test_seeding_tall_images_capped_by_height():
     html = open("templates/seeding.html", encoding="utf-8").read()
     assert 'buoc3-1.jpeg" alt="Ảnh minh họa bước 3" class="seed-img seed-img-tall"' in html
     assert 'luu-y-1.jpeg" alt="Ảnh minh họa lưu ý" class="seed-img seed-img-tall"' in html
+
+
+def test_seeding_sheets_shopee_active_and_tiktok_placeholder(client):
+    """Sheet Shopee giữ đủ nội dung cũ; sheet TikTok là trạng thái trống
+    trung thực, không số giả."""
+    create_owner(client)
+    r = client.get("/seeding")
+    assert r.status_code == 200
+    assert 'href="/seeding?sheet=shopee" class="tab active"' in r.text
+    assert "Bước 1" in r.text
+    rt = client.get("/seeding?sheet=tiktok")
+    assert rt.status_code == 200
+    assert 'href="/seeding?sheet=tiktok" class="tab active"' in rt.text
+    assert "Sắp có" in rt.text
+    assert "Bước 1" not in rt.text
+
+
+def test_seeding_uses_base_font_no_override():
+    """Trang Seeding dùng đúng font chuẩn của web: template không khai báo
+    font riêng, toàn app chỉ có 1 font-family duy nhất ở body."""
+    html = open("templates/seeding.html", encoding="utf-8").read()
+    assert "font-family" not in html and "<style" not in html
+    css = open("static/style.css", encoding="utf-8").read()
+    assert css.count("font-family") == 1

@@ -330,7 +330,7 @@ def test_board_page_default_day_unchanged(client):
 
 def test_board_page_week_forbidden_for_plain_staff(client):
     create_owner(client)
-    code = create_staff(client, "nv_board", perms=("can_view_products",))
+    code = create_staff(client, "nv_board", perms=("sidebar_products",))
     logout(client)
     activate(client, "nv_board", code)
     assert client.get("/checklist/board?period=week").status_code == 403

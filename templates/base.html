@@ -17,57 +17,13 @@
   <aside class="sidebar" id="sidebar">
     <a class="brand" href="/" aria-label="{{ app_name }}">
       <img src="/static/logo.png" alt="{{ app_name }}" class="brand-img">
-      <span class="brand-slogan">Trao Giá Trị, Nhận Niềm Tin</span>
+      <span class="brand-slogan">Trao Giá Trị - Nhận Niềm Tin</span>
     </a>
     <nav class="nav">
-      {% if user and (user.is_owner or user.can_checklist_leader or user.can_checklist_admin) %}
-      <a href="/ceo" class="nav-item{% if nav_active == 'ceo' %} active{% endif %}">👑 Dashboard CEO</a>
-      {% endif %}
-      {% if user and user.can_view_products %}
-      <a href="/products" class="nav-item{% if nav_active == 'products' %} active{% endif %}">📦 Sản phẩm</a>
-      <a href="/analysis" class="nav-item{% if nav_active == 'analysis' %} active{% endif %}">📈 Phân tích</a>
-      {% endif %}
-      {% if user and (user.is_owner or user.can_view_seeding) %}
-      <a href="/seeding" class="nav-item{% if nav_active == 'seeding' %} active{% endif %}">🌱 Seeding Shopee</a>
-      {% endif %}
-      {% if user and user.can_view_pricing %}
-      <a href="/dinh-gia" class="nav-item{% if nav_active == 'pricing' %} active{% endif %}">🏷️ Định giá sản phẩm</a>
-      {% endif %}
-      {% if user and user.can_view_gmv %}
-      <a href="/gmv" class="nav-item{% if nav_active == 'gmv' %} active{% endif %}">📣 GMV Max Shopee</a>
-      {% endif %}
-      {% if user and user.can_view_affiliate %}
-      <a href="/affiliate" class="nav-item{% if nav_active == 'affiliate' %} active{% endif %}">🔗 Affiliate</a>
-      {% endif %}
-      {% if user and user.can_view_tiktok %}
-      <a href="/tiktok-onboard" class="nav-item{% if nav_active == 'tiktok_onboard' %} active{% endif %}"><img src="/static/tiktok-icon.png" alt="" class="nav-ico"> TikTok Onboard</a>
-      {% endif %}
-      {% if user and user.can_view_daily %}
-      <a href="/bao-cao" class="nav-item{% if nav_active == 'daily' %} active{% endif %}">📊 Báo cáo ngày</a>
-      {% endif %}
-      {% if user and user.can_view_cskh %}
-      <a href="/cskh" class="nav-item{% if nav_active == 'cskh' %} active{% endif %}">💬 Mẫu CSKH</a>
-      {% endif %}
-      {% if user %}
-      <a href="/checklist" class="nav-item{% if nav_active == 'checklist' %} active{% endif %}">✅ Daily Checklist</a>
-      {% if user.is_owner or user.can_checklist_leader or user.can_checklist_admin %}
-      <a href="/checklist/board" class="nav-item{% if nav_active == 'checklist_board' %} active{% endif %}">📋 Bảng Leader</a>
-      <a href="/kpi" class="nav-item{% if nav_active == 'kpi' %} active{% endif %}">🏆 KPI nhân viên</a>
-      {% endif %}
-      {% if user.is_owner or user.can_checklist_admin %}
-      <a href="/checklist/admin" class="nav-item{% if nav_active == 'checklist_admin' %} active{% endif %}">⚙️ Mẫu checklist</a>
-      {% endif %}
-      <a href="/thong-bao" class="nav-item{% if nav_active == 'notifications' %} active{% endif %}">🔔 Thông báo{% if unread_notifications %} ({{ unread_notifications }}){% endif %}</a>
-      {% endif %}
-      {% if user and user.can_view_uni %}
-      <a href="/uni" class="nav-item{% if nav_active == 'uni' %} active{% endif %}">🎓 Apyko Uni</a>
-      {% endif %}
-      {% if user and (user.is_owner or user.can_view_accounts) %}
-      <a href="/accounts?tab=shop" class="nav-item{% if nav_active == 'accounts' %} active{% endif %}">👥 Quản lý tài khoản</a>
-      {% endif %}
-      {% if user and user.is_owner %}
-      <a href="/sao-luu" class="nav-item{% if nav_active == 'backup' %} active{% endif %}">💾 Sao lưu & Khôi phục</a>
-      {% endif %}
+      {# Sidebar render từ registry app/sidebar.py (nav_items đã lọc quyền). #}
+      {% for item in nav_items %}
+      <a href="{{ item.route }}" class="nav-item{% if nav_active == item.active %} active{% endif %}">{% if item.icon_img %}<img src="{{ item.icon_img }}" alt="" class="nav-ico"> {% endif %}{% if item.icon %}{{ item.icon }} {% endif %}{{ item.label }}{% if item.badge %} ({{ item.badge }}){% endif %}</a>
+      {% endfor %}
     </nav>
     <div class="sidebar-foot">
       {% if user %}

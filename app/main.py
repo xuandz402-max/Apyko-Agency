@@ -83,6 +83,11 @@ def _bootstrap_owner_from_env() -> None:
             "can_view_buyer_pii": 1,
         }
     )
+    from . import sidebar as _sidebar
+
+    _owner = db.get_user_by_username(config.OWNER_USERNAME)
+    if _owner:
+        db.sidebar_set_grants(_owner["id"], _sidebar.all_ids())
     log.warning("Đã tạo tài khoản chủ sở hữu '%s' từ biến môi trường.", config.OWNER_USERNAME)
 
 

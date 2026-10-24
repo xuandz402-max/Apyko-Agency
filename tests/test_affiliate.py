@@ -156,7 +156,7 @@ def test_affiliate_search_and_platform_filter(client):
 
 def test_affiliate_forbidden_without_view_perm_and_menu_hidden(client):
     create_owner(client)
-    code = create_staff(client, "nv_no_view", perms=())
+    code = create_staff(client, "nv_no_view", perms=("sidebar_checklist",))
     logout(client)
     activate(client, "nv_no_view", code)
     assert client.get("/affiliate").status_code == 403
@@ -178,9 +178,9 @@ def test_affiliate_write_permissions(client):
     create_owner(client)
     db = _db()
     item_id = db.affiliate_upsert(_payload(), "owner")
-    code_view = create_staff(client, "nv_xem", perms=("can_view_affiliate",))
+    code_view = create_staff(client, "nv_xem", perms=("sidebar_affiliate",))
     code_edit = create_staff(
-        client, "nv_sua", perms=("can_view_affiliate", "can_add_edit_products")
+        client, "nv_sua", perms=("sidebar_affiliate", "can_add_edit_products")
     )
     # Chỉ xem: xem được, thêm/sửa/xóa đều 403
     logout(client)

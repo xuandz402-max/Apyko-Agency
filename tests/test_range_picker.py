@@ -214,7 +214,7 @@ def test_daily_page_range_totals_only_count_inside_range(client):
 def test_kpi_csv_respects_range(client):
     create_owner(client)
     db, cl = _db(), _cl()
-    create_staff(client, "nv_rp", perms=("can_view_products",))
+    create_staff(client, "nv_rp", perms=("sidebar_products",))
     staff = db.get_user_by_username("nv_rp")
     # Chỉ giữ 1 mẫu việc của nv_rp để số liệu gọn
     for t in db.cl_template_list():

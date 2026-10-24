@@ -345,7 +345,7 @@ def test_multiline_xlsx_sheet_orders(client):
 
 def test_section_requires_can_view_orders(client):
     _import_demo(client)
-    code = create_staff(client, "nv1", perms=("can_view_products",))
+    code = create_staff(client, "nv1", perms=("sidebar_products", "sidebar_analysis"))
     logout(client)
     activate(client, "nv1", code)
     r = client.get("/analysis")
@@ -363,7 +363,7 @@ def test_finance_stripped_server_side(client):
     _import_demo(client)
     login(client, "chushop", "matkhau123")
     code = create_staff(
-        client, "nvfin", perms=("can_view_products", "can_view_orders")
+        client, "nvfin", perms=("sidebar_products", "sidebar_analysis", "can_view_orders")
     )
     logout(client)
     activate(client, "nvfin", code)
@@ -385,12 +385,12 @@ def test_pii_masked_and_reveal_audited(client):
     assert buyer and buyer["phone"]
     login(client, "chushop", "matkhau123")
     code_no = create_staff(
-        client, "nvpii0", perms=("can_view_products", "can_view_orders")
+        client, "nvpii0", perms=("sidebar_products", "sidebar_analysis", "can_view_orders")
     )
     code_yes = create_staff(
         client,
         "nvpii1",
-        perms=("can_view_products", "can_view_orders", "can_view_buyer_pii"),
+        perms=("sidebar_products", "sidebar_analysis", "can_view_orders", "can_view_buyer_pii"),
     )
     logout(client)
     url = f"/analysis/don-hang/don/261018VUCSNGU4?shop={quote(SHOP)}"
@@ -419,7 +419,7 @@ def test_import_and_export_permissions(client):
     _import_demo(client)
     login(client, "chushop", "matkhau123")
     code = create_staff(
-        client, "nvio", perms=("can_view_products", "can_view_orders")
+        client, "nvio", perms=("sidebar_products", "sidebar_analysis", "can_view_orders")
     )
     logout(client)
     activate(client, "nvio", code)
@@ -444,7 +444,7 @@ def test_order_permission_defaults(client):
         "can_export_orders", "can_view_buyer_pii",
     ):
         assert owner[flag] == 1
-    code = create_staff(client, "nvdef", perms=("can_view_products",))
+    code = create_staff(client, "nvdef", perms=("sidebar_products", "sidebar_analysis"))
     activate(client, "nvdef", code)
     staff = _db().get_user_by_username("nvdef")
     for flag in (
@@ -575,7 +575,7 @@ def test_exclude_confirm_flow(client):
     # Nhân viên chỉ có quyền xem: bị chặn 403.
     login(client, "chushop", "matkhau123")
     code = create_staff(
-        client, "nvex", perms=("can_view_products", "can_view_orders")
+        client, "nvex", perms=("sidebar_products", "sidebar_analysis", "can_view_orders")
     )
     logout(client)
     activate(client, "nvex", code)
@@ -647,7 +647,7 @@ def test_original_file_saved_download_and_hash_guard(client, tmp_path):
     # Nhân viên không có quyền nhập: 403.
     login(client, "chushop", "matkhau123")
     code = create_staff(
-        client, "nvfile", perms=("can_view_products", "can_view_orders")
+        client, "nvfile", perms=("sidebar_products", "sidebar_analysis", "can_view_orders")
     )
     logout(client)
     activate(client, "nvfile", code)

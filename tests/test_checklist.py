@@ -27,7 +27,8 @@ def _vn(h, m, day=MON):
     return datetime(y, mo, d, h, m, tzinfo=VN)
 
 
-def _owner_and_staff(client, staff_name="nv_a", staff_perms=()):
+def _owner_and_staff(client, staff_name="nv_a",
+                      staff_perms=("sidebar_checklist", "sidebar_notifications")):
     """Tạo owner + 1 nhân sự đã kích hoạt. Trả về (db, cl, staff_user)."""
     create_owner(client)
     db = _db()
@@ -174,7 +175,7 @@ def test_complete_or_cancel_stops_reminders(client):
 def test_notifications_privacy(client):
     db, cl, staff_a = _owner_and_staff(client, "nv_e")
     login(client, "chushop", "matkhau123")
-    code = create_staff(client, "nv_f")
+    code = create_staff(client, "nv_f", perms=("sidebar_checklist", "sidebar_notifications"))
     logout(client)
     activate(client, "nv_f", code)
     staff_b = db.get_user_by_username("nv_f")
@@ -230,7 +231,7 @@ def test_restart_keeps_state(client):
 def test_cross_user_forbidden(client):
     db, cl, staff_a = _owner_and_staff(client, "nv_h")
     login(client, "chushop", "matkhau123")
-    code = create_staff(client, "nv_i")
+    code = create_staff(client, "nv_i", perms=("sidebar_checklist",))
     logout(client)
     activate(client, "nv_i", code)
     logout(client)
@@ -269,10 +270,12 @@ def test_cross_user_forbidden(client):
 
 
 def test_leader_board_and_admin_crud(client):
-    db, cl, _ = _owner_and_staff(client, "leader1", staff_perms=("can_checklist_leader",))
+    db, cl, _ = _owner_and_staff(
+        client, "leader1", staff_perms=("can_checklist_leader", "sidebar_checklist")
+    )
     # Owner gán mẫu cho nhân sự rồi tạo việc
     login(client, "chushop", "matkhau123")
-    code = create_staff(client, "nv_j")
+    code = create_staff(client, "nv_j", perms=("sidebar_checklist",))
     activate(client, "nv_j", code)
     staff_j = db.get_user_by_username("nv_j")
     tpl = db.cl_template_list()[0]

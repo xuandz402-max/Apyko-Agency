@@ -40,6 +40,7 @@ from . import (
     periods,
     pricing,
     rangeview,
+    sidebar,
     tiktok,
 )
 from . import database as db
@@ -175,6 +176,9 @@ def _ctx(request: Request, user: dict, **kw) -> dict:
             base["unread_notifications"] = 0
     else:
         base["unread_notifications"] = 0
+    # Sidebar render từ registry (app/sidebar.py) — template chỉ lặp nav_items.
+    base["nav_items"] = sidebar.build_nav(user, base["unread_notifications"])
+    base["sidebar_registry"] = sidebar.SIDEBAR_ITEMS
     base.update(kw)
     return base
 
@@ -244,6 +248,7 @@ async def page_setup_create(request: Request):
             "can_view_buyer_pii": 1,
         }
     )
+    db.sidebar_set_grants(uid, sidebar.all_ids())
     resp = RedirectResponse(url="/", status_code=303)
     auth.set_session_cookie(resp, auth.create_login_session(uid))
     return resp
@@ -357,34 +362,19 @@ def _dashboard_data() -> dict:
 @router.get("/")
 def page_home(request: Request):
     """Trang chủ: không còn Dashboard riêng — chuyển thẳng tới trang đầu
-    tiên trong sidebar mà user có quyền xem."""
+    tiên trong sidebar mà user có quyền xem (registry + ngoại lệ vai trò)."""
     user, redir = auth.page_guard(request)
     if redir:
         return redir
     if _ceo_can_view(user):
         target = "/ceo"
-    elif user.get("can_view_products"):
-        target = "/products"
-    elif user.get("can_view_seeding"):
-        target = "/seeding"
-    elif user.get("can_view_daily"):
-        target = "/bao-cao"
-    elif user.get("can_view_gmv"):
-        target = "/gmv"
-    elif user.get("can_view_affiliate"):
-        target = "/affiliate"
-    elif user.get("can_view_tiktok"):
-        target = "/tiktok-onboard"
-    elif user.get("can_view_pricing"):
-        target = "/dinh-gia"
-    elif user.get("can_view_cskh"):
-        target = "/cskh"
-    elif user.get("can_view_accounts"):
-        target = "/accounts?tab=shop"
-    elif user.get("can_view_uni"):
-        target = "/uni"
     else:
         target = "/checklist"
+        for item in sidebar.build_nav(user, 0):
+            if item["active"] not in ("checklist_board", "kpi", "checklist_admin",
+                                      "backup"):
+                target = item["route"]
+                break
     return RedirectResponse(url=target, status_code=303)
 
 
@@ -469,7 +459,7 @@ def page_products(
     dir: str = "desc",
     msg: str | None = None,
 ):
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard_sidebar(request, "products")
     if redir:
         return redir
     products = db.list_products(
@@ -527,7 +517,7 @@ async def page_product_create(request: Request):
 
 @router.get("/products/{product_id}", response_class=HTMLResponse)
 def page_product_detail(product_id: int, request: Request):
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard_sidebar(request, "products")
     if redir:
         return redir
     p = db.get_product(product_id)
@@ -605,7 +595,7 @@ def page_analysis(request: Request):
     thẳng vào /analysis/don-hang, chưa có quyền thì hiện khung kèm
     ghi chú. Các nền tảng còn lại chưa có nguồn dữ liệu — hiện trạng
     thái trống trung thực, không số liệu giả."""
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard_sidebar(request, "analysis")
     if redir:
         return redir
     platform = (request.query_params.get("platform") or "shopee").strip().lower()
@@ -664,7 +654,7 @@ _ORDER_TABS = [
 
 def _orders_guard(request: Request):
     """Cổng chung của phần đơn hàng: (user, None) hoặc (None, redirect)."""
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard_sidebar(request, "analysis")
     if redir:
         return None, redir
     if not user.get("can_view_orders"):
@@ -1069,7 +1059,7 @@ async def page_orders_import(
     shop_select: Annotated[str, Form()] = "",
     shop_new: Annotated[str, Form()] = "",
 ):
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard_sidebar(request, "analysis")
     if redir:
         return redir
     if not user.get("can_import_orders"):
@@ -1125,7 +1115,7 @@ async def page_orders_import(
 async def page_orders_import_confirm(
     request: Request, token: Annotated[str, Form()] = ""
 ):
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard_sidebar(request, "analysis")
     if redir:
         return redir
     if not user.get("can_import_orders"):
@@ -1215,7 +1205,7 @@ async def page_orders_import_confirm(
 async def page_orders_import_cancel(
     request: Request, token: Annotated[str, Form()] = ""
 ):
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard_sidebar(request, "analysis")
     if redir:
         return redir
     _stash_pop(token)
@@ -1224,7 +1214,7 @@ async def page_orders_import_cancel(
 
 @router.post(_ORDERS_BASE + "/import/{batch_id}/delete")
 async def page_orders_import_delete(request: Request, batch_id: int):
-    user, redir = auth.page_guard(request, "can_view_products")
+    user, redir = auth.page_guard_sidebar(request, "analysis")
     if redir:
         return redir
     if not user.get("can_import_orders"):
@@ -1356,7 +1346,7 @@ def page_orders_export(request: Request):
 
 @router.get("/uni", response_class=HTMLResponse)
 def page_uni_list(request: Request):
-    user, redir = auth.page_guard(request, "can_view_uni")
+    user, redir = auth.page_guard_sidebar(request, "uni")
     if redir:
         return redir
     all_lessons = lessons.list_lessons()
@@ -1372,7 +1362,7 @@ def page_uni_list(request: Request):
 
 @router.get("/uni/{lesson_id}", response_class=HTMLResponse)
 def page_uni_detail(lesson_id: str, request: Request):
-    user, redir = auth.page_guard(request, "can_view_uni")
+    user, redir = auth.page_guard_sidebar(request, "uni")
     if redir:
         return redir
     lesson = lessons.get_lesson(lesson_id)
@@ -1393,7 +1383,7 @@ def page_uni_detail(lesson_id: str, request: Request):
 
 @router.post("/uni/{lesson_id}/learn")
 async def page_uni_learn(lesson_id: str, request: Request):
-    user, redir = auth.page_guard(request, "can_view_uni")
+    user, redir = auth.page_guard_sidebar(request, "uni")
     if redir:
         return redir
     if lessons.get_lesson(lesson_id) is None:
@@ -1405,35 +1395,28 @@ async def page_uni_learn(lesson_id: str, request: Request):
 
 
 # ------------------------------ seeding (SOP chỉ đọc) ----------------------
-# Trang SOP "Seeding Shopee": nội dung nguyên văn từ file user gửi, kèm ảnh
+# Trang SOP "Seeding": nội dung nguyên văn từ file user gửi, kèm ảnh
 # minh họa trong static/seeding/ (file gốc, không chỉnh sửa). Không có tính
-# năng tương tác. Quyền xem: chủ sở hữu hoặc can_view_seeding.
+# năng tương tác. Quyền xem: grant sidebar "seeding" (registry app/sidebar.py).
 
 
 @router.get("/seeding", response_class=HTMLResponse)
-def page_seeding(request: Request):
-    user, redir = auth.page_guard(request)
+def page_seeding(request: Request, sheet: str | None = None):
+    user, redir = auth.page_guard_sidebar(request, "seeding")
     if redir:
         return redir
-    if not (user.get("is_owner") or user.get("can_view_seeding")):
-        raise HTTPException(status_code=403, detail="Tài khoản không có quyền này.")
-    return templates.TemplateResponse("seeding.html", _ctx(request, user))
+    sheet = sheet if sheet in ("shopee", "tiktok") else "shopee"
+    return templates.TemplateResponse(
+        "seeding.html", _ctx(request, user, sheet=sheet)
+    )
 
 
 # ------------------------------ accounts (owner) ---------------------------
 
 
+# Quyền KHÔNG thuộc sidebar (form phân quyền render thêm sau nhóm sidebar
+# lấy từ registry app/sidebar.py): nội dung đơn hàng, sửa/xóa, vai trò CL.
 _PERM_FIELDS = [
-    ("can_view_daily", "Xem Báo cáo ngày"),
-    ("can_view_products", "Xem Sản phẩm"),
-    ("can_view_pricing", "Xem Định giá sản phẩm"),
-    ("can_view_gmv", "Xem GMV Max Shopee"),
-    ("can_view_affiliate", "Xem Affiliate"),
-    ("can_view_tiktok", "Xem TikTok Onboard"),
-    ("can_view_uni", "Xem Apyko Uni"),
-    ("can_view_cskh", "Xem Mẫu CSKH"),
-    ("can_view_seeding", "Xem Seeding Shopee"),
-    ("can_view_accounts", "Xem Quản lý tài khoản (kho)"),
     ("can_view_orders", "Xem Phân tích đơn Shopee"),
     ("can_view_order_finance", "Xem dữ liệu tài chính đơn hàng"),
     ("can_import_orders", "Nhập file đơn hàng Shopee"),
@@ -1543,6 +1526,12 @@ def _accounts_base_ctx(user: dict, tab: str) -> dict:
     """Context mặc định của trang /accounts cho mọi tab (đủ biến cho template)."""
     is_owner = bool(user.get("is_owner"))
     can_edit = bool(user.get("can_add_edit_products"))
+    # Loại tài khoản nội bộ: built-in (luôn có) + loại user tự thêm.
+    kinds = list(_VAULT_KINDS)
+    custom_types = db.vault_type_names_custom()
+    for t in custom_types:
+        if t["name"] not in kinds:
+            kinds.append(t["name"])
     return {
         "tab": tab,
         "q": "",
@@ -1555,7 +1544,9 @@ def _accounts_base_ctx(user: dict, tab: str) -> dict:
         "new_user": "",
         "items": [],
         "edit_item": None,
-        "kinds": _VAULT_KINDS,
+        "kinds": kinds,
+        "vault_types": custom_types,
+        "user_grants": {},
         "platforms": _SHOP_PLATFORMS,
         "roles": _SHOP_ROLES,
         "assignees": [],
@@ -1592,9 +1583,18 @@ def page_accounts(
     if tab == "dang-nhap":
         if not is_owner:
             raise HTTPException(status_code=403, detail="Chỉ chủ sở hữu được thực hiện.")
-        ctx["users"] = db.list_users()
+        users_list = db.list_users()
+        grants_map = db.sidebar_grants_map()
+        for u in users_list:
+            u["sidebar_labels"] = ", ".join(
+                it["label"]
+                for it in sidebar.SIDEBAR_ITEMS
+                if it["id"] in grants_map.get(u["id"], set())
+            )
+        ctx["users"] = users_list
+        ctx["user_grants"] = grants_map
         return templates.TemplateResponse("accounts.html", _ctx(request, user, **ctx))
-    if not (is_owner or user.get("can_view_accounts")):
+    if not (is_owner or sidebar.has_grant(user, "accounts")):
         raise HTTPException(status_code=403, detail="Tài khoản không có quyền này.")
     if tab in ("shop", "noi-bo"):
         category = "shop" if tab == "shop" else "noi_bo"
@@ -1657,7 +1657,7 @@ async def page_accounts_create(request: Request):
             status_code=422,
         )
     code = auth.new_activation_code()
-    db.create_user(
+    uid = db.create_user(
         {
             "username": username,
             "display_name": display,
@@ -1668,6 +1668,11 @@ async def page_accounts_create(request: Request):
             "activation_code": code,
             **{field: 1 if form.get(field) else 0 for field, _label in _PERM_FIELDS},
         }
+    )
+    # Grant sidebar = đúng các ô sidebar_* được tick (registry app/sidebar.py).
+    db.sidebar_set_grants(
+        uid,
+        [it["id"] for it in sidebar.SIDEBAR_ITEMS if form.get("sidebar_" + it["id"])],
     )
     return RedirectResponse(url=f"/accounts?new_user={username}&new_code={code}", status_code=303)
 
@@ -1729,6 +1734,10 @@ async def page_accounts_perms(user_id: int, request: Request):
         user_id,
         {field: 1 if form.get(field) else 0 for field, _label in _PERM_FIELDS},
     )
+    db.sidebar_set_grants(
+        user_id,
+        [it["id"] for it in sidebar.SIDEBAR_ITEMS if form.get("sidebar_" + it["id"])],
+    )
     return RedirectResponse(url="/accounts", status_code=303)
 
 
@@ -1781,7 +1790,10 @@ def _vault_payload(form, category: str) -> dict:
         data["account_number"] = ""
     else:
         kind = _f("kind")
-        data["kind"] = kind if kind in _VAULT_KINDS else "Khác"
+        allowed = list(_VAULT_KINDS) + [
+            t["name"] for t in db.vault_type_names_custom()
+        ]
+        data["kind"] = kind if kind in allowed else "Khác"
     return data
 
 
@@ -1845,6 +1857,53 @@ def page_vault_delete(request: Request, item_id: int):
         url=f"/accounts?tab={tab}&msg=" + quote("Đã xóa tài khoản khỏi kho."),
         status_code=303,
     )
+
+
+def _vault_type_redirect(err=None, msg=None):
+    url = "/accounts?tab=noi-bo"
+    if err:
+        url += "&err=" + quote(err)
+    if msg:
+        url += "&msg=" + quote(msg)
+    return RedirectResponse(url=url, status_code=303)
+
+
+@router.post("/accounts/loai-tai-khoan/them")
+async def page_vault_type_create(request: Request):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    form = await request.form()
+    try:
+        db.vault_type_create(form.get("name") or "")
+    except (ValueError, sqlite3.IntegrityError):
+        return _vault_type_redirect(err="Tên loại tài khoản đã tồn tại hoặc không hợp lệ.")
+    return _vault_type_redirect(msg="Đã thêm loại tài khoản.")
+
+
+@router.post("/accounts/loai-tai-khoan/{type_id}/doi-ten")
+async def page_vault_type_rename(type_id: int, request: Request):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    form = await request.form()
+    try:
+        db.vault_type_rename(type_id, form.get("name") or "")
+    except (ValueError, sqlite3.IntegrityError):
+        return _vault_type_redirect(err="Tên loại tài khoản đã tồn tại hoặc không hợp lệ.")
+    return _vault_type_redirect(msg="Đã đổi tên loại tài khoản.")
+
+
+@router.post("/accounts/loai-tai-khoan/{type_id}/xoa")
+def page_vault_type_delete(type_id: int, request: Request):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    try:
+        db.vault_type_delete(type_id)
+    except ValueError as e:
+        return _vault_type_redirect(err=str(e))
+    return _vault_type_redirect(msg="Đã xóa loại tài khoản.")
 
 
 # ------------------------------ JSON API ----------------------------------
@@ -2093,7 +2152,7 @@ def page_gmv(
     date_from: str | None = Query(default=None, alias="from"),
     date_to: str | None = Query(default=None, alias="to"),
 ):
-    user, redir = auth.page_guard(request, "can_view_gmv")
+    user, redir = auth.page_guard_sidebar(request, "gmv")
     if redir:
         return redir
     _cl_safety_net(checklist.today_str())
@@ -2306,7 +2365,7 @@ def page_daily(
     date_from: str | None = Query(default=None, alias="from"),
     date_to: str | None = Query(default=None, alias="to"),
 ):
-    user, redir = auth.page_guard(request, "can_view_daily")
+    user, redir = auth.page_guard_sidebar(request, "daily")
     if redir:
         return redir
     # Bộ chọn khoảng kiểu Shopee Ads: mặc định 30 ngày qua cho trang này.
@@ -2853,6 +2912,8 @@ def page_checklist(
     user, redir = auth.page_guard(request)
     if redir:
         return redir
+    if not sidebar.has_grant(user, "checklist"):
+        raise HTTPException(status_code=403, detail="Tài khoản không có quyền này.")
     today = checklist.today_str()
     date_str = _cl_valid_date(date) or today
     _cl_safety_net(date_str)
@@ -2996,6 +3057,8 @@ def page_notifications(request: Request):
     user, redir = auth.page_guard(request)
     if redir:
         return redir
+    if not sidebar.has_grant(user, "notifications"):
+        raise HTTPException(status_code=403, detail="Tài khoản không có quyền này.")
     _cl_safety_net(checklist.today_str())
     notifs = db.notif_list(user["id"])
     unread = db.notif_unread_count(user["id"])
@@ -3318,8 +3381,8 @@ def _pricing_defaults() -> dict:
 
 @router.get("/dinh-gia", response_class=HTMLResponse)
 def page_pricing(request: Request):
-    # Xem: quyền riêng can_view_pricing (tách khỏi quyền Sản phẩm).
-    user, redir = auth.page_guard(request, "can_view_pricing")
+    # Xem: grant sidebar "pricing" (registry app/sidebar.py).
+    user, redir = auth.page_guard_sidebar(request, "pricing")
     if redir:
         return redir
     return templates.TemplateResponse(
@@ -3684,6 +3747,9 @@ def page_kpi(
     request: Request,
     date_from: str | None = Query(default=None, alias="from"),
     date_to: str | None = Query(default=None, alias="to"),
+    sheet: str | None = None,
+    err: str | None = None,
+    msg: str | None = None,
 ):
     user, redir = auth.page_guard(request)
     if redir:
@@ -3691,6 +3757,7 @@ def page_kpi(
     if not _cl_is_leader(user):
         raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
     rng, rows, team = _kpi_compute(date_from, date_to)
+    sheet = sheet if sheet in ("bang", "nhan-su") else "bang"
     return templates.TemplateResponse(
         "kpi.html",
         _ctx(
@@ -3699,8 +3766,93 @@ def page_kpi(
             rng=rng,
             rows=rows,
             team=team,
+            sheet=sheet,
+            err=err,
+            msg=msg,
+            staff=db.kpi_staff_list(),
+            job_types=db.kpi_job_type_names(),
+            job_types_custom=db.kpi_job_types_custom(),
         ),
     )
+
+
+def _kpi_staff_redirect(err=None, msg=None):
+    url = "/kpi?sheet=nhan-su"
+    if err:
+        url += "&err=" + quote(err)
+    if msg:
+        url += "&msg=" + quote(msg)
+    return RedirectResponse(url=url, status_code=303)
+
+
+@router.post("/kpi/nhan-su/them")
+async def page_kpi_staff_create(request: Request):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    if not _cl_is_leader(user):
+        raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
+    form = await request.form()
+    try:
+        db.kpi_staff_create(form.get("name") or "", form.get("job_type") or "")
+    except ValueError as e:
+        return _kpi_staff_redirect(err=str(e))
+    return _kpi_staff_redirect(msg="Đã thêm nhân sự.")
+
+
+@router.post("/kpi/nhan-su/{staff_id}/xoa")
+def page_kpi_staff_delete(staff_id: int, request: Request):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    if not _cl_is_leader(user):
+        raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
+    db.kpi_staff_delete(staff_id)
+    return _kpi_staff_redirect(msg="Đã xóa nhân sự.")
+
+
+@router.post("/kpi/loai-cong-viec/them")
+async def page_kpi_job_type_create(request: Request):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    if not _cl_is_leader(user):
+        raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
+    form = await request.form()
+    try:
+        db.kpi_job_type_create(form.get("name") or "")
+    except ValueError as e:
+        return _kpi_staff_redirect(err=str(e))
+    return _kpi_staff_redirect(msg="Đã thêm loại công việc.")
+
+
+@router.post("/kpi/loai-cong-viec/{type_id}/doi-ten")
+async def page_kpi_job_type_rename(type_id: int, request: Request):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    if not _cl_is_leader(user):
+        raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
+    form = await request.form()
+    try:
+        db.kpi_job_type_rename(type_id, form.get("name") or "")
+    except ValueError as e:
+        return _kpi_staff_redirect(err=str(e))
+    return _kpi_staff_redirect(msg="Đã đổi tên loại công việc.")
+
+
+@router.post("/kpi/loai-cong-viec/{type_id}/xoa")
+def page_kpi_job_type_delete(type_id: int, request: Request):
+    user, redir = auth.page_guard(request)
+    if redir:
+        return redir
+    if not _cl_is_leader(user):
+        raise HTTPException(status_code=403, detail="Chỉ Leader/Quản trị được xem.")
+    try:
+        db.kpi_job_type_delete(type_id)
+    except ValueError as e:
+        return _kpi_staff_redirect(err=str(e))
+    return _kpi_staff_redirect(msg="Đã xóa loại công việc.")
 
 
 @router.get("/kpi/export")
@@ -3776,7 +3928,7 @@ def page_cskh(
     err: str | None = None,
     msg: str | None = None,
 ):
-    user, redir = auth.page_guard(request, "can_view_cskh")
+    user, redir = auth.page_guard_sidebar(request, "cskh")
     if redir:
         return redir
     items = db.cskh_list(q)
@@ -3892,7 +4044,7 @@ def page_affiliate(
     err: str | None = None,
     msg: str | None = None,
 ):
-    user, redir = auth.page_guard(request, "can_view_affiliate")
+    user, redir = auth.page_guard_sidebar(request, "affiliate")
     if redir:
         return redir
     tab = tab if tab in ("theo-doi", "noi-dung") else "theo-doi"
@@ -3945,7 +4097,7 @@ def page_affiliate_export(
     q: str | None = None,
     platform: str | None = None,
 ):
-    user, redir = auth.page_guard(request, "can_view_affiliate")
+    user, redir = auth.page_guard_sidebar(request, "affiliate")
     if redir:
         return redir
     platform = platform if platform in affiliate.PLATFORMS else None
@@ -4059,7 +4211,7 @@ def page_tiktok_onboard(
     err: str | None = None,
     msg: str | None = None,
 ):
-    user, redir = auth.page_guard(request, "can_view_tiktok")
+    user, redir = auth.page_guard_sidebar(request, "tiktok")
     if redir:
         return redir
     tab = tab if tab in ("danh-sach", "lich-su") else "danh-sach"

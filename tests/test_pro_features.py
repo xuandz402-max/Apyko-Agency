@@ -150,7 +150,7 @@ def test_backup_delete_forbidden_for_staff(client):
     create_owner(client)
     backup = _backup()
     name = backup.create_backup("manual")
-    code = create_staff(client, "nv_xoa", perms=("can_view_products",))
+    code = create_staff(client, "nv_xoa", perms=("sidebar_products",))
     logout(client)
     activate(client, "nv_xoa", code)
     assert client.post(f"/sao-luu/xoa/{name}").status_code == 403
@@ -160,7 +160,7 @@ def test_backup_delete_forbidden_for_staff(client):
 
 def test_backup_forbidden_for_staff_and_menu_hidden(client):
     create_owner(client)
-    code = create_staff(client, "nv_thuong", perms=("can_view_products",))
+    code = create_staff(client, "nv_thuong", perms=("sidebar_products",))
     logout(client)
     activate(client, "nv_thuong", code)
     assert client.get("/sao-luu").status_code == 403
@@ -220,8 +220,8 @@ def _seed_kpi(client):
 
 
 def _make_kpi_staff(client):
-    create_staff(client, "nv_a", perms=("can_view_products",))
-    create_staff(client, "nv_b", perms=("can_view_products",))
+    create_staff(client, "nv_a", perms=("sidebar_products",))
+    create_staff(client, "nv_b", perms=("sidebar_products",))
 
 
 def test_kpi_ranking_and_delta(client):
@@ -258,7 +258,7 @@ def test_kpi_csv_export(client):
 
 def test_kpi_forbidden_for_plain_staff(client):
     create_owner(client)
-    code = create_staff(client, "nv_thuong", perms=("can_view_products",))
+    code = create_staff(client, "nv_thuong", perms=("sidebar_products",))
     logout(client)
     activate(client, "nv_thuong", code)
     assert client.get("/kpi").status_code == 403
@@ -323,12 +323,12 @@ def test_cskh_permissions(client):
     db = _db()
     seed_id = db.cskh_list()[0]["id"]
     code_view = create_staff(
-        client, "nv_xem", perms=("can_view_products", "can_view_cskh")
+        client, "nv_xem", perms=("sidebar_products", "sidebar_cskh")
     )
     code_edit = create_staff(
         client,
         "nv_sua",
-        perms=("can_view_products", "can_add_edit_products", "can_view_cskh"),
+        perms=("sidebar_products", "can_add_edit_products", "sidebar_cskh"),
     )
     # Nhân viên chỉ xem: xem được trang nhưng thêm/xóa đều 403
     logout(client)

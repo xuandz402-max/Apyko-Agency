@@ -138,6 +138,42 @@
 
 {% if can_edit %}
 <div class="card">
+  <div class="card-head"><h2>🏷️ Loại tài khoản</h2></div>
+  <p class="muted small">Loại có sẵn (Ngân hàng, Shopee, TikTok Shop, Facebook, Email, Zalo, Khác) luôn dùng được và không xóa được. Thêm loại mới (VD: Canva, Tài khoản ads) khi phát sinh — loại mới sẽ xuất hiện ngay trong ô "Loại tài khoản" ở form trên.</p>
+  <form method="post" action="/accounts/loai-tai-khoan/them" class="form-inline">
+    <label>Thêm loại tài khoản
+      <input name="name" required class="input" placeholder="VD: Canva, Tài khoản ads...">
+    </label>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">➕ Thêm loại</button>
+    </div>
+  </form>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Loại tự thêm</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for t in vault_types %}
+      <tr>
+        <td><strong>{{ t.name }}</strong></td>
+        <td>
+          <form method="post" action="/accounts/loai-tai-khoan/{{ t.id }}/doi-ten" class="form-inline inline">
+            <input name="name" required class="input" value="{{ t.name }}">
+            <button class="btn btn-ghost btn-sm" type="submit">✏️ Đổi tên</button>
+          </form>
+          <form method="post" action="/accounts/loai-tai-khoan/{{ t.id }}/xoa" class="inline" onsubmit="return confirm('Xóa loại tài khoản {{ t.name }}?');">
+            <button type="submit" class="btn btn-danger btn-sm">🗑️ Xóa</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="2" class="muted">Chưa có loại tự thêm nào.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+{% if can_edit %}
+<div class="card">
   <div class="card-head"><h2>{% if edit_item %}✏️ Sửa tài khoản nội bộ{% else %}➕ Thêm tài khoản nội bộ{% endif %}</h2></div>
   <form method="post" action="{% if edit_item %}/accounts/vault/{{ edit_item.id }}/update{% else %}/accounts/vault/create{% endif %}" class="form">
     <input type="hidden" name="category" value="noi_bo">
@@ -309,10 +345,18 @@
       </label>
     </div>
     <fieldset class="fieldset">
-      <legend>Quyền</legend>
+      <legend>Quyền xem sidebar</legend>
+      <div class="check-grid">
+        {% for item in sidebar_registry %}
+        <label class="check"><input type="checkbox" name="sidebar_{{ item.id }}" {% if item.default %}checked{% endif %}> Xem {{ item.label }}</label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <fieldset class="fieldset">
+      <legend>Quyền khác</legend>
       <div class="check-grid">
         {% for field, label in perm_fields %}
-        <label class="check"><input type="checkbox" name="{{ field }}" {% if field in ("can_view_products", "can_view_uni") %}checked{% endif %}> {{ label }}</label>
+        <label class="check"><input type="checkbox" name="{{ field }}"> {{ label }}</label>
         {% endfor %}
       </div>
     </fieldset>
@@ -336,10 +380,9 @@
         <td class="small">
           {% if u.is_owner %}Toàn quyền
           {% else %}
-          {{ "Xem SP" if u.can_view_products else "" }}
+          {{ u.sidebar_labels or "—" }}
           {{ "· Sửa SP" if u.can_add_edit_products else "" }}
           {{ "· Xóa SP" if u.can_delete_products else "" }}
-          {{ "· Uni" if u.can_view_uni else "" }}
           {{ "· Leader CL" if u.can_checklist_leader else "" }}
           {{ "· Admin CL" if u.can_checklist_admin else "" }}
           {% endif %}
@@ -358,6 +401,9 @@
             </form>
           </div>
           <form method="post" action="/accounts/{{ u.id }}/perms" class="perm-form">
+            {% for item in sidebar_registry %}
+            <label class="check check-sm"><input type="checkbox" name="sidebar_{{ item.id }}" {% if item.id in user_grants.get(u.id, []) %}checked{% endif %}> Xem {{ item.label }}</label>
+            {% endfor %}
             {% for field, label in perm_fields %}
             <label class="check check-sm"><input type="checkbox" name="{{ field }}" {% if u[field] %}checked{% endif %}> {{ label }}</label>
             {% endfor %}

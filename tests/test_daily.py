@@ -218,7 +218,7 @@ def test_fail_closed_no_login(client):
 def test_view_only_cannot_write(client):
     create_owner(client)
     client.post("/api/daily", json=_report())
-    code = create_staff(client, "nv_daily", perms=("can_view_daily",))
+    code = create_staff(client, "nv_daily", perms=("sidebar_daily",))
     logout(client)
     activate(client, "nv_daily", code)
 
@@ -232,7 +232,7 @@ def test_view_only_cannot_write(client):
 
 def test_delete_needs_delete_perm(client):
     create_owner(client)
-    code = create_staff(client, "nv_sua2", perms=("can_view_daily", "can_add_edit_products"))
+    code = create_staff(client, "nv_sua2", perms=("sidebar_daily", "can_add_edit_products"))
     logout(client)
     activate(client, "nv_sua2", code)
 
@@ -245,14 +245,37 @@ def test_delete_needs_delete_perm(client):
 
 
 def test_report_export_header_uses_logo_slogan_and_mint(client):
-    """Ảnh xuất báo cáo: header xanh lá + logo + slogan, thân báo cáo giữ nguyên."""
+    """Ảnh xuất báo cáo: header xanh lá + logo + slogan, thân báo cáo giữ nguyên.
+
+    Slogan dùng dấu gạch ngang, không còn gạch trang trí phía trên slogan
+    trong canvas header.
+    """
     create_owner(client)
     r = client.get("/bao-cao")
     assert r.status_code == 200
     assert 'img.src = "/static/logo.png"' in r.text
-    assert "Trao Giá Trị, Nhận Niềm Tin" in r.text
+    assert "Trao Giá Trị - Nhận Niềm Tin" in r.text
+    assert "Trao Giá Trị, Nhận Niềm Tin" not in r.text
+    assert "fillRect(W / 2 - 32, 152, 64, 4)" not in r.text
     assert 'MINT = "#3FA46F"' in r.text
     assert "BÁO CÁO DOANH THU NGÀY" in r.text
     assert "DOANH THU THEO NGUỒN" in r.text
     assert "HIỆU QUẢ QUẢNG CÁO" in r.text
     assert client.get("/static/logo.png").status_code == 200
+
+
+def test_report_export_downloads_via_anchor_with_filename(client):
+    """Nút Xuất ảnh phải tải file thật: anchor có download + click (không
+    window.open), tên file giữ mẫu apyko-bao-cao-<ngày>.png, và ngày phải
+    được truyền vào hàm tải (lỗi isoDate undefined trước đây làm click
+    không bao giờ chạy)."""
+    create_owner(client)
+    r = client.get("/bao-cao")
+    assert r.status_code == 200
+    assert "downloadReport(r, img, isoDate)" in r.text
+    assert "downloadReport(r, null, isoDate)" in r.text
+    assert "function downloadReport(r, logoImg, isoDate)" in r.text
+    assert 'a.download = "apyko-bao-cao-" + isoDate + ".png"' in r.text
+    assert "document.body.appendChild(a)" in r.text
+    assert "a.click()" in r.text
+    assert "window.open" not in r.text

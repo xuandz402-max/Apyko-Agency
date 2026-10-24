@@ -76,7 +76,7 @@ def logout(client):
     client.get("/logout")
 
 
-def create_staff(client, username, perms=("can_view_products", "can_view_uni")):
+def create_staff(client, username, perms=("sidebar_products", "sidebar_uni")):
     """Owner tạo nhân sự; trả về mã kích hoạt (đọc từ redirect)."""
     data = {"username": username, "display_name": username}
     for p in perms:

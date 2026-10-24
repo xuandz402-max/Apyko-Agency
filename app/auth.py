@@ -89,6 +89,14 @@ def _session_user(token: str | None) -> dict | None:
     user = db.get_user(sess["user_id"])
     if user is None or not user.get("is_active"):
         return None
+    # Grant sidebar (registry) gắn vào user dict để cổng route + sidebar
+    # dùng chung; chủ sở hữu luôn có đủ mọi grant (xem app/sidebar.py).
+    from . import sidebar as _sidebar
+
+    if user.get("is_owner"):
+        user["sidebar_grants"] = set(_sidebar.all_ids())
+    else:
+        user["sidebar_grants"] = db.sidebar_grants(user["id"])
     return user
 
 
@@ -130,6 +138,24 @@ def api_perm(perm: str):
     return _dep
 
 
+def api_sidebar(sidebar_id: str):
+    """Factory cho API: bắt buộc có grant sidebar `sidebar_id` (fail-closed).
+
+    Dùng cho các API thuộc 1 mục sidebar (thay cho api_perm("can_view_*")
+    cũ — các cột cờ sidebar đã nghỉ hưu, xem app/sidebar.py).
+    """
+
+    def _dep(request: Request) -> dict:
+        from . import sidebar as _sidebar
+
+        user = api_user(request)
+        if not _sidebar.has_grant(user, sidebar_id):
+            _deny(403, "Tài khoản không có quyền này.")
+        return user
+
+    return _dep
+
+
 def api_owner(request: Request) -> dict:
     """Dependency cho API: chỉ owner (fail-closed)."""
     user = api_user(request)
@@ -141,14 +167,29 @@ def api_owner(request: Request) -> dict:
 # Dependencies cho API
 ApiUser = Depends(api_user)
 ApiOwner = Depends(api_owner)
-ApiCanViewProducts = Depends(api_perm("can_view_products"))
-ApiCanViewDaily = Depends(api_perm("can_view_daily"))
-ApiCanViewPricing = Depends(api_perm("can_view_pricing"))
-ApiCanViewGmv = Depends(api_perm("can_view_gmv"))
-ApiCanViewAffiliate = Depends(api_perm("can_view_affiliate"))
+ApiCanViewProducts = Depends(api_sidebar("products"))
+ApiCanViewDaily = Depends(api_sidebar("daily"))
+ApiCanViewPricing = Depends(api_sidebar("pricing"))
+ApiCanViewGmv = Depends(api_sidebar("gmv"))
+ApiCanViewAffiliate = Depends(api_sidebar("affiliate"))
 ApiCanEditProducts = Depends(api_perm("can_add_edit_products"))
 ApiCanDeleteProducts = Depends(api_perm("can_delete_products"))
-ApiCanViewUni = Depends(api_perm("can_view_uni"))
+ApiCanViewUni = Depends(api_sidebar("uni"))
+
+
+def page_guard_sidebar(request: Request, sidebar_id: str):
+    """Cổng route trang thuộc 1 mục sidebar: đăng nhập + grant sidebar.
+
+    Trả về (user, None) hoặc (None, redirect/403) như page_guard.
+    """
+    from . import sidebar as _sidebar
+
+    user, redir = page_guard(request)
+    if redir:
+        return None, redir
+    if not _sidebar.has_grant(user, sidebar_id):
+        raise HTTPException(status_code=403, detail="Tài khoản không có quyền này.")
+    return user, None
 
 
 def page_guard(request: Request, perm: str | None = None):

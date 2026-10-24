@@ -212,10 +212,9 @@
       var lw = 340, lh = lw * logoImg.naturalHeight / logoImg.naturalWidth;
       ctx.drawImage(logoImg, (W - lw) / 2, 24, lw, lh);
       ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(W / 2 - 32, 152, 64, 4);
       ctx.textAlign = "center";
       ctx.font = "400 28px " + FONT;
-      ctx.fillText("Trao Giá Trị, Nhận Niềm Tin", W / 2, 190);
+      ctx.fillText("Trao Giá Trị - Nhận Niềm Tin", W / 2, 190);
       ctx.font = "700 42px " + FONT;
       ctx.fillText("BÁO CÁO DOANH THU NGÀY", W / 2, 245);
       ctx.font = "400 32px " + FONT;
@@ -321,12 +320,12 @@
     if (!r) { alert("Không tìm thấy báo cáo ngày này."); return; }
     // Chờ logo tải xong mới vẽ (cùng nguồn, không CORS); lỗi thì vẽ header chữ cũ.
     var img = new Image();
-    img.onload = function () { downloadReport(r, img); };
-    img.onerror = function () { downloadReport(r, null); };
+    img.onload = function () { downloadReport(r, img, isoDate); };
+    img.onerror = function () { downloadReport(r, null, isoDate); };
     img.src = "/static/logo.png";
   }
 
-  function downloadReport(r, logoImg) {
+  function downloadReport(r, logoImg, isoDate) {
     drawReport(r, logoImg);
     var cv = $("reportCanvas");
     cv.toBlob(function (blob) {

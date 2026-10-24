@@ -348,7 +348,7 @@ def test_ceo_route_range_switch(client):
 
 def test_ceo_route_period_forbidden_for_plain_staff(client):
     create_owner(client)
-    code = create_staff(client, "nv_period", perms=("can_view_products",))
+    code = create_staff(client, "nv_period", perms=("sidebar_products",))
     logout(client)
     activate(client, "nv_period", code)
     assert client.get("/ceo").status_code == 403
@@ -358,7 +358,7 @@ def test_ceo_route_period_forbidden_for_plain_staff(client):
 def test_ceo_route_period_ok_for_leader(client):
     create_owner(client)
     code = create_staff(
-        client, "nv_lead2", perms=("can_view_products", "can_checklist_leader")
+        client, "nv_lead2", perms=("sidebar_products", "can_checklist_leader")
     )
     logout(client)
     activate(client, "nv_lead2", code)
@@ -535,7 +535,7 @@ def test_ceo_route_future_or_bad_range_no_crash(client):
 
 def test_ceo_route_date_custom_forbidden_for_plain_staff(client):
     create_owner(client)
-    code = create_staff(client, "nv_date", perms=("can_view_products",))
+    code = create_staff(client, "nv_date", perms=("sidebar_products",))
     logout(client)
     activate(client, "nv_date", code)
     assert client.get("/ceo?from=2026-09-20&to=2026-09-20").status_code == 403
@@ -626,7 +626,7 @@ def test_ceo_route_range_invalid_falls_back(client):
 
 def test_ceo_route_range_forbidden_for_plain_staff(client):
     create_owner(client)
-    code = create_staff(client, "nv_range", perms=("can_view_products",))
+    code = create_staff(client, "nv_range", perms=("sidebar_products",))
     logout(client)
     activate(client, "nv_range", code)
     assert client.get("/ceo?from=2026-09-01&to=2026-10-31").status_code == 403

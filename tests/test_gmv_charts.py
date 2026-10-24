@@ -241,8 +241,8 @@ def test_sync_notifications_dedupe_same_day(client):
 
 def test_sync_notifications_recipients_include_gmv_viewers(client):
     owner_id = _owner_id(client)
-    code = create_staff(client, "nv_xem", perms=("can_view_gmv",))
-    code2 = create_staff(client, "nv_khong_xem", perms=("can_view_uni",))
+    code = create_staff(client, "nv_xem", perms=("sidebar_gmv",))
+    code2 = create_staff(client, "nv_khong_xem", perms=("sidebar_uni",))
     logout(client)
     activate(client, "nv_xem", code)
     logout(client)
@@ -304,7 +304,7 @@ def test_gmv_page_query_validation(client):
 
 def test_gmv_page_forbidden_without_view_perm(client):
     create_owner(client)
-    code = create_staff(client, "nv_uni", perms=("can_view_uni",))
+    code = create_staff(client, "nv_uni", perms=("sidebar_uni",))
     logout(client)
     activate(client, "nv_uni", code)
     assert client.get("/gmv").status_code == 403

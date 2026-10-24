@@ -57,7 +57,7 @@ def test_vault_tabs_require_view_perm(client):
 
 def test_viewer_opens_vault_tabs_but_not_login_admin(client):
     create_owner(client)
-    _login_staff(client, "nv_xem", perms=("can_view_accounts",))
+    _login_staff(client, "nv_xem", perms=("sidebar_accounts",))
     for tab in ("shop", "noi-bo", "ban-giao"):
         assert client.get(f"/accounts?tab={tab}").status_code == 200, tab
     r = client.get("/accounts?tab=dang-nhap", follow_redirects=False)
@@ -85,7 +85,7 @@ def test_password_not_in_html_for_viewer(client):
     # Chủ sở hữu thấy mật khẩu thật ở cả 2 tab
     assert SECRET in client.get("/accounts?tab=noi-bo").text
     assert SHOP_SECRET in client.get("/accounts?tab=shop").text
-    _login_staff(client, "nv_xem", perms=("can_view_accounts",))
+    _login_staff(client, "nv_xem", perms=("sidebar_accounts",))
     for tab in ("noi-bo", "shop"):
         r = client.get(f"/accounts?tab={tab}")
         assert r.status_code == 200
@@ -104,7 +104,7 @@ def test_editor_sees_password(client):
     create_owner(client)
     assert _create_noibo(client).status_code == 303
     _login_staff(
-        client, "nv_sua", perms=("can_view_accounts", "can_add_edit_products")
+        client, "nv_sua", perms=("sidebar_accounts", "can_add_edit_products")
     )
     r = client.get("/accounts?tab=noi-bo")
     assert r.status_code == 200
@@ -130,7 +130,7 @@ def test_vault_post_permission_gates(client):
         "note": "",
     }
     # Người chỉ xem: không tạo / sửa / xóa được
-    _login_staff(client, "nv_xem", perms=("can_view_accounts",))
+    _login_staff(client, "nv_xem", perms=("sidebar_accounts",))
     assert _create_noibo(client).status_code == 403
     r = client.post(f"/accounts/vault/{item['id']}/update", data=upd)
     assert r.status_code == 403
@@ -140,7 +140,7 @@ def test_vault_post_permission_gates(client):
     logout(client)
     login(client, "chushop", "matkhau123")
     _login_staff(
-        client, "nv_sua", perms=("can_view_accounts", "can_add_edit_products")
+        client, "nv_sua", perms=("sidebar_accounts", "can_add_edit_products")
     )
     assert _create_shop(client).status_code == 303
     r = client.post(

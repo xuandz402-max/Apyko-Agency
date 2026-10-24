@@ -101,3 +101,10 @@ def test_home_falls_back_to_seeding_for_seeding_only_staff(client):
     r = client.get("/", follow_redirects=False)
     assert r.status_code == 303
     assert r.headers["location"] == "/seeding"
+
+
+def test_seeding_images_capped_width():
+    """Ảnh minh họa Seeding không tràn full thẻ (tối đa 640px, căn giữa)."""
+    css = open("static/style.css", encoding="utf-8").read()
+    rule = next(line for line in css.splitlines() if line.strip().startswith(".seed-img"))
+    assert "max-width: 640px" in rule and "margin: 12px auto" in rule

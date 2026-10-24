@@ -123,3 +123,10 @@ def test_render_loose_numbered_list_single_ol():
     html = lessons.render_markdown(md)
     assert html.count("<ol>") == 1
     assert html.count("<li>") == 3
+
+
+def test_lesson_images_readable_width():
+    """Ảnh bài Uni đủ lớn để đọc chữ trong ảnh chụp màn hình (tối đa 640px)."""
+    css = open("static/style.css", encoding="utf-8").read()
+    rule = next(line for line in css.splitlines() if line.strip().startswith(".lesson-img"))
+    assert "max-width: 640px" in rule

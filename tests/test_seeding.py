@@ -120,9 +120,10 @@ def test_seeding_tall_images_capped_by_height():
     assert 'luu-y-1.jpeg" alt="Ảnh minh họa lưu ý" class="seed-img seed-img-tall"' in html
 
 
-def test_seeding_sheets_shopee_active_and_tiktok_placeholder(client):
-    """Sheet Shopee giữ đủ nội dung cũ; sheet TikTok là trạng thái trống
-    trung thực, không số giả."""
+def test_seeding_sheets_shopee_active_and_tiktok_content(client):
+    """Sheet Shopee giữ đủ nội dung cũ; sheet TikTok giờ chứa nguyên văn tài
+    liệu Seeding hợp lệ (không còn placeholder 'Sắp có'), không lẫn nội dung
+    Shopee (Shopee có chữ 'Bước 1' riêng, TikTok có 'Bước 1 — Lập kế hoạch')."""
     create_owner(client)
     r = client.get("/seeding")
     assert r.status_code == 200
@@ -131,8 +132,9 @@ def test_seeding_sheets_shopee_active_and_tiktok_placeholder(client):
     rt = client.get("/seeding?sheet=tiktok")
     assert rt.status_code == 200
     assert 'href="/seeding?sheet=tiktok" class="tab active"' in rt.text
-    assert "Sắp có" in rt.text
-    assert "Bước 1" not in rt.text
+    assert "Sắp có" not in rt.text
+    assert "Sidebar Seeding hợp lệ" in rt.text
+    assert "SET MUA KÈM DEAL SOCK" not in rt.text
 
 
 def test_seeding_uses_base_font_no_override():
@@ -144,14 +146,14 @@ def test_seeding_uses_base_font_no_override():
     assert css.count("font-family") == 1
 
 
-def test_seeding_hop_le_sheet_full_content(client):
-    """Sheet 'Seeding Hợp Lệ' render đủ nội dung nguyên văn từ tài liệu
+def test_seeding_tiktok_sheet_full_content(client):
+    """Sheet TikTok render đủ nội dung nguyên văn từ tài liệu
     Sidebar_Seeding_Hop_Le_Web_App.docx: tiêu đề, 8 bước, 9 trạng thái,
     7 nhóm dữ liệu, 5 nguyên tắc, 7 mục checklist (chỉ đọc)."""
     create_owner(client)
-    r = client.get("/seeding?sheet=hop-le")
+    r = client.get("/seeding?sheet=tiktok")
     assert r.status_code == 200
-    assert 'href="/seeding?sheet=hop-le" class="tab active"' in r.text
+    assert 'href="/seeding?sheet=tiktok" class="tab active"' in r.text
     assert "Sidebar Seeding hợp lệ" in r.text
     assert "Quy trình dành cho nhân sự vận hành TikTok Shop và đội nội dung" in r.text
     assert "Mục tiêu: tạo nội dung và lượt tiếp cận từ trải nghiệm thật của creator/KOC, theo dõi hiệu quả bằng dữ liệu minh bạch và lưu đầy đủ bằng chứng cho từng chiến dịch." in r.text
@@ -192,17 +194,21 @@ def test_seeding_hop_le_sheet_full_content(client):
 
 
 def test_seeding_sheet_order_and_others_unchanged(client):
-    """Thứ tự tab: Shopee -> Seeding Hợp Lệ -> TikTok; sheet Shopee và
-    placeholder TikTok giữ nguyên; sheet lạ fallback về Shopee."""
+    """Chỉ còn 2 tab, thứ tự: Shopee -> TikTok; sheet Shopee giữ nguyên;
+    ?sheet=hop-le cũ và sheet lạ đều fallback về Shopee."""
     create_owner(client)
-    r = client.get("/seeding?sheet=hop-le")
-    pos = [r.text.index(f'sheet={s}"') for s in ("shopee", "hop-le", "tiktok")]
+    r = client.get("/seeding?sheet=tiktok")
+    pos = [r.text.index(f'sheet={s}"') for s in ("shopee", "tiktok")]
     assert pos == sorted(pos), pos
+    assert 'sheet=hop-le' not in r.text
     rs = client.get("/seeding")
     assert "Sidebar Seeding hợp lệ" not in rs.text
     assert "Bước 1" in rs.text
     rt = client.get("/seeding?sheet=tiktok")
-    assert "Sidebar Seeding hợp lệ" not in rt.text
-    assert "Sắp có" in rt.text
+    assert "Sidebar Seeding hợp lệ" in rt.text
+    assert "Sắp có" not in rt.text
+    rh = client.get("/seeding?sheet=hop-le")
+    assert 'href="/seeding?sheet=shopee" class="tab active"' in rh.text
+    assert "Sidebar Seeding hợp lệ" not in rh.text
     rb = client.get("/seeding?sheet=bogus")
     assert 'href="/seeding?sheet=shopee" class="tab active"' in rb.text

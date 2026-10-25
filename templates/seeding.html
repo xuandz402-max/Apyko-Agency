@@ -8,11 +8,10 @@
 
 <div class="tabs">
   <a href="/seeding?sheet=shopee" class="tab{% if sheet == 'shopee' %} active{% endif %}">🛍️ Shopee</a>
-  <a href="/seeding?sheet=hop-le" class="tab{% if sheet == 'hop-le' %} active{% endif %}">🌱 Seeding Hợp Lệ</a>
   <a href="/seeding?sheet=tiktok" class="tab{% if sheet == 'tiktok' %} active{% endif %}">🎵 TikTok</a>
 </div>
 
-{% if sheet == 'hop-le' %}
+{% if sheet == 'tiktok' %}
 <div class="card">
   <div class="card-head"><h2>Sidebar Seeding hợp lệ</h2></div>
   <p class="muted">Quy trình dành cho nhân sự vận hành TikTok Shop và đội nội dung</p>
@@ -128,11 +127,6 @@
     <li>☐ Số liệu, nguồn đo, chi phí và đối soát đã cập nhật.</li>
     <li>☐ Việc còn mở, bài học và đề xuất tiếp theo đã ghi lại.</li>
   </ul>
-</div>
-{% elif sheet == 'tiktok' %}
-<div class="card">
-  <div class="card-head"><h2>🎵 TikTok</h2></div>
-  <p class="muted">Sắp có — sheet TikTok sẽ được thêm sau. Hiện chưa có nội dung hay số liệu nào cho nền tảng này.</p>
 </div>
 {% else %}
 <div class="card">

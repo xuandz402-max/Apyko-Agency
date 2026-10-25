@@ -1410,7 +1410,7 @@ def page_seeding(request: Request, sheet: str | None = None):
     user, redir = auth.page_guard_sidebar(request, "seeding")
     if redir:
         return redir
-    sheet = sheet if sheet in ("shopee", "hop-le", "tiktok") else "shopee"
+    sheet = sheet if sheet in ("shopee", "tiktok") else "shopee"
     return templates.TemplateResponse(
         "seeding.html", _ctx(request, user, sheet=sheet)
     )

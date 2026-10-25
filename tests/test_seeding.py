@@ -142,3 +142,67 @@ def test_seeding_uses_base_font_no_override():
     assert "font-family" not in html and "<style" not in html
     css = open("static/style.css", encoding="utf-8").read()
     assert css.count("font-family") == 1
+
+
+def test_seeding_hop_le_sheet_full_content(client):
+    """Sheet 'Seeding Hợp Lệ' render đủ nội dung nguyên văn từ tài liệu
+    Sidebar_Seeding_Hop_Le_Web_App.docx: tiêu đề, 8 bước, 9 trạng thái,
+    7 nhóm dữ liệu, 5 nguyên tắc, 7 mục checklist (chỉ đọc)."""
+    create_owner(client)
+    r = client.get("/seeding?sheet=hop-le")
+    assert r.status_code == 200
+    assert 'href="/seeding?sheet=hop-le" class="tab active"' in r.text
+    assert "Sidebar Seeding hợp lệ" in r.text
+    assert "Quy trình dành cho nhân sự vận hành TikTok Shop và đội nội dung" in r.text
+    assert "Mục tiêu: tạo nội dung và lượt tiếp cận từ trải nghiệm thật của creator/KOC, theo dõi hiệu quả bằng dữ liệu minh bạch và lưu đầy đủ bằng chứng cho từng chiến dịch." in r.text
+    for step in (
+        "Bước 1 — Lập kế hoạch chiến dịch",
+        "Bước 2 — Chọn và duyệt KOC / Creator",
+        "Bước 3 — Duyệt và gửi sản phẩm mẫu thật",
+        "Bước 4 — Gửi brief rõ ràng",
+        "Bước 5 — Theo dõi sản xuất và duyệt nội dung khi cần",
+        "Bước 6 — Kiểm tra bài đăng và lưu bằng chứng",
+        "Bước 7 — Đo lường kết quả",
+        "Bước 8 — Đối soát và kết thúc chiến dịch",
+    ):
+        assert step in r.text, step
+    for status in (
+        "Bản nháp", "Chờ duyệt", "Đã duyệt", "Đang thực hiện", "Chờ đăng",
+        "Đã đăng", "Đang đo lường", "Đã đối soát", "Tạm dừng / Không áp dụng",
+    ):
+        assert status in r.text, status
+    for group in (
+        "Chiến dịch", "KOC / Creator", "Hợp tác", "Sản phẩm mẫu", "Nội dung",
+        "Kết quả", "Bằng chứng &amp; lịch sử",
+    ):
+        assert group in r.text, group
+    # Nguyên tắc: kiểm tra nguyên văn đủ 2 câu (1 câu là quy tắc chỉ ghi nhận thật)
+    assert "Chỉ ghi nhận lượt mua, đơn hàng và kết quả phát sinh thật; không hướng dẫn hoặc tạo đơn/tương tác/đánh giá giả." in r.text
+    assert "Mỗi đầu việc chỉ đánh dấu hoàn tất khi có bằng chứng hoặc xác nhận phù hợp; nếu không áp dụng thì ghi rõ lý do." in r.text
+    for item in (
+        "☐ Mục tiêu, SKU, kỳ chạy và người phụ trách đã rõ.",
+        "☐ KOC/Creator và điều kiện hợp tác đã được duyệt.",
+        "☐ Sản phẩm mẫu thật đã được duyệt và theo dõi giao nhận.",
+        "☐ Brief, nội dung cần bàn giao, lịch và link sản phẩm đã xác nhận.",
+        "☐ Bài đăng và bằng chứng đã lưu.",
+        "☐ Số liệu, nguồn đo, chi phí và đối soát đã cập nhật.",
+        "☐ Việc còn mở, bài học và đề xuất tiếp theo đã ghi lại.",
+    ):
+        assert item in r.text, item
+
+
+def test_seeding_sheet_order_and_others_unchanged(client):
+    """Thứ tự tab: Shopee -> Seeding Hợp Lệ -> TikTok; sheet Shopee và
+    placeholder TikTok giữ nguyên; sheet lạ fallback về Shopee."""
+    create_owner(client)
+    r = client.get("/seeding?sheet=hop-le")
+    pos = [r.text.index(f'sheet={s}"') for s in ("shopee", "hop-le", "tiktok")]
+    assert pos == sorted(pos), pos
+    rs = client.get("/seeding")
+    assert "Sidebar Seeding hợp lệ" not in rs.text
+    assert "Bước 1" in rs.text
+    rt = client.get("/seeding?sheet=tiktok")
+    assert "Sidebar Seeding hợp lệ" not in rt.text
+    assert "Sắp có" in rt.text
+    rb = client.get("/seeding?sheet=bogus")
+    assert 'href="/seeding?sheet=shopee" class="tab active"' in rb.text

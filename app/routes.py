@@ -41,6 +41,7 @@ from . import (
     pricing,
     rangeview,
     selfupdate,
+    shopee,
     sidebar,
     tiktok,
 )
@@ -4277,4 +4278,101 @@ async def page_tiktok_update(request: Request):
         return RedirectResponse(url=back + "&err=" + quote(message), status_code=303)
     return RedirectResponse(
         url=back + "&msg=" + quote(f"Đã cập nhật việc {task['code']}."), status_code=303
+    )
+
+
+# ------------------------------ shopee onboard ------------------------------
+# Lộ trình onboarding Shopee: danh mục tĩnh 7 giai đoạn / 43 việc lấy
+# nguyên văn từ file Excel của chủ shop (app/data/shopee_onboard.json);
+# DB chỉ lưu tiến độ từng việc + nhật ký đổi trạng thái (sp_progress /
+# sp_history). Mirror đúng mẫu TikTok Onboard (app/shopee.py). Các tab
+# tham khảo (Lộ trình, Kế hoạch tuần, Shop công ty & khách, Đánh giá)
+# chỉ đọc — riêng tab Đánh giá là khung để Team Lead/Quản lý điền theo
+# từng người/tháng nên không có điểm số chung toàn cục để cập nhật.
+
+
+@router.get("/shopee-onboard", response_class=HTMLResponse)
+def page_shopee_onboard(
+    request: Request,
+    tab: str | None = None,
+    phase: str | None = None,
+    status: str | None = None,
+    q: str | None = None,
+    err: str | None = None,
+    msg: str | None = None,
+):
+    user, redir = auth.page_guard_sidebar(request, "shopee_onboard")
+    if redir:
+        return redir
+    tab = tab if tab in (
+        "danh-sach",
+        "lo-trinh",
+        "ke-hoach-tuan",
+        "shop",
+        "danh-gia",
+        "lich-su",
+    ) else "danh-sach"
+    all_tasks = shopee.merge_progress(shopee.list_tasks(), db.sp_progress_map())
+    phase = phase if phase in shopee.phase_names() else None
+    status = status if status in shopee.STATUSES else None
+    filtered = shopee.filter_tasks(all_tasks, phase=phase, status=status, q=q)
+    history = []
+    if tab == "lich-su":
+        titles = {t["code"]: t["title"] for t in shopee.list_tasks()}
+        for h in db.sp_history_list(100):
+            row = dict(h)
+            row["title"] = titles.get(row["code"], "")
+            row["changed_vn"] = _tt_fmt_history_time(row.get("changed_at") or "")
+            row["old_class"] = shopee.STATUS_CLASSES.get(row["old_status"], "")
+            row["new_class"] = shopee.STATUS_CLASSES.get(row["new_status"], "")
+            history.append(row)
+    return templates.TemplateResponse(
+        "shopee_onboard.html",
+        _ctx(
+            request,
+            user,
+            tab=tab,
+            groups=shopee.group_by_phase(filtered),
+            summary=shopee.summarize(all_tasks),
+            phase_cards=shopee.phase_summaries(all_tasks),
+            phases=shopee.list_phases(),
+            statuses=shopee.STATUSES,
+            status_classes=shopee.STATUS_CLASSES,
+            phase=phase or "",
+            status=status or "",
+            q=q or "",
+            shown=len(filtered),
+            history=history,
+            roadmap=shopee.roadmap(),
+            weekly=shopee.weekly(),
+            compare=shopee.compare(),
+            eval_sheet=shopee.eval_sheet(),
+            can_edit=bool(user.get("can_add_edit_products")),
+            err=err,
+            msg=msg,
+        ),
+    )
+
+
+@router.post("/shopee-onboard/update")
+async def page_shopee_update(request: Request):
+    user, redir = auth.page_guard(request, "can_add_edit_products")
+    if redir:
+        return redir
+    form = await request.form()
+    data = dict(form)
+    task = shopee.get_task(str(data.get("code") or "").strip())
+    if task is None:
+        return RedirectResponse(
+            url="/shopee-onboard?err=" + quote("Mã công việc không tồn tại."),
+            status_code=303,
+        )
+    _clean, errors = shopee.update_progress(data, _cskh_actor(user), db)
+    back = "/shopee-onboard?phase=" + quote(task["phase"])
+    if errors:
+        message = "; ".join(errors.values()) or "Dữ liệu chưa hợp lệ."
+        return RedirectResponse(url=back + "&err=" + quote(message), status_code=303)
+    return RedirectResponse(
+        url=back + "&msg=" + quote(f"Đã cập nhật việc {task['code']}."),
+        status_code=303,
     )

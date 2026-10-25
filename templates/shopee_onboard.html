@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% set nav_active = "shopee_onboard" %}
+{% block title %}Shopee Onboard · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1><img src="/static/shopee-icon.svg" alt="" class="sp-logo"> Shopee Onboard</h1>
+  <p class="muted">Lộ trình onboarding Shopee: 7 giai đoạn, 43 đầu việc — danh mục nguyên văn
+  từ file checklist của chủ shop. Cập nhật trạng thái, người phụ trách, hạn và link bằng chứng cho từng việc.</p>
+</div>
+
+{% if err %}<div class="alert alert-error">{{ err }}</div>{% endif %}
+{% if msg %}<div class="alert alert-ok">{{ msg }}</div>{% endif %}
+
+<div class="card">
+  <div class="progress-meta">
+    <span><strong>{{ summary.done }}/{{ summary.total }} việc hoàn tất</strong>
+      ({{ summary.percent }}%){% if summary.na %} · {{ summary.na }} việc không áp dụng{% endif %}</span>
+  </div>
+  <div class="progress progress-lg"><div class="progress-bar" style="width: {{ summary.percent }}%"></div></div>
+</div>
+
+<div class="tabs">
+  <a href="/shopee-onboard?tab=danh-sach" class="tab{% if tab == 'danh-sach' %} active{% endif %}">📋 Danh sách việc</a>
+  <a href="/shopee-onboard?tab=lo-trinh" class="tab{% if tab == 'lo-trinh' %} active{% endif %}">🗺️ Lộ trình</a>
+  <a href="/shopee-onboard?tab=ke-hoach-tuan" class="tab{% if tab == 'ke-hoach-tuan' %} active{% endif %}">📅 Kế hoạch tuần</a>
+  <a href="/shopee-onboard?tab=shop" class="tab{% if tab == 'shop' %} active{% endif %}">🏪 Shop công ty &amp; khách</a>
+  <a href="/shopee-onboard?tab=danh-gia" class="tab{% if tab == 'danh-gia' %} active{% endif %}">⭐ Đánh giá thử việc</a>
+  <a href="/shopee-onboard?tab=lich-su" class="tab{% if tab == 'lich-su' %} active{% endif %}">🕘 Lịch sử thay đổi</a>
+</div>
+
+{% if tab == 'lo-trinh' %}
+<div class="card">
+  <h2 class="tt-group">{{ roadmap.title }}{% if roadmap.duration %} · {{ roadmap.duration }}{% endif %}</h2>
+  <p>{{ roadmap.intro }}</p>
+</div>
+<div class="tt-phases">
+  {% for w in roadmap.weeks %}
+  <div class="tt-phase-card">
+    <div class="tt-phase-name">{{ w.week }} · {{ w.title }}</div>
+    <div class="tt-phase-count">{{ w.summary }}</div>
+  </div>
+  {% endfor %}
+</div>
+<div class="card">
+  <h2 class="tt-group">{{ roadmap.quick_view_title }}</h2>
+  <div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>{% for h in roadmap.quick_view_headers %}<th>{{ h }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+    {% for row in roadmap.quick_view_rows %}
+      <tr>
+        <td><strong>{{ row.label }}</strong></td>
+        {% for v in row.week_values %}<td>{{ v }}</td>{% endfor %}
+        <td>{{ roadmap.end_condition }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="tt-phase-intro">
+    <p><strong>Quy tắc dễ nhớ:</strong> {{ roadmap.rules }}</p>
+    <p><strong>Quy trình shop mới:</strong> {{ roadmap.new_shop_process }}</p>
+  </div>
+</div>
+
+{% elif tab == 'ke-hoach-tuan' %}
+<div class="card">
+  <h2 class="tt-group">{{ weekly.title }}</h2>
+  <p>{{ weekly.intro }}</p>
+  <div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>{% for h in weekly.headers %}<th>{{ h }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+    {% for row in weekly.rows %}
+      <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+{% elif tab == 'shop' %}
+<div class="card">
+  <h2 class="tt-group">{{ compare.title }}</h2>
+  <p>{{ compare.intro }}</p>
+  <div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>{% for h in compare.headers %}<th>{{ h }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+    {% for row in compare.rows %}
+      <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+{% elif tab == 'danh-gia' %}
+<div class="card">
+  <h2 class="tt-group">{{ eval_sheet.title }}</h2>
+  <p>{{ eval_sheet.intro }}</p>
+  <p class="muted">Tab này chỉ để tham khảo: khung đánh giá do Team Lead/Quản lý điền
+  theo từng người và từng tháng, nên không có điểm số chung để cập nhật tại đây.</p>
+  <div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>{% for h in eval_sheet.headers %}<th>{{ h }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+    {% for row in eval_sheet.competencies %}
+      <tr>{% for cell in row %}<td>{{ cell or "—" }}</td>{% endfor %}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <h3>{{ eval_sheet.conclusion_label }}</h3>
+  {% for field in eval_sheet.open_fields %}
+  <div class="tt-field"><span class="tt-label">{{ field }}</span><div class="tt-text">—</div></div>
+  {% endfor %}
+</div>
+
+{% elif tab == 'lich-su' %}
+<div class="card card-flat">
+  <div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr><th>Thời gian</th><th>Mã</th><th>Công việc</th><th>Trạng thái cũ</th><th>Trạng thái mới</th><th>Người đổi</th><th>Ghi chú</th></tr>
+    </thead>
+    <tbody>
+    {% for h in history %}
+      <tr>
+        <td class="nowrap">{{ h.changed_vn }}</td>
+        <td><strong>{{ h.code }}</strong></td>
+        <td>{{ h.title }}</td>
+        <td>{% if h.old_status %}<span class="tt-status {{ h.old_class }}">{{ h.old_status }}</span>{% endif %}</td>
+        <td><span class="tt-status {{ h.new_class }}">{{ h.new_status }}</span></td>
+        <td>{{ h.changed_by }}</td>
+        <td>{{ h.note }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="muted">Chưa có thay đổi trạng thái nào.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+{% else %}
+<div class="tt-phases">
+  <a href="/shopee-onboard" class="tt-phase-card{% if not phase %} active{% endif %}">
+    <div class="tt-phase-name">Tất cả giai đoạn</div>
+    <div class="tt-phase-count">{{ summary.done }}/{{ summary.total }} hoàn tất</div>
+  </a>
+  {% for pc in phase_cards %}
+  <a href="/shopee-onboard?phase={{ pc.phase.name | urlencode }}" class="tt-phase-card{% if phase == pc.phase.name %} active{% endif %}">
+    <div class="tt-phase-name">{{ pc.phase.name }}</div>
+    <div class="tt-phase-count">{{ pc.done }}/{{ pc.total }} hoàn tất</div>
+  </a>
+  {% endfor %}
+</div>
+
+<form method="get" action="/shopee-onboard" class="form-inline">
+  <input type="hidden" name="tab" value="danh-sach">
+  <label>Giai đoạn
+    <select name="phase" class="input">
+      <option value="">Tất cả</option>
+      {% for p in phases %}
+      <option value="{{ p.name }}"{% if phase == p.name %} selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Trạng thái
+    <select name="status" class="input">
+      <option value="">Tất cả</option>
+      {% for s in statuses %}
+      <option value="{{ s }}"{% if status == s %} selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="grow">Từ khóa
+    <input type="text" name="q" value="{{ q }}" class="input" placeholder="Mã việc, tên việc, người phụ trách…">
+  </label>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
+    {% if phase or status or q %}<a href="/shopee-onboard" class="btn btn-ghost btn-sm">Xóa lọc</a>{% endif %}
+  </div>
+</form>
+<p class="sync-note">Đang hiển thị {{ shown }} việc. Bấm vào từng việc để xem chi tiết{% if can_edit %} và cập nhật tiến độ{% endif %}.</p>
+
+{% for g in groups %}
+<h2 class="tt-group">{{ g.phase.name }}</h2>
+
+{% for t in g.tasks %}
+{% set p = t.progress %}
+<details class="tt-item">
+  <summary>
+    <span class="tt-code">{{ t.code }}</span>
+    <span class="tt-title">{{ t.title }}</span>
+    <span class="tt-status {{ t.status_class }}">{{ p.status }}</span>
+    <span class="tt-meta">👤 {{ p.assignee or "Chưa giao" }}</span>
+    {% if t.due_vn %}<span class="tt-meta">📅 Hạn: {{ t.due_vn }}</span>{% endif %}
+  </summary>
+  <div class="tt-body">
+    {% if t.goal %}<div class="tt-field"><span class="tt-label">Mục tiêu</span><div class="tt-text">{{ t.goal }}</div></div>{% endif %}
+    {% if t.guide %}<div class="tt-field"><span class="tt-label">Cách làm cho người mới</span><div class="tt-text">{{ t.guide }}</div></div>{% endif %}
+    {% if t.evidence %}<div class="tt-field"><span class="tt-label">Bằng chứng / kết quả</span><div class="tt-text">{{ t.evidence }}</div></div>{% endif %}
+    {% if t.frequency %}<div class="tt-field"><span class="tt-label">Tần suất / thời điểm</span><div class="tt-text">{{ t.frequency }}</div></div>{% endif %}
+    {% if t.owner_hint %}<div class="tt-field"><span class="tt-label">Chủ trì gợi ý</span><div class="tt-text">{{ t.owner_hint }}</div></div>{% endif %}
+    {% if t.review_note %}<div class="tt-field"><span class="tt-label">Cần xác nhận / duyệt</span><div class="tt-text">{{ t.review_note }}</div></div>{% endif %}
+
+    {% if can_edit %}
+    <form method="post" action="/shopee-onboard/update" class="form-inline tt-form">
+      <input type="hidden" name="code" value="{{ t.code }}">
+      <label>Trạng thái
+        <select name="status" class="input">
+          {% for s in statuses %}
+          <option value="{{ s }}"{% if p.status == s %} selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Người phụ trách
+        <input type="text" name="assignee" value="{{ p.assignee }}" class="input" placeholder="Tên người làm">
+      </label>
+      <label>Hạn hoàn thành
+        <input inputmode="numeric" placeholder="DD/MM/YYYY" type="text" name="due" value="{{ p.due }}" class="input date-vn">
+      </label>
+      <label class="grow">Link bằng chứng
+        <input type="text" name="evidence" value="{{ p.evidence }}" class="input" placeholder="https://…">
+      </label>
+      <label class="grow">Ghi chú / lý do
+        <input type="text" name="note" value="{{ p.note }}" class="input" placeholder="Bắt buộc khi Hoàn tất (nếu chưa có link) hoặc Không áp dụng">
+      </label>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-sm">Lưu cập nhật</button>
+      </div>
+    </form>
+    {% if p.updated_by %}<p class="sync-note">Cập nhật gần nhất: {{ p.updated_by }}{% if p.updated_at %} · {{ p.updated_at }}{% endif %}</p>{% endif %}
+    {% else %}
+    <div class="tt-field"><span class="tt-label">Người phụ trách</span><div class="tt-text">{{ p.assignee or "Chưa giao" }}</div></div>
+    {% if t.due_vn %}<div class="tt-field"><span class="tt-label">Hạn hoàn thành</span><div class="tt-text">{{ t.due_vn }}</div></div>{% endif %}
+    {% if p.evidence %}<div class="tt-field"><span class="tt-label">Bằng chứng</span><div class="tt-text"><a href="{{ p.evidence }}" target="_blank" rel="noopener">{{ p.evidence }}</a></div></div>{% endif %}
+    {% if p.note %}<div class="tt-field"><span class="tt-label">Ghi chú</span><div class="tt-text">{{ p.note }}</div></div>{% endif %}
+    {% if p.updated_by %}<p class="sync-note">Cập nhật gần nhất: {{ p.updated_by }}{% if p.updated_at %} · {{ p.updated_at }}{% endif %}</p>{% endif %}
+    {% endif %}
+  </div>
+</details>
+{% endfor %}
+{% else %}
+<p class="empty muted">Không có việc nào khớp bộ lọc.</p>
+{% endfor %}
+{% endif %}
+{% endblock %}

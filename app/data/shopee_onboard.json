@@ -1,0 +1,799 @@
+{
+  "phases": [
+    {
+      "order": 1,
+      "name": "1. Nhận shop"
+    },
+    {
+      "order": 2,
+      "name": "2. Setup nền tảng"
+    },
+    {
+      "order": 3,
+      "name": "3. Cơ cấu & tối ưu sản phẩm"
+    },
+    {
+      "order": 4,
+      "name": "4. Seeding & Affiliate"
+    },
+    {
+      "order": 5,
+      "name": "5. Video & Livestream"
+    },
+    {
+      "order": 6,
+      "name": "6. Quảng cáo & chiến dịch"
+    },
+    {
+      "order": 7,
+      "name": "7. Báo cáo & phối hợp"
+    }
+  ],
+  "tasks": [
+    {
+      "code": "SP-001",
+      "phase": "1. Nhận shop",
+      "title": "Nhận shop – shop mới MKT City",
+      "goal": "Biết rõ shop đang tiếp nhận và người chịu trách nhiệm.",
+      "guide": "Ghi tên shop, loại shop (công ty/khách hàng), Team Lead phụ trách, đầu mối khách hàng, ngày bắt đầu và kênh trao đổi.",
+      "evidence": "Phiếu nhận shop và đầu mối được xác nhận.",
+      "frequency": "Ngày đầu nhận shop",
+      "owner_hint": "Nhân sự mới + Team Lead",
+      "review_note": "Shop mới phải báo cáo Team Lead phụ trách."
+    },
+    {
+      "code": "SP-002",
+      "phase": "1. Nhận shop",
+      "title": "Đổi thông tin và số điện thoại shop (nếu được phân công)",
+      "goal": "Đảm bảo thông tin shop chính xác, người có quyền quản lý được xác nhận.",
+      "guide": "Kiểm tra thông tin hiện tại; xin thông tin đúng từ khách/chủ shop; làm theo quyền được cấp; kiểm tra sau cập nhật.",
+      "evidence": "Thông tin đã cập nhật và xác nhận/capture kết quả.",
+      "frequency": "Khi tiếp nhận shop, nếu có yêu cầu",
+      "owner_hint": "Người được phân quyền",
+      "review_note": "Xác nhận với khách/chủ shop và Team Lead trước khi đổi."
+    },
+    {
+      "code": "SP-003",
+      "phase": "1. Nhận shop",
+      "title": "Xin thông tin từ khách hàng",
+      "goal": "Thu thập đủ đầu vào để không phải đoán khi setup.",
+      "guide": "Dùng danh sách yêu cầu: thông tin shop, SKU, giá, tồn, kho, nội dung, ảnh/video, lịch sale, quyền truy cập, báo cáo, mục tiêu và người duyệt; ghi phần thiếu/người cung cấp/hạn.",
+      "evidence": "Danh sách đầu vào có trạng thái nhận/thiếu và ngày cập nhật.",
+      "frequency": "Khi onboard shop khách hàng",
+      "owner_hint": "Account/nhân sự vận hành",
+      "review_note": "Nếu thiếu dữ liệu hoặc quyền, báo Team Lead và chờ bổ sung."
+    },
+    {
+      "code": "SP-004",
+      "phase": "1. Nhận shop",
+      "title": "Thêm các sheet báo cáo",
+      "goal": "Bảo đảm shop có nơi theo dõi kết quả thống nhất.",
+      "guide": "Dùng mẫu nội bộ đã duyệt; thêm sheet phù hợp; kiểm tra quyền truy cập, tên kỳ và nguồn số liệu.",
+      "evidence": "Link sheet, người có quyền, kỳ báo cáo và nguồn dữ liệu.",
+      "frequency": "Khi setup shop mới hoặc theo chỉ đạo",
+      "owner_hint": "Nhân sự vận hành + Team Lead",
+      "review_note": "Dùng đúng mẫu/drive và quyền chia sẻ được duyệt."
+    },
+    {
+      "code": "SP-005",
+      "phase": "2. Setup nền tảng",
+      "title": "Setup kho hàng",
+      "goal": "Thiết lập quy trình/đầu mối kho để tồn và xử lý hàng đúng.",
+      "guide": "Xác định kho, nguồn tồn chính thức, SKU, người cập nhật, cách báo tồn thấp và đầu mối xử lý.",
+      "evidence": "Danh sách kho/đầu mối/nguồn tồn; cách đối chiếu đã thống nhất.",
+      "frequency": "Khi setup shop mới; rà soát khi có thay đổi",
+      "owner_hint": "Vận hành + kho",
+      "review_note": "Không tự tạo hoặc sửa tồn nếu chưa được giao quyền."
+    },
+    {
+      "code": "SP-006",
+      "phase": "2. Setup nền tảng",
+      "title": "Đăng sản phẩm",
+      "goal": "Đưa sản phẩm lên đúng thông tin và có thể kiểm tra lại.",
+      "guide": "Nhận thông tin đã duyệt; nhập tên, phân loại, giá, tồn, ảnh/video và thuộc tính; rà hiển thị/link.",
+      "evidence": "Link SKU và checklist kiểm tra sau đăng.",
+      "frequency": "Khi shop có sản phẩm mới",
+      "owner_hint": "Vận hành + ngành hàng/nội dung",
+      "review_note": "Giá, mô tả/claim và tồn theo thông tin đã xác nhận."
+    },
+    {
+      "code": "SP-007",
+      "phase": "2. Setup nền tảng",
+      "title": "Tạo combo nếu có",
+      "goal": "Tạo nhóm mua kèm/combo theo chương trình được duyệt.",
+      "guide": "Xác định SKU, điều kiện, giá, thời gian và tồn; tạo nháp; kiểm tra hiển thị sau khi duyệt.",
+      "evidence": "Link/capture combo, sản phẩm và thời hạn.",
+      "frequency": "Nếu shop/campaign áp dụng",
+      "owner_hint": "Vận hành",
+      "review_note": "Cần duyệt giá, điều kiện và thời gian."
+    },
+    {
+      "code": "SP-008",
+      "phase": "2. Setup nền tảng",
+      "title": "Thiết lập mã giảm giá (MGG)",
+      "goal": "Cài ưu đãi đúng mức, điều kiện và lịch.",
+      "guide": "Ghi mức giảm, SKU/đối tượng, điều kiện, thời hạn và ngân sách; kiểm tra cấu hình.",
+      "evidence": "Link/capture MGG và điều kiện áp dụng.",
+      "frequency": "Theo lịch chương trình",
+      "owner_hint": "Vận hành",
+      "review_note": "Người có quyền duyệt xác nhận trước khi bật."
+    },
+    {
+      "code": "SP-009",
+      "phase": "2. Setup nền tảng",
+      "title": "Thiết lập Deal Sock",
+      "goal": "Đưa sản phẩm vào Deal Sock theo kế hoạch.",
+      "guide": "Kiểm tra SKU, giá, thời gian, số lượng và điều kiện; chuẩn bị cài đặt và kiểm tra sau khi duyệt.",
+      "evidence": "Trạng thái đăng ký/cấu hình và link/capture.",
+      "frequency": "Theo campaign",
+      "owner_hint": "Vận hành",
+      "review_note": "Duyệt mức giá/ưu đãi và số lượng."
+    },
+    {
+      "code": "SP-010",
+      "phase": "2. Setup nền tảng",
+      "title": "Thiết lập Flash Sale",
+      "goal": "Chuẩn bị SKU, giá và tồn cho Flash Sale.",
+      "guide": "Xác nhận lịch, điều kiện, giá sau giảm, số lượng và khả năng đáp ứng; kiểm tra trạng thái.",
+      "evidence": "Danh sách SKU, lịch và cấu hình đã được xác nhận.",
+      "frequency": "Theo campaign",
+      "owner_hint": "Vận hành + kho",
+      "review_note": "Duyệt giá/tồn/khung giờ trước khi tham gia."
+    },
+    {
+      "code": "SP-011",
+      "phase": "2. Setup nền tảng",
+      "title": "Thiết lập xu thưởng",
+      "goal": "Cài xu thưởng theo chương trình shop đã chọn.",
+      "guide": "Xác nhận đối tượng, mức áp dụng, thời gian và điều kiện theo kế hoạch; rà cấu hình.",
+      "evidence": "Link/capture và thời gian áp dụng.",
+      "frequency": "Nếu có trong kế hoạch",
+      "owner_hint": "Vận hành",
+      "review_note": "Duyệt chi phí/điều kiện trước khi bật."
+    },
+    {
+      "code": "SP-012",
+      "phase": "2. Setup nền tảng",
+      "title": "Thiết lập mã giảm giá theo dõi",
+      "goal": "Thiết lập mã liên quan đến người theo dõi shop theo chương trình.",
+      "guide": "Xác nhận đối tượng, mức giảm, điều kiện, thời gian; kiểm tra nội dung hiển thị và cấu hình.",
+      "evidence": "Link/capture và điều kiện áp dụng.",
+      "frequency": "Nếu có trong kế hoạch",
+      "owner_hint": "Vận hành",
+      "review_note": "Duyệt ưu đãi và ngân sách."
+    },
+    {
+      "code": "SP-013",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Rà cơ cấu sản phẩm",
+      "goal": "Biết SKU trọng tâm, SKU bổ trợ và sản phẩm cần ưu tiên.",
+      "guide": "Dựa trên danh mục, dữ liệu bán, tồn, mục tiêu và vai trò sản phẩm; ghi nhận đề xuất thay đổi cơ cấu.",
+      "evidence": "Danh sách SKU nhóm theo ưu tiên và lý do.",
+      "frequency": "Khi onboard; rà soát định kỳ",
+      "owner_hint": "Vận hành + ngành hàng",
+      "review_note": "Đề xuất được Team Lead/khách xác nhận trước thay đổi lớn."
+    },
+    {
+      "code": "SP-014",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Làm lại ảnh đại diện/ảnh bìa",
+      "goal": "Giúp khách nhận diện sản phẩm nhanh và đúng.",
+      "guide": "Kiểm tra ảnh hiện tại; gửi brief ảnh mới theo tiêu chuẩn thương hiệu và thông tin thật; rà bản cuối trên trang sản phẩm.",
+      "evidence": "Ảnh đã duyệt và link/capture sau cập nhật.",
+      "frequency": "Khi ảnh yếu/lỗi thời hoặc theo kế hoạch",
+      "owner_hint": "Nội dung/thiết kế + vận hành",
+      "review_note": "Duyệt hình ảnh/claim trước khi thay."
+    },
+    {
+      "code": "SP-015",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Bổ sung ảnh đẹp và ảnh đánh giá tốt",
+      "goal": "Cung cấp hình ảnh hỗ trợ khách hiểu sản phẩm và phản hồi thực tế.",
+      "guide": "Chọn ảnh đúng SKU, rõ nét, được phép sử dụng; không chỉnh sửa gây sai lệch đánh giá; xếp thứ tự hợp lý.",
+      "evidence": "Ảnh đã chọn/duyệt và trang sản phẩm sau cập nhật.",
+      "frequency": "Theo kế hoạch tối ưu",
+      "owner_hint": "Nội dung + vận hành",
+      "review_note": "Xác nhận quyền sử dụng ảnh đánh giá/người dùng."
+    },
+    {
+      "code": "SP-016",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Bổ sung video sản phẩm",
+      "goal": "Minh họa cách dùng/đặc điểm sản phẩm bằng video.",
+      "guide": "Dùng brief đã xác nhận; kiểm tra đúng SKU, thông tin, âm thanh/hình ảnh và liên kết sản phẩm.",
+      "evidence": "Video/link và trạng thái duyệt/đăng.",
+      "frequency": "Theo lịch nội dung",
+      "owner_hint": "Nội dung + vận hành",
+      "review_note": "Duyệt thông tin sản phẩm và quyền sử dụng."
+    },
+    {
+      "code": "SP-017",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Đặt lại tên sản phẩm",
+      "goal": "Làm tên rõ, dễ tìm và đúng thuộc tính sản phẩm.",
+      "guide": "Dựa trên tên SKU, đặc điểm xác thực và bộ từ khóa; đảm bảo không thêm claim chưa được duyệt.",
+      "evidence": "Tên mới và link/capture.",
+      "frequency": "Khi cần tối ưu",
+      "owner_hint": "Vận hành + nội dung",
+      "review_note": "Duyệt theo guideline shop/khách."
+    },
+    {
+      "code": "SP-018",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Bổ sung hashtag",
+      "goal": "Bổ sung hashtag phù hợp nội dung/sản phẩm.",
+      "guide": "Chọn từ khóa/hashtag liên quan; tránh gây hiểu sai hoặc không liên quan; lưu danh sách đề xuất.",
+      "evidence": "Bản nội dung/hashtag đã duyệt.",
+      "frequency": "Khi cập nhật nội dung",
+      "owner_hint": "Nội dung",
+      "review_note": "Rà chính sách/kênh trước đăng."
+    },
+    {
+      "code": "SP-019",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Đặt lại giá",
+      "goal": "Điều chỉnh giá theo chiến lược và dữ liệu đã thống nhất.",
+      "guide": "Tổng hợp đề xuất, ảnh hưởng tới ưu đãi/campaign và biên lợi nhuận; chỉ cập nhật sau khi được duyệt.",
+      "evidence": "Bằng chứng duyệt và giá đã kiểm tra.",
+      "frequency": "Khi có quyết định giá",
+      "owner_hint": "Người có quyền + vận hành",
+      "review_note": "Bắt buộc phê duyệt trước khi thay."
+    },
+    {
+      "code": "SP-020",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Bổ sung bộ từ khóa quảng cáo tìm kiếm",
+      "goal": "Mở rộng từ khóa phù hợp nhu cầu tìm kiếm.",
+      "guide": "Tập hợp từ khóa từ dữ liệu/đề xuất; phân nhóm theo SKU và mục tiêu; cập nhật theo quyền.",
+      "evidence": "Danh sách từ khóa, SKU, ngày cập nhật và kết quả theo dõi.",
+      "frequency": "Theo kế hoạch tối ưu",
+      "owner_hint": "Vận hành Ads",
+      "review_note": "Xác nhận/người duyệt ngân sách nếu kèm chiến dịch."
+    },
+    {
+      "code": "SP-021",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Trang trí gian hàng và đưa sản phẩm lên trang chủ",
+      "goal": "Làm shop dễ điều hướng và làm nổi bật sản phẩm cần ưu tiên.",
+      "guide": "Theo kế hoạch thương hiệu/campaign; cập nhật banner/nhóm hàng; kiểm tra link và hiển thị điện thoại.",
+      "evidence": "Ảnh chụp shop/link và danh sách vị trí đã cập nhật.",
+      "frequency": "Theo campaign / khi có sản phẩm mới",
+      "owner_hint": "Vận hành + thiết kế/nội dung",
+      "review_note": "Duyệt banner/thông tin/ưu đãi."
+    },
+    {
+      "code": "SP-022",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Bơm traffic ngoài",
+      "goal": "Đưa lượt truy cập từ kênh phù hợp về sản phẩm/shop bằng hoạt động thật.",
+      "guide": "Xác định kênh, nội dung, link tracking và lịch; theo dõi nguồn truy cập/kết quả.",
+      "evidence": "Link bài, nguồn traffic và số liệu có nguồn.",
+      "frequency": "Theo kế hoạch marketing",
+      "owner_hint": "Marketing + vận hành",
+      "review_note": "Chỉ dùng hoạt động hợp lệ, minh bạch; không tạo traffic/đơn giả."
+    },
+    {
+      "code": "SP-023",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Kiểm tra đánh giá xấu",
+      "goal": "Phát hiện vấn đề sản phẩm/dịch vụ và chuyển đúng nhóm xử lý.",
+      "guide": "Rà đánh giá mới; phân loại nguyên nhân; ghi SKU, mức độ, phản hồi theo quy trình và người nhận.",
+      "evidence": "Danh sách vấn đề, trạng thái và hành động xử lý.",
+      "frequency": "Theo lịch vận hành",
+      "owner_hint": "CS + vận hành",
+      "review_note": "Phản hồi theo quy trình đã duyệt."
+    },
+    {
+      "code": "SP-024",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Kiểm tra tag giảm giá",
+      "goal": "Đảm bảo tag giảm giá phù hợp giá và ưu đãi thật.",
+      "guide": "Kiểm tra sản phẩm có tag giảm giá không; đối chiếu chương trình, thời gian và giá đang hiển thị.",
+      "evidence": "SKU có/không có tag; sai lệch và việc cần xử lý.",
+      "frequency": "Khi rà SKU/campaign",
+      "owner_hint": "Vận hành",
+      "review_note": "Không tự tạo mức giảm khi chưa duyệt."
+    },
+    {
+      "code": "SP-025",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Kiểm tra tồn kho và màu bán chạy",
+      "goal": "Tránh SKU/màu bán chạy hết hàng mà vẫn tiếp tục quảng bá.",
+      "guide": "Đối chiếu tồn theo SKU/biến thể với nguồn kho; ghi màu sắp hết/hết; báo kho/Team Lead.",
+      "evidence": "Danh sách biến thể rủi ro, số liệu nguồn và người nhận.",
+      "frequency": "Theo lịch vận hành; trước campaign",
+      "owner_hint": "Vận hành + kho",
+      "review_note": "Chỉ cập nhật tồn khi có quyền và xác nhận nguồn."
+    },
+    {
+      "code": "SP-026",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Kiểm tra quảng cáo, ngân sách và tự động tắt",
+      "goal": "Phát hiện quảng cáo dừng hoặc chi tiêu khác kế hoạch.",
+      "guide": "Rà trạng thái chiến dịch, ngân sách, cảnh báo và thiết lập tự động tắt; ghi đề xuất nhưng không tự tăng ngân sách.",
+      "evidence": "Ảnh/link cài đặt, trạng thái và đề xuất.",
+      "frequency": "Theo nhịp Ads/đang chạy",
+      "owner_hint": "Vận hành Ads",
+      "review_note": "Tăng ngân sách/đổi cấu hình cần duyệt."
+    },
+    {
+      "code": "SP-027",
+      "phase": "3. Cơ cấu & tối ưu sản phẩm",
+      "title": "Kiểm tra ảnh bìa và phân loại sản phẩm",
+      "goal": "Đảm bảo ảnh bìa đúng, phân loại/biến thể chính xác.",
+      "guide": "Rà SKU, ảnh đại diện, màu/size/biến thể, tên và danh mục; ghi lỗi và yêu cầu sửa.",
+      "evidence": "Danh sách SKU lỗi/đạt; link/capture.",
+      "frequency": "Khi rà soát sản phẩm",
+      "owner_hint": "Vận hành + nội dung",
+      "review_note": "Duyệt thay đổi nội dung/thuộc tính nếu cần."
+    },
+    {
+      "code": "SP-028",
+      "phase": "4. Seeding & Affiliate",
+      "title": "Seeding sản phẩm nếu có",
+      "goal": "Tạo nội dung/trải nghiệm thật để hỗ trợ nhận biết sản phẩm.",
+      "guide": "Xác định SKU, mục tiêu, người tham gia, mẫu thật nếu có, nội dung, lịch và cách đo; theo dõi bài đăng.",
+      "evidence": "Kế hoạch được duyệt, link nội dung, kết quả có nguồn.",
+      "frequency": "Nếu có kế hoạch",
+      "owner_hint": "Vận hành + marketing",
+      "review_note": "Không tạo đơn/đánh giá/tương tác giả; xin duyệt chi phí và mẫu."
+    },
+    {
+      "code": "SP-029",
+      "phase": "4. Seeding & Affiliate",
+      "title": "Mở Affiliate và setup campaign",
+      "goal": "Kết nối sản phẩm với hoạt động Affiliate phù hợp.",
+      "guide": "Chọn sản phẩm/campaign; xác nhận mức hoa hồng 10–12% theo thông tin đã chốt; ghi thời gian và điều kiện.",
+      "evidence": "Cấu hình campaign, sản phẩm, mức hoa hồng và link kiểm tra.",
+      "frequency": "Theo kế hoạch Affiliate",
+      "owner_hint": "Vận hành Affiliate",
+      "review_note": "Mức 10–12% đã được anh xác nhận; người có quyền duyệt trước khi bật."
+    },
+    {
+      "code": "SP-030",
+      "phase": "5. Video & Livestream",
+      "title": "Đăng video",
+      "goal": "Đăng video đúng lịch và gắn sản phẩm/link khi cần.",
+      "guide": "Dùng nội dung đã duyệt; kiểm tra caption, hashtag, link sản phẩm, lịch đăng và hiển thị.",
+      "evidence": "URL video, ngày đăng và kiểm tra link.",
+      "frequency": "Theo lịch nội dung; nếu có nhịp hằng ngày thì theo kế hoạch kênh",
+      "owner_hint": "Nội dung + vận hành",
+      "review_note": "Duyệt nội dung/claim và quyền sử dụng."
+    },
+    {
+      "code": "SP-031",
+      "phase": "5. Video & Livestream",
+      "title": "Phối hợp sản xuất video",
+      "goal": "Tổ chức brief/quay/dựng/duyệt video theo SKU.",
+      "guide": "Ghi SKU, brief, người làm, lịch, vòng duyệt và deadline; theo dõi tới khi có link bàn giao/đăng.",
+      "evidence": "Lịch video, tệp/link, trạng thái sản xuất và duyệt.",
+      "frequency": "Theo kế hoạch nội dung",
+      "owner_hint": "Nội dung + vận hành",
+      "review_note": ""
+    },
+    {
+      "code": "SP-032",
+      "phase": "5. Video & Livestream",
+      "title": "Livestream",
+      "goal": "Chuẩn bị buổi livestream theo kế hoạch shop.",
+      "guide": "Chốt lịch, host, SKU, tồn, ưu đãi, kịch bản, link và đầu mối xử lý; tổng kết sau buổi.",
+      "evidence": "Checklist trước live, link/bản ghi và báo cáo kết quả.",
+      "frequency": "Theo lịch livestream",
+      "owner_hint": "Vận hành + nội dung/host",
+      "review_note": "Duyệt kịch bản/ưu đãi/chi phí nếu có."
+    },
+    {
+      "code": "SP-033",
+      "phase": "6. Quảng cáo & chiến dịch",
+      "title": "Chạy quảng cáo Shopee",
+      "goal": "Triển khai quảng cáo theo mục tiêu, ngân sách và thời hạn được duyệt.",
+      "guide": "Xác nhận sản phẩm, mục tiêu, từ khóa, ngân sách, lịch và tiêu chí theo dõi; ghi trạng thái theo nhịp.",
+      "evidence": "Link/capture cài đặt, ngân sách, kết quả và nguồn số liệu.",
+      "frequency": "Theo campaign; theo dõi khi đang chạy",
+      "owner_hint": "Vận hành Ads",
+      "review_note": "Ngân sách cần phê duyệt; nhân sự mới không tự tăng ngân sách."
+    },
+    {
+      "code": "SP-034",
+      "phase": "6. Quảng cáo & chiến dịch",
+      "title": "Tăng ngân sách Ads (nếu được duyệt)",
+      "goal": "Tăng phân phối khi có cơ sở và trong ngân sách đã phê duyệt.",
+      "guide": "Đưa số liệu, lý do, mức đề xuất và ảnh hưởng; chỉ tăng sau xác nhận.",
+      "evidence": "Bằng chứng duyệt và cấu hình mới.",
+      "frequency": "Khi có đề xuất",
+      "owner_hint": "Vận hành Ads",
+      "review_note": "Bắt buộc Team Lead/khách hàng có thẩm quyền duyệt."
+    },
+    {
+      "code": "SP-035",
+      "phase": "6. Quảng cáo & chiến dịch",
+      "title": "Tham gia chương trình/CTKM",
+      "goal": "Đăng ký chương trình phù hợp với mục tiêu và khả năng cung ứng.",
+      "guide": "Rà điều kiện, SKU, giá sau ưu đãi, tồn và thời gian; theo dõi trạng thái đăng ký.",
+      "evidence": "Danh sách SKU, trạng thái và link chương trình.",
+      "frequency": "Theo lịch chương trình",
+      "owner_hint": "Vận hành + ngành hàng",
+      "review_note": "Duyệt giá/tồn/ưu đãi."
+    },
+    {
+      "code": "SP-036",
+      "phase": "6. Quảng cáo & chiến dịch",
+      "title": "Trực Spike Day",
+      "goal": "Đảm bảo shop được theo dõi trong ngày cao điểm.",
+      "guide": "Chốt lịch trực; kiểm tra hàng, giá, nội dung, ads, ưu đãi và đầu mối sự cố; ghi nhật ký trong ca.",
+      "evidence": "Lịch trực, checklist trước ngày và nhật ký ca.",
+      "frequency": "Mỗi Spike Day",
+      "owner_hint": "Vận hành + kho + CS",
+      "review_note": "Team Lead phân ca và đầu mối escalation."
+    },
+    {
+      "code": "SP-037",
+      "phase": "7. Báo cáo & phối hợp",
+      "title": "Lập kế hoạch ngày/campaign",
+      "goal": "Chuyển mục tiêu thành việc có người, hạn và đầu ra.",
+      "guide": "Ghi mục tiêu, SKU, hoạt động, thời gian, phụ thuộc, người làm và người duyệt.",
+      "evidence": "Kế hoạch có trạng thái, người duyệt và bước tiếp theo.",
+      "frequency": "Hằng ngày / trước campaign",
+      "owner_hint": "Vận hành + Team Lead",
+      "review_note": ""
+    },
+    {
+      "code": "SP-038",
+      "phase": "7. Báo cáo & phối hợp",
+      "title": "Báo cáo tuần",
+      "goal": "Giúp nhóm nắm kết quả, vấn đề và ưu tiên tuần tới.",
+      "guide": "Dùng sheet/mẫu; ghi kỳ, nguồn số liệu, kết quả, việc đã làm, vướng mắc và hành động tiếp.",
+      "evidence": "Báo cáo tuần và link nguồn dữ liệu.",
+      "frequency": "Hằng tuần",
+      "owner_hint": "Nhân sự vận hành",
+      "review_note": "Team Lead rà soát; shop khách gửi theo lịch đã thống nhất."
+    },
+    {
+      "code": "SP-039",
+      "phase": "7. Báo cáo & phối hợp",
+      "title": "Báo cáo tháng",
+      "goal": "Tổng kết hiệu quả và đề xuất theo tháng.",
+      "guide": "Tổng hợp dữ liệu theo mẫu; phân biệt số liệu và nhận định; nêu việc cần quyết định.",
+      "evidence": "Báo cáo tháng có nguồn, kỳ, kết luận và đề xuất.",
+      "frequency": "Hằng tháng",
+      "owner_hint": "Vận hành + Team Lead",
+      "review_note": "Khách hàng nhận theo phạm vi/lịch báo cáo nếu là shop khách."
+    },
+    {
+      "code": "SP-040",
+      "phase": "7. Báo cáo & phối hợp",
+      "title": "Thông báo tình trạng vận hành",
+      "goal": "Giúp nhóm biết sự cố, ảnh hưởng và việc cần hỗ trợ.",
+      "guide": "Cập nhật tình trạng, ảnh hưởng, việc đã làm, người nhận và hạn; báo sớm vấn đề quan trọng.",
+      "evidence": "Thông báo/log có người nhận và bước tiếp.",
+      "frequency": "Khi có vấn đề; theo nhịp nhóm",
+      "owner_hint": "Nhân sự vận hành",
+      "review_note": ""
+    },
+    {
+      "code": "SP-041",
+      "phase": "7. Báo cáo & phối hợp",
+      "title": "Phối hợp nội dung/đối tác/KOC/Affiliate",
+      "goal": "Bàn giao đúng SKU, thông tin, lịch và đầu ra.",
+      "guide": "Gửi brief; theo dõi booking, gửi mẫu thật nếu có, duyệt kịch bản/ảnh/video và link bài; lưu trạng thái.",
+      "evidence": "Brief, xác nhận, lịch, link nội dung và kết quả.",
+      "frequency": "Theo campaign",
+      "owner_hint": "Vận hành + nhóm liên quan",
+      "review_note": "Duyệt chi phí, claim, ưu đãi theo phân quyền."
+    },
+    {
+      "code": "SP-042",
+      "phase": "7. Báo cáo & phối hợp",
+      "title": "Cung cấp thông tin cho sản phẩm mới (tối đa 10 hoặc ít hơn theo nguồn)",
+      "goal": "Để các nhóm làm nội dung/campaign với dữ liệu đúng.",
+      "guide": "Xác nhận danh sách sản phẩm được đề xuất; cung cấp SKU, thông tin, ảnh/video, giá/ưu đãi đã duyệt và đầu mối.",
+      "evidence": "Bộ thông tin cho từng SKU; danh sách gửi/nhận.",
+      "frequency": "Khi được yêu cầu",
+      "owner_hint": "Ngành hàng + vận hành",
+      "review_note": "Theo danh sách được quản lý duyệt."
+    },
+    {
+      "code": "SP-043",
+      "phase": "7. Báo cáo & phối hợp",
+      "title": "Banner, quà tặng, thông báo tồn, Star Shop, booking, AFF",
+      "goal": "Điều phối các hạng mục phối hợp có phát sinh trong shop/campaign.",
+      "guide": "Xác nhận mục nào áp dụng; giao người phụ trách, lịch, thông tin, nội dung và cách kiểm tra kết quả.",
+      "evidence": "Kế hoạch/link, trạng thái, người nhận và kết quả.",
+      "frequency": "Nếu có / theo campaign",
+      "owner_hint": "Vận hành + nhóm liên quan",
+      "review_note": "Chương trình/chi phí/ưu đãi cần người có quyền duyệt."
+    }
+  ],
+  "roadmap": {
+    "title": "Lộ trình onboard Shopee | 1 tháng thử việc",
+    "duration": "",
+    "intro": "Dành cho nhân sự mới tiếp nhận shop công ty hoặc shop khách hàng. Học từng bước: hiểu shop → chuẩn bị nền tảng → triển khai → tự vận hành có kiểm soát.",
+    "weeks": [
+      {
+        "week": "TUẦN 1",
+        "title": "NHẬN & HIỂU SHOP",
+        "summary": "Mục tiêu • sản phẩm • khách hàng • quyền • báo cáo Team Lead"
+      },
+      {
+        "week": "TUẦN 2",
+        "title": "SETUP NỀN TẢNG",
+        "summary": "Thông tin shop • kho • sheet • đăng sản phẩm • chương trình"
+      },
+      {
+        "week": "TUẦN 3",
+        "title": "KÍCH HOẠT BÁN HÀNG",
+        "summary": "Seeding hợp lệ • Affiliate • Video • Ads • Livestream"
+      },
+      {
+        "week": "TUẦN 4",
+        "title": "TỐI ƯU & ĐÁNH GIÁ",
+        "summary": "Rà sản phẩm • đọc kết quả • báo cáo • nhận phạm vi tự chủ"
+      }
+    ],
+    "quick_view_title": "Lộ trình nhìn nhanh",
+    "quick_view_headers": [
+      "Mốc",
+      "Tuần 1",
+      "Tuần 2",
+      "Tuần 3",
+      "Tuần 4",
+      "Điều kiện kết thúc thử việc"
+    ],
+    "quick_view_rows": [
+      {
+        "label": "Bạn hiểu",
+        "week_values": [
+          "Biết mục tiêu, phạm vi, người phụ trách và sản phẩm.",
+          "Biết shop đã setup gì, còn thiếu gì.",
+          "Biết việc nào đang chạy và cách theo dõi.",
+          "Biết đọc kết quả và nêu bước tiếp theo."
+        ]
+      },
+      {
+        "label": "Bạn thực hành",
+        "week_values": [
+          "Đọc bàn giao; kiểm tra shop cùng người hướng dẫn.",
+          "Làm thử setup trên sản phẩm/campaign được giao.",
+          "Theo dõi một chu kỳ hoạt động có giám sát.",
+          "Tự xử lý việc thường lệ trong phạm vi được giao."
+        ]
+      },
+      {
+        "label": "Minh chứng",
+        "week_values": [
+          "Ghi chú shop + danh sách thông tin thiếu.",
+          "Link/capture setup + checklist kiểm tra.",
+          "Nhật ký công việc + bằng chứng chiến dịch.",
+          "Báo cáo tuần/tháng mẫu + đề xuất tối ưu."
+        ]
+      }
+    ],
+    "end_condition": "Đạt khi nhân sự hiểu quy trình, có thể làm việc thường lệ trong phạm vi được giao, biết khi nào phải hỏi/duyệt và lưu được kết quả kiểm tra.",
+    "rules": "Quy tắc dễ nhớ: Hỏi đúng người • Làm đúng phạm vi • Lưu bằng chứng • Chưa duyệt thì chưa bật",
+    "new_shop_process": "Quy trình shop mới: báo cáo Team Lead phụ trách trước; xin/ghi nhận thông tin còn thiếu từ khách hàng. Chọn tab “Shop công ty và khách” để xem nhánh phù hợp."
+  },
+  "weekly": {
+    "title": "Kế hoạch học và thực hành theo tuần",
+    "intro": "Người hướng dẫn giao việc theo mức độ khó tăng dần. Nhân sự mới quan sát trước, thực hành có kiểm tra, cuối tháng mới nhận việc thường lệ trong phạm vi cho phép.",
+    "headers": [
+      "Tuần / ngày",
+      "Chủ đề học",
+      "Người hướng dẫn",
+      "Nhân sự mới làm",
+      "Đầu ra / bằng chứng",
+      "Người cần phối hợp",
+      "Mốc xác nhận",
+      "Trạng thái"
+    ],
+    "rows": [
+      [
+        "Tuần 1 • Ngày 1",
+        "Nhận shop và thông tin shop",
+        "Team Lead giới thiệu shop, mục tiêu, phạm vi, quy trình, người duyệt và kênh trao đổi.",
+        "Ghi lại loại shop, mục tiêu, đầu mối, việc đang mở và câu hỏi.",
+        "Phiếu nhận shop; danh sách thông tin/quyền còn thiếu.",
+        "Team Lead; khách hàng nếu là shop khách",
+        "Team Lead xác nhận nhân sự biết báo cáo cho ai.",
+        "Chưa bắt đầu"
+      ],
+      [
+        "Tuần 1 • Ngày 2",
+        "Xin thông tin và rà hiện trạng",
+        "Hướng dẫn thông tin cần hỏi khách hàng; chỉ rõ dữ liệu nội bộ có thể tự lấy.",
+        "Thu thập tên shop, thông tin liên hệ, SKU, giá, tồn, nội dung, kho, lịch campaign, báo cáo và quyền cần thiết.",
+        "Danh sách nhận đủ/thiếu, nguồn, người cung cấp và hạn.",
+        "Khách hàng; ngành hàng; kho",
+        "Không tự điền/đoán thông tin thiếu.",
+        "Chưa bắt đầu"
+      ],
+      [
+        "Tuần 1 • Ngày 3–5",
+        "Hiểu sản phẩm và shop",
+        "Cùng nhân sự xem sản phẩm, khách hàng, đánh giá, nội dung, giá, tồn và cấu trúc shop.",
+        "Chọn SKU trọng tâm; ghi vấn đề/ưu tiên; quan sát các báo cáo và kênh bán.",
+        "Bản tóm tắt hiện trạng shop và câu hỏi cần xác minh.",
+        "Team Lead; ngành hàng; kho; CS",
+        "Team Lead rà soát phần nhận định và ưu tiên.",
+        "Chưa bắt đầu"
+      ],
+      [
+        "Tuần 2",
+        "Setup shop và sản phẩm",
+        "Làm mẫu cách cập nhật thông tin shop, kho, sheet báo cáo, sản phẩm, combo và khuyến mãi.",
+        "Thực hành dưới giám sát; kiểm tra link/hiển thị; không tự bật giá/ưu đãi chưa duyệt.",
+        "Checklist setup; link/capture; việc chờ khách/Team Lead duyệt.",
+        "Team Lead; khách; kho; nội dung",
+        "Từng cài đặt được kiểm tra trước khi áp dụng.",
+        "Chưa bắt đầu"
+      ],
+      [
+        "Tuần 3",
+        "Triển khai kênh bán",
+        "Hướng dẫn seeding hợp lệ, Affiliate, đăng video, Ads, Livestream và phối hợp nội dung.",
+        "Theo dõi hoạt động được giao; cập nhật lịch, ngân sách đã duyệt, link, số liệu và vấn đề.",
+        "Kế hoạch/nhật ký chiến dịch; bài đăng/link; dữ liệu kết quả có nguồn.",
+        "Team Lead; nội dung; KOC/Affiliate; Ads",
+        "Có người duyệt và đầu mối xử lý mỗi hoạt động.",
+        "Chưa bắt đầu"
+      ],
+      [
+        "Tuần 4",
+        "Tối ưu sản phẩm, báo cáo, đánh giá",
+        "Hướng dẫn rà checklist tối ưu, tổng hợp kết quả và viết đề xuất.",
+        "Rà SKU; lập báo cáo tuần/tháng theo mẫu; trình bày việc đã làm, vướng mắc, đề xuất.",
+        "Báo cáo có kỳ, nguồn, kết luận, hành động tiếp theo và minh chứng.",
+        "Team Lead; khách nếu liên quan",
+        "Team Lead đánh giá khả năng làm việc thường lệ trong phạm vi.",
+        "Chưa bắt đầu"
+      ],
+      [
+        "Cuối tháng",
+        "Đánh giá thử việc",
+        "Đánh giá năng lực, chất lượng, giao tiếp, phối hợp, tuân thủ và khả năng báo vấn đề.",
+        "Tự tổng kết; nêu phần làm được, phần cần hỗ trợ và kế hoạch tiếp tục học.",
+        "Phiếu đánh giá và phạm vi công việc tiếp theo.",
+        "Team Lead / quản lý",
+        "Quản lý xác nhận kết quả; không tự cấp quyền vượt phân công.",
+        "Chưa bắt đầu"
+      ]
+    ]
+  },
+  "compare": {
+    "title": "Hai nhánh tiếp nhận shop",
+    "intro": "Các nghiệp vụ Shopee dùng chung. Khác nhau chủ yếu ở mục tiêu, phạm vi, nguồn thông tin, người duyệt và cách báo cáo.",
+    "headers": [
+      "Nội dung",
+      "Shop công ty",
+      "Shop khách hàng",
+      "Nhân sự mới cần làm",
+      "Người xác nhận",
+      "Hoàn tất khi"
+    ],
+    "rows": [
+      [
+        "Mục tiêu/phạm vi",
+        "Theo mục tiêu và phân công nội bộ.",
+        "Theo thỏa thuận/phạm vi dịch vụ với khách.",
+        "Ghi mục tiêu, việc bao gồm, deadline và việc ngoài phạm vi.",
+        "Team Lead; Account/khách",
+        "Phạm vi và ưu tiên rõ."
+      ],
+      [
+        "Báo cáo",
+        "Báo cáo Team Lead và nhóm nội bộ.",
+        "Báo cáo Team Lead; cập nhật khách theo lịch đã thống nhất.",
+        "Với shop mới, báo Team Lead phụ trách và xin thông tin từ khách.",
+        "Team Lead; đầu mối khách",
+        "Biết báo ai, kênh nào, khi nào."
+      ],
+      [
+        "Quyền shop",
+        "Nhận quyền theo vai trò nội bộ.",
+        "Xin khách cấp quyền phù hợp; xác định ai sở hữu shop.",
+        "Ghi user, vai trò, phạm vi quyền và phần còn thiếu.",
+        "Quản trị shop/Team Lead/khách",
+        "Đăng nhập được và không vượt quyền."
+      ],
+      [
+        "Đầu vào",
+        "Lấy từ tài liệu/SOP/dữ liệu nội bộ.",
+        "Xin khách cung cấp thông tin shop, SKU, giá, tồn, kho, ảnh, video, lịch và guideline.",
+        "Gửi danh sách thông tin cần xin; theo dõi người cung cấp và hạn.",
+        "Team Lead/khách",
+        "Đã nhận đủ hoặc có kế hoạch bổ sung phần thiếu."
+      ],
+      [
+        "Phê duyệt",
+        "Theo cấp duyệt nội bộ.",
+        "Giá, ngân sách, ưu đãi, nội dung theo thỏa thuận cần người có quyền xác nhận.",
+        "Trước khi bật/chỉnh, tìm đúng người duyệt và lưu xác nhận.",
+        "Team Lead/người được ủy quyền/khách",
+        "Có bằng chứng duyệt trước thao tác."
+      ],
+      [
+        "Kết thúc thử việc",
+        "Quản lý xác nhận phạm vi tự chủ nội bộ.",
+        "Team Lead xác nhận phạm vi phục vụ; khách được cập nhật nếu thuộc quy trình.",
+        "Tổng kết việc đã học, minh chứng, điểm cần hỗ trợ.",
+        "Team Lead/Quản lý",
+        "Được giao rõ việc tự làm và việc phải xin duyệt."
+      ]
+    ]
+  },
+  "eval": {
+    "title": "Đánh giá cuối tháng thử việc",
+    "intro": "Đánh giá mức sẵn sàng làm việc theo phạm vi được giao; mục này là khung tham khảo để Team Lead/Quản lý điền, không tự đặt KPI doanh thu.",
+    "headers": [
+      "Năng lực",
+      "Đạt khi nhân sự có thể…",
+      "Minh chứng",
+      "Mức đánh giá",
+      "Nhận xét / việc cần học thêm",
+      "Người xác nhận"
+    ],
+    "competencies": [
+      [
+        "Hiểu shop",
+        "Trình bày đúng mục tiêu, sản phẩm trọng tâm, loại shop và đầu mối.",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Quy trình & tuân thủ",
+        "Làm đúng SOP, không thay giá/ngân sách/ưu đãi khi chưa duyệt.",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Setup cơ bản",
+        "Kiểm tra thông tin shop, kho, sản phẩm, chương trình và báo cáo theo checklist.",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Vận hành & tối ưu",
+        "Rà sản phẩm, tồn, đánh giá, Ads và phát hiện vấn đề cần báo.",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Phối hợp & giao tiếp",
+        "Báo đúng Team Lead; xin đủ thông tin khách; bàn giao rõ người/hạn.",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Báo cáo & bằng chứng",
+        "Cập nhật trạng thái, lưu link/minh chứng, báo cáo có kỳ và nguồn.",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Sẵn sàng nhận việc",
+        "Biết việc tự làm, việc cần duyệt và khi nào phải escalates.",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "conclusion_label": "Kết luận thử việc",
+    "open_fields": [
+      "Phạm vi có thể tự phụ trách:",
+      "Phần cần đào tạo thêm:",
+      "Kết luận / ngày rà soát:"
+    ]
+  }
+}
